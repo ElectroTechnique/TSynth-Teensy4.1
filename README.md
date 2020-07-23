@@ -1,2 +1,2 @@
 # TSynth-Teensy4.1
-TSynth for Teemsy 4.1
+TSynth for Teensy 4.1
