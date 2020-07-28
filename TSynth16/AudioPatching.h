@@ -1,5 +1,5 @@
 // GUItool: begin automatically generated code
-
+AudioOutputUSB           usbAudio;       //xy=2356,593
 AudioSynthWaveformDc     constant1Dc;    //xy=69.5,437
 AudioSynthNoisePink      pink;           //xy=268,349
 AudioSynthNoiseWhite     white;           //xy=268,359
@@ -273,7 +273,6 @@ AudioFilterStateVariable dcOffsetFilter;     //xy=1564,580
 AudioEffectEnsemble       ensemble;  //xy=1800,600
 AudioMixer4              effectMixerR;         //xy=1848,625
 AudioMixer4              effectMixerL;         //xy=1857,539
-AudioOutputUSB           usbAudio;       //xy=2356,593
 AudioOutputI2S           i2s;            //xy=2364,547
 
 AudioConnection          patchCord1(constant1Dc, filterEnvelope2);

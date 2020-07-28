@@ -52,7 +52,6 @@
 #define UNISON_SW 36
 #define TEMPO_SW 16
 #define RECALL_SW 17
-//#define SAVE_SW 24
 #define SAVE_SW 30
 #define SETTINGS_SW 29
 #define BACK_SW 31
@@ -67,10 +66,10 @@
 #define OSC_FX_LED 14
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 7
+#define QUANTISE_FACTOR 8//7
 
 #define DEBOUNCE 30
-#define ADC_DELAY 250
+#define ADC_DELAY 20
 
 static byte muxInput = 0;
 static int mux1ValuesPrev[MUXCHANNELS] = {};
@@ -91,11 +90,11 @@ Bounce tempoSwitch = Bounce(TEMPO_SW, DEBOUNCE);
 Bounce recallButton = Bounce(RECALL_SW, DEBOUNCE); //On encoder
 boolean recall = true; //Hack for recall button
 Bounce saveButton = Bounce(SAVE_SW, DEBOUNCE);
-boolean del = true; //Hack for save button
+boolean del = false; //Hack for save button
 Bounce settingsButton = Bounce(SETTINGS_SW, DEBOUNCE);
-boolean reini = true; //Hack for settings button
+boolean reini = false; //Hack for settings button
 Bounce backButton = Bounce(BACK_SW, DEBOUNCE);
-boolean panic = true; //Hack for back button
+boolean panic = false; //Hack for back button
 Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
 
 void setupHardware()
@@ -105,6 +104,13 @@ void setupHardware()
   pinMode(MUX_1, OUTPUT);
   pinMode(MUX_2, OUTPUT);
   pinMode(MUX_3, OUTPUT);
+
+  //Mux ADC
+  pinMode(MUX1_S, INPUT);
+  pinMode(MUX2_S, INPUT);
+
+  //Volume ADC
+  pinMode(VOLUME_POT, INPUT);
 
   //Switches
   pinMode(OSC_FX_SW, INPUT_PULLUP);
