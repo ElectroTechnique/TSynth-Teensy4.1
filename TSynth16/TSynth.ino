@@ -6,10 +6,10 @@
     Board: "Teensy4.1"
     USB Type: "Serial + MIDI + Audio"
     CPU Speed: "600MHz"
-    Optimize: "Faster"
+    Optimize: "Smallest Code" IMPORTANT - RUNNING LOW ON MEMORY
 
   Performance Tests   CPU  Mem
-  600MHz Faster       71   104
+  600MHz Faster       70   105
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -36,6 +36,8 @@
 #include "HWControls.h"
 #include "EepromMgr.h"
 #include "Settings.h"
+
+
 
 #define PARAMETER 0 //The main page for displaying the current patch and control (parameter) changes
 #define RECALL 1 //Patches list
@@ -155,25 +157,7 @@ void setup() {
   noiseMixer.gain(2, 0);
   noiseMixer.gain(3, 0);
 
-  voiceMixer1.gain(0, VOICEMIXERLEVEL);
-  voiceMixer1.gain(1, VOICEMIXERLEVEL);
-  voiceMixer1.gain(2, VOICEMIXERLEVEL);
-  voiceMixer1.gain(3, VOICEMIXERLEVEL);
-
-  voiceMixer2.gain(0, VOICEMIXERLEVEL);
-  voiceMixer2.gain(1, VOICEMIXERLEVEL);
-  voiceMixer2.gain(2, VOICEMIXERLEVEL);
-  voiceMixer2.gain(3, VOICEMIXERLEVEL);
-
-  voiceMixer3.gain(0, VOICEMIXERLEVEL);
-  voiceMixer3.gain(1, VOICEMIXERLEVEL);
-  voiceMixer3.gain(2, VOICEMIXERLEVEL);
-  voiceMixer3.gain(3, VOICEMIXERLEVEL);
-
-  voiceMixer4.gain(0, VOICEMIXERLEVEL);
-  voiceMixer4.gain(1, VOICEMIXERLEVEL);
-  voiceMixer4.gain(2, VOICEMIXERLEVEL);
-  voiceMixer4.gain(3, VOICEMIXERLEVEL);
+  setVoiceMixerLevels(VOICEMIXERLEVEL);
 
   voiceMixerM.gain(0, 0.25f);
   voiceMixerM.gain(1, 0.25f);
@@ -394,6 +378,29 @@ void setup() {
   recallPatch(patchNo); //Load first patch
 
   //threads.addThread(loopThread);
+}
+
+
+void setVoiceMixerLevels(float level) {
+  voiceMixer1.gain(0, level);
+  voiceMixer1.gain(1, level);
+  voiceMixer1.gain(2, level);
+  voiceMixer1.gain(3, level);
+
+  voiceMixer2.gain(0, level);
+  voiceMixer2.gain(1, level);
+  voiceMixer2.gain(2, level);
+  voiceMixer2.gain(3, level);
+
+  voiceMixer3.gain(0, level);
+  voiceMixer3.gain(1, level);
+  voiceMixer3.gain(2, level);
+  voiceMixer3.gain(3, level);
+
+  voiceMixer4.gain(0, level);
+  voiceMixer4.gain(1, level);
+  voiceMixer4.gain(2, level);
+  voiceMixer4.gain(3, level);
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
@@ -1518,12 +1525,14 @@ void setPwmMixerBFEnv(float value) {
 
 void updateUnison() {
   if (unison == 0) {
+    setVoiceMixerLevels(VOICEMIXERLEVEL);
     allNotesOff();//Avoid hanging notes
     showCurrentParameterPage("Unison", "Off");
     digitalWriteFast(UNISON_LED, LOW);  // LED off
   }
   else
   {
+    setVoiceMixerLevels(UNISONVOICEMIXERLEVEL);
     showCurrentParameterPage("Unison", "On");
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   }
@@ -2597,17 +2606,19 @@ void myControlChange(byte channel, byte control, byte value)
       break;
 
     case CCfilterfreq:
-      //Pick up
-      //if (pickUp && (filterfreqPrevValue <  value - PICKUPTOLERANCE || filterfreqPrevValue >  value + PICKUPTOLERANCE))return;
+      //Experimental feature - Pick up
+      if (pickUp && value < 126 && value > 0 && (filterfreqPrevValue <  FILTERFREQS[value + 1] || filterfreqPrevValue >  FILTERFREQS[value - 1]))return; //PICK-UP
       filterFreq = FILTERFREQS[value];
       updateFilterFreq();
-      // filterfreqPrevValue = value;
+      filterfreqPrevValue = filterFreq;//PICK-UP
       break;
 
     case CCfilterres:
       //Pick up
+      if (pickUp && value < 126 && value > 0 && (resonancePrevValue <  ((13.9f * POWER[value + 1]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value - 1]) + 1.1f)))return; //PICK-UP
       filterRes = (13.9f * POWER[value]) + 1.1f; //If <1.1 there is noise at high cutoff freq
       updateFilterRes();
+      resonancePrevValue = filterRes;//PICK-UP
       break;
 
     case CCfiltermixer:
@@ -2856,7 +2867,9 @@ void setCurrentPatchData(String data[]) {
   pwA = data[20].toFloat();
   pwB = data[21].toFloat();
   filterRes = data[22].toFloat();
+  resonancePrevValue = filterRes;//Pick-up
   filterFreq = data[23].toFloat();
+  filterfreqPrevValue = filterFreq; //Pick-up
   filterMix = data[24].toFloat();
   filterEnv = data[25].toFloat();
   oscLfoAmt = data[26].toFloat();
@@ -2935,7 +2948,6 @@ String getCurrentPatchData()
 }
 
 void checkMux() {
-  delayMicroseconds(ADC_DELAY);
   mux1Read = analogRead(MUX1_S);
   if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR))
   {
@@ -2995,7 +3007,6 @@ void checkMux() {
         break;
     }
   }
-  delayMicroseconds(ADC_DELAY);
   mux2Read = analogRead(MUX2_S);
   if (mux2Read > (mux2ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux2Read < (mux2ValuesPrev[muxInput] - QUANTISE_FACTOR))
   {
@@ -3066,7 +3077,6 @@ void checkMux() {
 }
 
 void checkVolumePot() {
-  delayMicroseconds(ADC_DELAY);
   volumeRead = analogRead(VOLUME_POT);
   if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))
   {
@@ -3421,8 +3431,6 @@ void checkEncoder()
 }
 
 void CPUMonitor() {
-  //  Serial.print("RAM:");
-  //  Serial.print(freeMemory());
   Serial.print(" CPU:");
   Serial.print(AudioProcessorUsage());
   Serial.print(" (");
@@ -3430,18 +3438,16 @@ void CPUMonitor() {
   Serial.print(")");
   Serial.print("  MEM:");
   Serial.println(AudioMemoryUsageMax());
-  delay(5);//Too fast for Serial Monitor
+  delayMicroseconds(5);
 }
 
 void loop() {
   myusb.Task();
   midi1.read(midiChannel);   //USB HOST MIDI Class Compliant
-  //  cli();
-  //  usbMIDI.read(midiChannel); //USB Client MIDI
-  // sei();
+  usbMIDI.read(midiChannel); //USB Client MIDI
   MIDI.read(midiChannel);    //MIDI 5 Pin DIN
   checkMux();
   checkSwitches();
   checkEncoder();
- // CPUMonitor();
+  //CPUMonitor();
 }

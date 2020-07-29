@@ -82,9 +82,9 @@ void renderCurrentPatchPage()
   tft.setFont(&Org_01);
 
   if (MIDIClkSignal) {
-    tft.fillRect(94, 25, 19, 7, ST77XX_ORANGE);
-    tft.setCursor(95, 30);
-    tft.println("CLK");
+    tft.fillRect(99, 25, 15, 7, ST77XX_ORANGE);
+    tft.setCursor(101, 30);
+    tft.println("CK");
   }
 
   if (voices[0].voiceOn == 1)   tft.fillRect(117, 24, 8, 8, ST7735_BLUE); else tft.drawRect(117, 24, 8, 8, ST7735_BLUE);
@@ -319,7 +319,7 @@ void renderSettingsPage()
   if (currentSettingsPart == SETTINGSVALUE) renderUpDown(140, 80, ST7735_WHITE);
 }
 
-void showCurrentParameterPage(const char *param, float val, int pType)
+void showCurrentParameterPage( const char *param, float val, int pType)
 {
   currentParameter = param;
   currentValue = String(val);

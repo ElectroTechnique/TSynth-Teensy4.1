@@ -59,6 +59,9 @@ float ampRelease = 300;
 float fxAmt = 1;
 float fxMix = 0;
 
-//For T4.1, T3.6 isn't fast enough to read MUX
-boolean pickUp = true;
-int filterfreqPrevValue = 63;
+//Pick-up - Experimental feature
+//Control will only start changing when the Knob/MIDI control reaches the current parameter value
+//Prevents jumps in value when the patch paramter and knob are different values
+boolean pickUp = false;
+float filterfreqPrevValue = 0.0f;//Need to set these when patch loaded
+float resonancePrevValue = 0.0f;

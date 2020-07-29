@@ -66,10 +66,9 @@
 #define OSC_FX_LED 14
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 8//7
+#define QUANTISE_FACTOR 7
 
 #define DEBOUNCE 30
-#define ADC_DELAY 20
 
 static byte muxInput = 0;
 static int mux1ValuesPrev[MUXCHANNELS] = {};
