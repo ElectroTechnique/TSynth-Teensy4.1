@@ -1,20 +1,16 @@
 /*
-
-  TODO:
-  Osc FX - Pulse problems and other FX
-  Memory optimisation
-
-  ElectroTechnique TSynth - Firmware Rev 1.2
+  ElectroTechnique TSynth - Firmware Rev 2.0
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
     Board: "Teensy4.1"
     USB Type: "Serial + MIDI + Audio"
     CPU Speed: "600MHz"
-    Optimize: "Smallest Code" IMPORTANT - RUNNING LOW ON MEMORY
+    Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          70    105
+  600MHz Faster          50    79
+  600MHz Fastest         44    79
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -92,7 +88,7 @@ void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(106);
+  AudioMemory(80);
   sgtl5000_1.enable();
   sgtl5000_1.volume(SGTL_MAXVOLUME * 0.5f); //Headphones - do not initialise to maximum, but this is re-read
 
@@ -1465,27 +1461,19 @@ FLASHMEM void updatePWA() {
     setPwmMixerBFEnv(0);
     setPwmMixerAPW(1);
     setPwmMixerBPW(1);
-    if (oscWaveformA == WAVEFORM_TRIANGLE_VARIABLE)
-    {
+    if (oscWaveformA == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("1. PW Amt", pwA, VAR_TRI);
-    }
-    else
-    {
+    } else {
       showCurrentParameterPage("1. PW Amt", pwA, PULSE);
     }
-  }
-  else
-  {
+  } else {
     setPwmMixerAPW(0);
     setPwmMixerBPW(0);
-    if (pwmSource == PWMSOURCELFO)
-    {
+    if (pwmSource == PWMSOURCELFO) {
       //PW alters PWM LFO amount for waveform A
       setPwmMixerALFO(pwmAmtA);
       showCurrentParameterPage("1. PWM Amt", "LFO " + String(pwmAmtA));
-    }
-    else
-    {
+    } else {
       //PW alters PWM Filter Env amount for waveform A
       setPwmMixerAFEnv(pwmAmtA);
       showCurrentParameterPage("1. PWM Amt", "F. Env " + String(pwmAmtA));
@@ -1498,8 +1486,7 @@ FLASHMEM void updatePWA() {
 }
 
 FLASHMEM void updatePWB() {
-  if (pwmRate < -5)
-  {
+  if (pwmRate < -5)  {
     //if PWM amount is around zero, fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
@@ -1546,8 +1533,7 @@ FLASHMEM void updateOscLevelA()
   waveformMixer11.gain(0, oscALevel);
   waveformMixer12.gain(0, oscALevel);
 
-  if (oscFX == 1)
-  {
+  if (oscFX == 1) {
     waveformMixer1.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer2.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer3.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
@@ -1560,7 +1546,6 @@ FLASHMEM void updateOscLevelA()
     waveformMixer10.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer11.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer12.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-
   }
   showCurrentParameterPage("Osc Levels", "   " + String(oscALevel) + " - " + String(oscBLevel));
 }
@@ -1592,34 +1577,27 @@ FLASHMEM void updateOscLevelB() {
     waveformMixer10.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer11.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer12.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-
   }
   showCurrentParameterPage("Osc Levels", "   " + String(oscALevel) + " - " + String(oscBLevel));
 }
 
 FLASHMEM void updateNoiseLevel() {
-  if (noiseLevel > 0)
-  {
+  if (noiseLevel > 0){
     pink.amplitude(noiseLevel);
     white.amplitude(0.0f);
     showCurrentParameterPage("Noise Level", "Pink " + String(noiseLevel));
-  }
-  else if (noiseLevel < 0)
-  {
+  } else if (noiseLevel < 0){
     pink.amplitude(0.0f);
     white.amplitude(abs(noiseLevel));
     showCurrentParameterPage("Noise Level", "White " + String(abs(noiseLevel)));
-  }
-  else
-  {
+  } else {
     pink.amplitude(noiseLevel);
     white.amplitude(noiseLevel);
     showCurrentParameterPage("Noise Level", "Off");
   }
 }
 
-FLASHMEM void updateFilterFreq()
-{
+FLASHMEM void updateFilterFreq(){
   filter1.frequency(filterFreq);
   filter2.frequency(filterFreq);
   filter3.frequency(filterFreq);
@@ -1632,7 +1610,6 @@ FLASHMEM void updateFilterFreq()
   filter10.frequency(filterFreq);
   filter11.frequency(filterFreq);
   filter12.frequency(filterFreq);
-
 
   if (filterFreq > 2500) {
     filterOctave = 2.0f;//Allows more accurate filter cutoff
@@ -1680,16 +1657,13 @@ FLASHMEM void updateFilterMixer() {
   float BP = 0;
   float HP = 0;
   String filterStr;
-  if (filterMix == LINEAR_FILTERMIXER[127])
-  {
+  if (filterMix == LINEAR_FILTERMIXER[127]){
     //BP mode
     LP = 0;
     BP = 1.0f;
     HP = 0;
     filterStr = "Band Pass";
-  }
-  else
-  {
+  }else {
     //LP-HP mix mode - a notch filter
     LP = 1.0f - filterMix;
     BP = 0;
@@ -1747,8 +1721,7 @@ FLASHMEM void updateFilterMixer() {
   showCurrentParameterPage("Filter Type", filterStr);
 }
 
-FLASHMEM void updateFilterEnv()
-{
+FLASHMEM void updateFilterEnv(){
   filterModMixer1.gain(0, filterEnv);
   filterModMixer2.gain(0, filterEnv);
   filterModMixer3.gain(0, filterEnv);
@@ -1765,8 +1738,7 @@ FLASHMEM void updateFilterEnv()
   showCurrentParameterPage("Filter Env.", String(filterEnv));
 }
 
-FLASHMEM void updatePitchEnv()
-{
+FLASHMEM void updatePitchEnv(){
   oscModMixer1a.gain(1, pitchEnv);
   oscModMixer1b.gain(1, pitchEnv);
   oscModMixer2a.gain(1, pitchEnv);
@@ -1795,8 +1767,7 @@ FLASHMEM void updatePitchEnv()
   showCurrentParameterPage("Pitch Env Amt", String(pitchEnv));
 }
 
-FLASHMEM void updateKeyTracking()
-{
+FLASHMEM void updateKeyTracking(){
   filterModMixer1.gain(2, keytrackingAmount);
   filterModMixer2.gain(2, keytrackingAmount);
   filterModMixer3.gain(2, keytrackingAmount);
