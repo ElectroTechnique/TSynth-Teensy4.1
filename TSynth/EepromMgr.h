@@ -5,6 +5,9 @@
 #define EEPROM_PITCHBEND 2
 #define EEPROM_MODWHEEL_DEPTH 3
 #define EEPROM_ENCODER_DIR 4
+#define EEPROM_PICKUP_ENABLE 5
+#define EEPROM_BASSENHANCE_ENABLE 6
+#define EEPROM_SCOPE_ENABLE 7
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
@@ -58,4 +61,34 @@ FLASHMEM boolean getEncoderDir() {
 
 FLASHMEM void storeEncoderDir(byte encoderDir){
   EEPROM.update(EEPROM_ENCODER_DIR, encoderDir);
+}
+
+FLASHMEM boolean getPickupEnable() {
+  byte pu = EEPROM.read(EEPROM_PICKUP_ENABLE); 
+  if (pu < 0 || pu > 1)return false; //If EEPROM has no pickup enable stored
+  return pu == 1 ? true : false;
+}
+
+FLASHMEM void storePickupEnable(byte pickupEnable){
+  EEPROM.update(EEPROM_PICKUP_ENABLE, pickupEnable);
+}
+
+FLASHMEM boolean getBassEnhanceEnable() {
+  byte eh = EEPROM.read(EEPROM_BASSENHANCE_ENABLE); 
+  if (eh < 0 || eh > 1)return false; //If EEPROM has no bass enhance enable stored
+  return eh == 1 ? true : false;
+}
+
+FLASHMEM void storeBassEnhanceEnable(byte bassEnhanceEnable){
+  EEPROM.update(EEPROM_BASSENHANCE_ENABLE, bassEnhanceEnable);
+}
+
+FLASHMEM boolean getScopeEnable() {
+  byte sc = EEPROM.read(EEPROM_SCOPE_ENABLE); 
+  if (sc < 0 || sc > 1)return false; //If EEPROM has no scope enable stored
+  return sc == 1 ? true : false;
+}
+
+FLASHMEM void storeScopeEnable(byte ScopeEnable){
+  EEPROM.update(EEPROM_SCOPE_ENABLE, ScopeEnable);
 }

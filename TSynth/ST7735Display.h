@@ -82,26 +82,33 @@ FLASHMEM void renderCurrentPatchPage()
   tft.setFont(&Org_01);
 
   if (MIDIClkSignal) {
-    tft.fillRect(99, 25, 15, 7, ST77XX_ORANGE);
-    tft.setCursor(101, 30);
+    tft.fillRect(99, 27, 15, 7, ST77XX_ORANGE);
+    tft.setCursor(101, 32);
     tft.println("CK");
   }
 
+  //      1 2 3 4 5 6 7 8 9 10 11 12
+  //    1 B B B B B B B B B B  B  B
+  //    2 B B B B B B Y Y Y Y  Y  Y
+  //    3 B B B B G G G G Y Y  Y  Y
+  //    4 B B B R G G G R R Y  Y  Y
   if (voices[0].voiceOn == 1)   tft.fillRect(117, 27, 8, 8, ST7735_BLUE); else tft.drawRect(117, 27, 8, 8, ST7735_BLUE);
   if (voices[1].voiceOn == 1)   tft.fillRect(127, 27, 8, 8, ST7735_BLUE); else tft.drawRect(127, 27, 8, 8, ST7735_BLUE);
   if (voices[2].voiceOn == 1)   tft.fillRect(137, 27, 8, 8, ST7735_BLUE); else tft.drawRect(137, 27, 8, 8, ST7735_BLUE);
-  if (voices[3].voiceOn == 1)   tft.fillRect(147, 27, 8, 8, ST7735_BLUE); else tft.drawRect(147, 27, 8, 8, ST7735_BLUE);
-  if (voices[4].voiceOn == 1)   tft.fillRect(117, 37, 8, 8, ST7735_BLUE); else tft.drawRect(117, 37, 8, 8, ST7735_BLUE);
-  if (voices[5].voiceOn == 1)   tft.fillRect(127, 37, 8, 8, ST7735_BLUE); else tft.drawRect(127, 37, 8, 8, ST7735_BLUE);
-  if (voices[6].voiceOn == 1)   tft.fillRect(137, 37, 8, 8, ST7735_BLUE); else tft.drawRect(137, 37, 8, 8, ST7735_BLUE);
-  if (voices[7].voiceOn == 1)   tft.fillRect(147, 37, 8, 8, ST7735_BLUE); else tft.drawRect(147, 37, 8, 8, ST7735_BLUE);
-  if (voices[8].voiceOn == 1)   tft.fillRect(117, 47, 8, 8, ST7735_BLUE); else tft.drawRect(117, 47, 8, 8, ST7735_BLUE);
-  if (voices[9].voiceOn == 1)   tft.fillRect(127, 47, 8, 8, ST7735_BLUE); else tft.drawRect(127, 47, 8, 8, ST7735_BLUE);
-  if (voices[10].voiceOn == 1)  tft.fillRect(137, 47, 8, 8, ST7735_BLUE); else tft.drawRect(137, 47, 8, 8, ST7735_BLUE);
-  if (voices[11].voiceOn == 1)  tft.fillRect(147, 47, 8, 8, ST7735_BLUE); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
 
- 
-  tft.drawFastHLine(10, 65, tft.width() - 20, ST7735_RED);
+  if (voices[3].voiceOn == 1)   tft.fillRect(147, 27, 8, 8, unison && notesOn == 4 ? ST77XX_DARKRED : ST7735_BLUE); else tft.drawRect(147, 27, 8, 8, ST7735_BLUE);
+  if (voices[4].voiceOn == 1)   tft.fillRect(117, 37, 8, 8, unison && notesOn > 2 ? ST77XX_ORANGE : ST7735_BLUE); else tft.drawRect(117, 37, 8, 8, ST7735_BLUE);
+  if (voices[5].voiceOn == 1)   tft.fillRect(127, 37, 8, 8, unison && notesOn > 2 ? ST77XX_ORANGE : ST7735_BLUE); else tft.drawRect(127, 37, 8, 8, ST7735_BLUE);
+
+  if (voices[6].voiceOn == 1)   tft.fillRect(137, 37, 8, 8, unison && notesOn > 2 ? ST77XX_ORANGE : unison && notesOn == 2 ? ST7735_YELLOW : ST7735_BLUE); else tft.drawRect(137, 37, 8, 8, ST7735_BLUE);
+  if (voices[7].voiceOn == 1)   tft.fillRect(147, 37, 8, 8, unison && notesOn == 2 ? ST7735_YELLOW : unison && notesOn == 3 ? ST77XX_ORANGE : unison && notesOn == 4 ? ST77XX_DARKRED : ST7735_BLUE); else tft.drawRect(147, 37, 8, 8, ST7735_BLUE);
+  if (voices[8].voiceOn == 1)   tft.fillRect(117, 47, 8, 8, unison && notesOn == 4 ? ST77XX_DARKRED : unison && (notesOn == 2 || notesOn == 3) ? ST7735_YELLOW : ST7735_BLUE); else tft.drawRect(117, 47, 8, 8, ST7735_BLUE);
+
+  if (voices[9].voiceOn == 1)   tft.fillRect(127, 47, 8, 8, unison && notesOn > 1 ? ST7735_YELLOW : ST7735_BLUE); else tft.drawRect(127, 47, 8, 8, ST7735_BLUE);
+  if (voices[10].voiceOn == 1)  tft.fillRect(137, 47, 8, 8, unison && notesOn > 1 ? ST7735_YELLOW : ST7735_BLUE); else tft.drawRect(137, 47, 8, 8, ST7735_BLUE);
+  if (voices[11].voiceOn == 1)  tft.fillRect(147, 47, 8, 8, unison && notesOn > 1 ? ST7735_YELLOW : ST7735_BLUE); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
+
+  tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans12pt7b);
   tft.setTextColor(ST7735_YELLOW);
   tft.setCursor(1, 90);
@@ -114,12 +121,9 @@ FLASHMEM void renderPulseWidth(float value)
   tft.drawFastHLine(108, 74, 15 + (value * 13), ST7735_CYAN);
   tft.drawFastVLine(123 + (value * 13), 74, 20, ST7735_CYAN);
   tft.drawFastHLine(123 + (value * 13), 94, 16 - (value * 13), ST7735_CYAN);
-  if (value < 0)
-  {
+  if (value < 0) {
     tft.drawFastVLine(108, 74, 21, ST7735_CYAN);
-  }
-  else
-  {
+  } else {
     tft.drawFastVLine(138, 74, 21, ST7735_CYAN);
   }
 }
@@ -149,7 +153,7 @@ FLASHMEM void renderCurrentParameterPage()
       tft.setTextColor(ST7735_YELLOW);
       tft.setTextSize(1);
       tft.println(currentParameter);
-      tft.drawFastHLine(10, 65, tft.width() - 20, ST7735_RED);
+      tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
       tft.setCursor(1, 90);
       tft.setTextColor(ST7735_WHITE);
       tft.println(currentValue);
@@ -172,7 +176,7 @@ FLASHMEM void renderCurrentParameterPage()
   }
 }
 
-FLASHMEM void renderDeletePatchPage(){
+FLASHMEM void renderDeletePatchPage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSansBold18pt7b);
   tft.setCursor(5, 53);
@@ -207,7 +211,7 @@ FLASHMEM void renderDeleteMessagePage() {
   tft.println("SD Card");
 }
 
-FLASHMEM void renderSavePage(){
+FLASHMEM void renderSavePage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSansBold18pt7b);
   tft.setCursor(5, 53);
@@ -251,7 +255,7 @@ FLASHMEM void renderPatchNamingPage()
   tft.setTextSize(1);
   tft.setCursor(0, 53);
   tft.println("Rename Patch");
-  tft.drawFastHLine(10, 65, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setTextColor(ST7735_WHITE);
   tft.setCursor(5, 90);
   tft.println(newPatchName);
@@ -284,19 +288,18 @@ FLASHMEM void renderRecallPage()
   patches.size() > 1 ? tft.println(patches[1].patchName) : tft.println(patches.last().patchName);
 }
 
-FLASHMEM void showRenamingPage(String newName){
+FLASHMEM void showRenamingPage(String newName) {
   newPatchName = newName;
 }
 
-FLASHMEM void renderUpDown(uint16_t  x, uint16_t  y, uint16_t  colour){
+FLASHMEM void renderUpDown(uint16_t  x, uint16_t  y, uint16_t  colour) {
   //Produces up/down indicator glyph at x,y
   tft.setCursor(x, y);
   tft.fillTriangle(x, y, x + 8, y - 8, x + 16, y, colour);
   tft.fillTriangle(x, y + 4, x + 8, y + 12, x + 16, y + 4, colour);
 }
 
-
-FLASHMEM void renderSettingsPage(){
+FLASHMEM void renderSettingsPage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSans12pt7b);
   tft.setTextColor(ST7735_YELLOW);
@@ -304,14 +307,14 @@ FLASHMEM void renderSettingsPage(){
   tft.setCursor(0, 53);
   tft.println(currentSettingsOption);
   if (currentSettingsPart == SETTINGS) renderUpDown(140, 42, ST7735_YELLOW);
-  tft.drawFastHLine(10, 65, tft.width() - 20, ST7735_RED);
+  tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setTextColor(ST7735_WHITE);
   tft.setCursor(5, 90);
   tft.println(currentSettingsValue);
   if (currentSettingsPart == SETTINGSVALUE) renderUpDown(140, 80, ST7735_WHITE);
 }
 
-FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType){
+FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType) {
   currentParameter = param;
   currentValue = String(val);
   currentFloatValue = val;
@@ -319,7 +322,7 @@ FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType)
   startTimer();
 }
 
-FLASHMEM void showCurrentParameterPage(const char *param, String val, int pType){
+FLASHMEM void showCurrentParameterPage(const char *param, String val, int pType) {
   if (state == SETTINGS || state == SETTINGSVALUE)state = PARAMETER;//Exit settings page if showing
   currentParameter = param;
   currentValue = val;
@@ -327,35 +330,33 @@ FLASHMEM void showCurrentParameterPage(const char *param, String val, int pType)
   startTimer();
 }
 
-FLASHMEM void showCurrentParameterPage(const char *param, String val){
+FLASHMEM void showCurrentParameterPage(const char *param, String val) {
   showCurrentParameterPage(param, val, PARAMETER);
 }
 
-FLASHMEM void showPatchPage(String number, String patchName){
+FLASHMEM void showPatchPage(String number, String patchName) {
   currentPgmNum = number;
   currentPatchName = patchName;
 }
 
-FLASHMEM void showSettingsPage(char *  option, char * value, int settingsPart){
+FLASHMEM void showSettingsPage(char *  option, char * value, int settingsPart) {
   currentSettingsOption = option;
   currentSettingsValue = value;
   currentSettingsPart = settingsPart;
 }
 
-void displayThread()
-{
+FLASHMEM void enableScope(boolean enable) {
+  enable? scope.ScreenSetup(&tft): scope.ScreenSetup(NULL);
+}
+
+void displayThread(){
   threads.delay(2000); //Give bootup page chance to display
-  while (1)
-  {
-    switch (state)
-    {
+  while (1){
+    switch (state) {
       case PARAMETER:
-        if ((millis() - timer) > DISPLAYTIMEOUT)
-        {
+        if ((millis() - timer) > DISPLAYTIMEOUT) {
           renderCurrentPatchPage();
-        }
-        else
-        {
+        } else {
           renderCurrentParameterPage();
         }
         break;

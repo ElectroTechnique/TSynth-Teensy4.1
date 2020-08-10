@@ -4,7 +4,7 @@ AudioSynthWaveformDc     constant1Dc;    //xy=69.5,437
 AudioSynthNoisePink      pink;           //xy=268,349
 AudioSynthNoiseWhite     white;           //xy=268,359
 AudioMixer4              noiseMixer;       //xy=288,369
-AudioSynthWaveform       pwmLfo;         //xy=92,208
+AudioSynthWaveformTS       pwmLfo;         //xy=92,208
 AudioSynthWaveformDc     pwa;            //xy=107,256
 AudioSynthWaveformDc     pwb;            //xy=110,301
 
@@ -47,7 +47,7 @@ AudioMixer4              pwMixer12a;         //xy=353.75,688.75
 AudioMixer4              pwMixer12b;         //xy=358.75,763.75
 
 
-AudioSynthWaveform       pitchLfo;         //xy=122,111
+AudioSynthWaveformTS       pitchLfo;         //xy=122,111
 AudioSynthWaveformDc     glide1;          //xy=124,152
 AudioSynthWaveformDc     glide2;          //xy=124,152
 AudioSynthWaveformDc     glide3;          //xy=124,152
@@ -63,7 +63,7 @@ AudioSynthWaveformDc     glide12;          //xy=124,152
 
 
 AudioSynthWaveformDc     pitchBend;      //xy=128,74
-AudioSynthWaveform       filterLfo;         //xy=166,632
+AudioSynthWaveformTS       filterLfo;         //xy=166,632
 AudioSynthWaveformDc     keytracking1;    //xy=176,745
 AudioSynthWaveformDc     keytracking2;    //xy=196,745
 AudioSynthWaveformDc     keytracking3;    //xy=216,745
@@ -104,30 +104,30 @@ AudioMixer4              oscModMixer11b;         //xy=550,265
 AudioMixer4              oscModMixer12a;         //xy=550,285
 AudioMixer4              oscModMixer12b;         //xy=550,305
 
-AudioSynthWaveformModulated   waveformMod1b;  //xy=503,170
-AudioSynthWaveformModulated  waveformMod1a;  //xy=507,114
-AudioSynthWaveformModulated  waveformMod2b;  //xy=513,550
-AudioSynthWaveformModulated  waveformMod4a;  //xy=519,899
-AudioSynthWaveformModulated  waveformMod2a;  //xy=521,458
-AudioSynthWaveformModulated waveformMod4b;  //xy=525,940
-AudioSynthWaveformModulated waveformMod3a;  //xy=532,678
-AudioSynthWaveformModulated waveformMod3b;  //xy=535,744
-AudioSynthWaveformModulated waveformMod5a;  //xy=521,458
-AudioSynthWaveformModulated waveformMod5b;  //xy=525,940
-AudioSynthWaveformModulated waveformMod6a;  //xy=532,678
-AudioSynthWaveformModulated waveformMod6b;  //xy=535,744
-AudioSynthWaveformModulated waveformMod7b;  //xy=503,170
-AudioSynthWaveformModulated waveformMod7a;  //xy=507,114
-AudioSynthWaveformModulated waveformMod8b;  //xy=513,550
-AudioSynthWaveformModulated waveformMod8a;  //xy=519,899
-AudioSynthWaveformModulated waveformMod9a;  //xy=521,458
-AudioSynthWaveformModulated waveformMod9b;  //xy=525,940
-AudioSynthWaveformModulated waveformMod10a;  //xy=532,678
-AudioSynthWaveformModulated waveformMod10b;  //xy=535,744
-AudioSynthWaveformModulated waveformMod11a;  //xy=521,458
-AudioSynthWaveformModulated waveformMod11b;  //xy=525,940
-AudioSynthWaveformModulated waveformMod12a;  //xy=532,678
-AudioSynthWaveformModulated waveformMod12b;  //xy=535,744
+AudioSynthWaveformModulatedTS   waveformMod1b;  //xy=503,170
+AudioSynthWaveformModulatedTS  waveformMod1a;  //xy=507,114
+AudioSynthWaveformModulatedTS  waveformMod2b;  //xy=513,550
+AudioSynthWaveformModulatedTS  waveformMod4a;  //xy=519,899
+AudioSynthWaveformModulatedTS  waveformMod2a;  //xy=521,458
+AudioSynthWaveformModulatedTS waveformMod4b;  //xy=525,940
+AudioSynthWaveformModulatedTS waveformMod3a;  //xy=532,678
+AudioSynthWaveformModulatedTS waveformMod3b;  //xy=535,744
+AudioSynthWaveformModulatedTS waveformMod5a;  //xy=521,458
+AudioSynthWaveformModulatedTS waveformMod5b;  //xy=525,940
+AudioSynthWaveformModulatedTS waveformMod6a;  //xy=532,678
+AudioSynthWaveformModulatedTS waveformMod6b;  //xy=535,744
+AudioSynthWaveformModulatedTS waveformMod7b;  //xy=503,170
+AudioSynthWaveformModulatedTS waveformMod7a;  //xy=507,114
+AudioSynthWaveformModulatedTS waveformMod8b;  //xy=513,550
+AudioSynthWaveformModulatedTS waveformMod8a;  //xy=519,899
+AudioSynthWaveformModulatedTS waveformMod9a;  //xy=521,458
+AudioSynthWaveformModulatedTS waveformMod9b;  //xy=525,940
+AudioSynthWaveformModulatedTS waveformMod10a;  //xy=532,678
+AudioSynthWaveformModulatedTS waveformMod10b;  //xy=535,744
+AudioSynthWaveformModulatedTS waveformMod11a;  //xy=521,458
+AudioSynthWaveformModulatedTS waveformMod11b;  //xy=525,940
+AudioSynthWaveformModulatedTS waveformMod12a;  //xy=532,678
+AudioSynthWaveformModulatedTS waveformMod12b;  //xy=535,744
 
 AudioEffectDigitalCombine oscFX1;       //xy=663,223
 AudioEffectDigitalCombine oscFX2;       //xy=684,542
@@ -215,6 +215,7 @@ AudioMixer4              voiceMixer3;     //xy=1524,570
 AudioMixer4              voiceMixerM;     //xy=1544,580
 AudioFilterStateVariable dcOffsetFilter;     //xy=1564,580
 AudioEffectEnsemble       ensemble;  //xy=1800,600
+Oscilloscope              scope;     
 AudioMixer4              effectMixerR;         //xy=1848,625
 AudioMixer4              effectMixerL;         //xy=1857,539
 AudioOutputI2S           i2s;            //xy=2364,547
@@ -659,6 +660,7 @@ AudioConnection          patchCord198(voiceMixer2, 0, voiceMixerM, 1);
 AudioConnection          patchCord215(voiceMixer3, 0, voiceMixerM, 2);
 AudioConnection          patchCord203(voiceMixerM, 0, dcOffsetFilter, 0);
 AudioConnection          patchCord112(dcOffsetFilter, 2, ensemble, 0);
+AudioConnection          patchCord415(dcOffsetFilter, 2, scope, 0);
 AudioConnection          patchCord113(ensemble, 0, effectMixerL, 1);
 AudioConnection          patchCord114(ensemble, 1, effectMixerR, 1);
 AudioConnection          patchCord115(dcOffsetFilter, 2, effectMixerL, 0);

@@ -15,6 +15,7 @@
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    fmenes - Oscilloscope object basic idea https://forum.pjrc.com/threads/60470-Teensy-4-0-Audio-Library-screen-oscilloscope?highlight=audio+oscilloscope+display
     Mark Tillotson - Special thanks for finally band-limiting the waveforms in the Audio Library
 
   Additional libraries:
@@ -35,7 +36,7 @@
 #include "PatchMgr.h"
 #include "HWControls.h"
 #include "EepromMgr.h"
-#include "Settings.h"
+#include "Detune.h"
 
 #define PARAMETER 0 //The main page for displaying the current patch and control (parameter) changes
 #define RECALL 1 //Patches list
@@ -60,8 +61,10 @@ struct VoiceAndNote {
 };
 
 struct VoiceAndNote voices[NO_OF_VOICES] = {{ -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}};
+uint32_t notesOn = 0;
 
 #include "ST7735Display.h"
+#include "Settings.h"
 
 boolean cardStatus = false;
 boolean firstPatchLoaded = false;
@@ -88,9 +91,15 @@ void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(80);
+  AudioMemory(82);
   sgtl5000_1.enable();
+  sgtl5000_1.muteHeadphone();
+  sgtl5000_1.muteLineout();
   sgtl5000_1.volume(SGTL_MAXVOLUME * 0.5f); //Headphones - do not initialise to maximum, but this is re-read
+
+  sgtl5000_1.audioPostProcessorEnable();
+  sgtl5000_1.enhanceBass(0.85, 0.7, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
+  sgtl5000_1.enhanceBassDisable();
 
   cardStatus = SD.begin(BUILTIN_SDCARD);
   if (cardStatus) {
@@ -320,19 +329,21 @@ void setup() {
 
   //Read Key Tracking from EEPROM, this can be set individually by each patch.
   keytrackingAmount = getKeyTracking();
-
   //Read Pitch Bend Range from EEPROM
   pitchBendRange = getPitchBendRange();
-
   //Read Mod Wheel Depth from EEPROM
   modWheelDepth = getModWheelDepth();
-
   //Read Encoder Direction from EEPROM
   encCW = getEncoderDir();
+  //Read Pick-up enable from EEPROM - experimental feature
+  pickUp = getPickupEnable();
+  //Read bass enhance enable from EEPROM
+  if (getBassEnhanceEnable()) sgtl5000_1.enhanceBassEnable();
+  //Read oscilloscope enable from EEPROM
+  enableScope(getScopeEnable());
 
   recallPatch(patchNo); //Load first patch
 }
-
 
 void setVoiceMixerLevels(float level) {
   voiceMixer1.gain(0, level);
@@ -351,10 +362,20 @@ void setVoiceMixerLevels(float level) {
   voiceMixer3.gain(3, level);
 }
 
+void incNotesOn() {
+  if (notesOn < MAXUNISON)notesOn++;
+}
+
+void decNotesOn() {
+  if (notesOn > 0)notesOn--;
+}
+
 void myNoteOn(byte channel, byte note, byte velocity) {
   //Check for out of range notes
   if (note + oscPitchA < 0 || note + oscPitchA > 127 || note + oscPitchB < 0 || note + oscPitchB > 127)
     return;
+
+  incNotesOn();//For Unison mode
 
   if (oscLfoRetrig == 1) {
     pitchLfo.sync();
@@ -373,8 +394,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope1.noteOn();
         ampEnvelope1.noteOn();
         voices[0].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide1.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -387,8 +407,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope2.noteOn();
         ampEnvelope2.noteOn();
         voices[1].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide2.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -401,8 +420,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope3.noteOn();
         ampEnvelope3.noteOn();
         voices[2].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide3.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -415,8 +433,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope4.noteOn();
         ampEnvelope4.noteOn();
         voices[3].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide4.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -429,8 +446,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope5.noteOn();
         ampEnvelope5.noteOn();
         voices[4].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide5.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -443,8 +459,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope6.noteOn();
         ampEnvelope6.noteOn();
         voices[5].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide6.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -457,8 +472,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope7.noteOn();
         ampEnvelope7.noteOn();
         voices[6].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide7.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -471,8 +485,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope8.noteOn();
         ampEnvelope8.noteOn();
         voices[7].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide8.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -485,8 +498,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope9.noteOn();
         ampEnvelope9.noteOn();
         voices[8].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide9.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -499,8 +511,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope10.noteOn();
         ampEnvelope10.noteOn();
         voices[9].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide10.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -513,8 +524,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope11.noteOn();
         ampEnvelope11.noteOn();
         voices[10].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide11.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
@@ -527,264 +537,308 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         filterEnvelope12.noteOn();
         ampEnvelope12.noteOn();
         voices[11].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote)
-        {
+        if (glideSpeed > 0 && note != prevNote) {
           glide12.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
           glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
         }
         break;
 
     }
-  }
-  else  {
+  } else  {
     //UNISON MODE
-    keytracking1.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking2.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking3.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking4.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking5.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking6.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking7.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking8.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking9.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking10.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking11.amplitude(note * DIV127 * keytrackingAmount);
-    keytracking12.amplitude(note * DIV127 * keytrackingAmount);
+    //1 Note : 1-12
+    //2 Notes: 1-6, 7-12
+    //3 Notes: 1-4, 5-8, 9-12
+    //4 Notes: 1-3, 4/8/9, 5-7, 10-12
+    //5 or more: extra notes are ignored
 
-    voices[0].note = note;
-    voices[0].timeOn = millis();
-    updateVoice1();
-    voices[1].note = note;
-    voices[1].timeOn = millis();
-    updateVoice2();
-    voices[2].note = note;
-    voices[2].timeOn = millis();
-    updateVoice3();
-    voices[3].note = note;
-    voices[3].timeOn = millis();
-    updateVoice4();
-    voices[4].note = note;
-    voices[4].timeOn = millis();
-    updateVoice5();
-    voices[5].note = note;
-    voices[5].timeOn = millis();
-    updateVoice6();
-    voices[6].note = note;
-    voices[6].timeOn = millis();
-    updateVoice7();
-    voices[7].note = note;
-    voices[7].timeOn = millis();
-    updateVoice8();
-    voices[8].note = note;
-    voices[8].timeOn = millis();
-    updateVoice9();
-    voices[9].note = note;
-    voices[9].timeOn = millis();
-    updateVoice10();
-    voices[10].note = note;
-    voices[10].timeOn = millis();
-    updateVoice11();
-    voices[11].note = note;
-    voices[11].timeOn = millis();
-    updateVoice12();
-
-    filterEnvelope1.noteOn();
-    filterEnvelope2.noteOn();
-    filterEnvelope3.noteOn();
-    filterEnvelope4.noteOn();
-    filterEnvelope5.noteOn();
-    filterEnvelope6.noteOn();
-    filterEnvelope7.noteOn();
-    filterEnvelope8.noteOn();
-    filterEnvelope9.noteOn();
-    filterEnvelope10.noteOn();
-    filterEnvelope11.noteOn();
-    filterEnvelope12.noteOn();
+    //Retrigger voices
+    //      1 2 3 4 5 6 7 8 9 10 11 12
+    //    1 x x x x x x x x x x  x  x
+    //    2             x x x x  x  x
+    //    3         x x x x
+    //    4       x       x x
 
 
-    ampEnvelope1.noteOn();
-    ampEnvelope2.noteOn();
-    ampEnvelope3.noteOn();
-    ampEnvelope4.noteOn();
-    ampEnvelope5.noteOn();
-    ampEnvelope6.noteOn();
-    ampEnvelope7.noteOn();
-    ampEnvelope8.noteOn();
-    ampEnvelope9.noteOn();
-    ampEnvelope10.noteOn();
-    ampEnvelope11.noteOn();
-    ampEnvelope12.noteOn();
-
-
-    voices[0].voiceOn = 1;
-    voices[1].voiceOn = 1;
-    voices[2].voiceOn = 1;
-    voices[3].voiceOn = 1;
-    voices[4].voiceOn = 1;
-    voices[5].voiceOn = 1;
-    voices[6].voiceOn = 1;
-    voices[7].voiceOn = 1;
-    voices[8].voiceOn = 1;
-    voices[9].voiceOn = 1;
-    voices[10].voiceOn = 1;
-    voices[11].voiceOn = 1;
-
-
-    if (glideSpeed > 0 && note != prevNote) {
-      glide1.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide2.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide3.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide4.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide5.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide6.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide7.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide8.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide9.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide10.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide11.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      glide12.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-      glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-
+    //Voice 1
+    if (notesOn == 1) {
+      keytracking1.amplitude(note * DIV127 * keytrackingAmount);
+      voices[0].note = note;
+      voices[0].timeOn = millis();
+      updateVoice1();
+      filterEnvelope1.noteOn();
+      ampEnvelope1.noteOn();
+      voices[0].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide1.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
     }
+
+    //Voice 2
+    if (notesOn == 1)  {
+      keytracking2.amplitude(note * DIV127 * keytrackingAmount);
+      voices[1].note = note;
+      voices[1].timeOn = millis();
+      updateVoice2();
+      filterEnvelope2.noteOn();
+      ampEnvelope2.noteOn();
+      voices[1].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide2.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 3
+    if (notesOn == 1) {
+      keytracking3.amplitude(note * DIV127 * keytrackingAmount);
+      voices[2].note = note;
+      voices[2].timeOn = millis();
+      updateVoice3();
+      filterEnvelope3.noteOn();
+      ampEnvelope3.noteOn();
+      voices[2].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide3.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 4
+    if (notesOn == 1 || notesOn == 4)  {
+      keytracking4.amplitude(note * DIV127 * keytrackingAmount);
+      voices[3].note = note;
+      voices[3].timeOn = millis();
+      updateVoice4();
+      filterEnvelope4.noteOn();
+      ampEnvelope4.noteOn();
+      voices[3].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide4.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 5
+    if (notesOn == 1 || notesOn == 3)  {
+      keytracking5.amplitude(note * DIV127 * keytrackingAmount);
+      voices[4].note = note;
+      voices[4].timeOn = millis();
+      updateVoice5();
+      filterEnvelope5.noteOn();
+      ampEnvelope5.noteOn();
+      voices[4].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide5.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 6
+    if (notesOn == 1 || notesOn == 3)  {
+      keytracking6.amplitude(note * DIV127 * keytrackingAmount);
+      voices[5].note = note;
+      voices[5].timeOn = millis();
+      updateVoice6();
+      filterEnvelope6.noteOn();
+      ampEnvelope6.noteOn();
+      voices[5].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide6.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 7
+    if (notesOn == 1 || notesOn == 2 || notesOn == 3)  {
+      keytracking7.amplitude(note * DIV127 * keytrackingAmount);
+      voices[6].note = note;
+      voices[6].timeOn = millis();
+      updateVoice7();
+      filterEnvelope7.noteOn();
+      ampEnvelope7.noteOn();
+      voices[6].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide7.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 8
+    if (notesOn == 1 || notesOn == 2 || notesOn == 3 || notesOn == 4)  {
+      keytracking8.amplitude(note * DIV127 * keytrackingAmount);
+      voices[7].note = note;
+      voices[7].timeOn = millis();
+      updateVoice8();
+      filterEnvelope8.noteOn();
+      ampEnvelope8.noteOn();
+      voices[7].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide8.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 9
+    if (notesOn == 1 || notesOn == 2 || notesOn == 4)  {
+      keytracking9.amplitude(note * DIV127 * keytrackingAmount);
+      voices[8].note = note;
+      voices[8].timeOn = millis();
+      updateVoice9();
+      filterEnvelope9.noteOn();
+      ampEnvelope9.noteOn();
+      voices[8].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide9.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 10
+    if (notesOn == 1 || notesOn == 2)  {
+      keytracking10.amplitude(note * DIV127 * keytrackingAmount);
+      voices[9].note = note;
+      voices[9].timeOn = millis();
+      updateVoice10();
+      filterEnvelope10.noteOn();
+      ampEnvelope10.noteOn();
+      voices[9].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide10.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 11
+    if (notesOn == 1 || notesOn == 2)  {
+      keytracking11.amplitude(note * DIV127 * keytrackingAmount);
+      voices[10].note = note;
+      voices[10].timeOn = millis();
+      updateVoice11();
+      filterEnvelope11.noteOn();
+      ampEnvelope11.noteOn();
+      voices[10].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide11.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+
+    //Voice 12
+    if (notesOn == 1 || notesOn == 2)  {
+      keytracking12.amplitude(note * DIV127 * keytrackingAmount);
+      voices[11].note = note;
+      voices[11].timeOn = millis();
+      updateVoice12();
+      filterEnvelope12.noteOn();
+      ampEnvelope12.noteOn();
+      voices[11].voiceOn = 1;
+      if (glideSpeed > 0 && note != prevNote) {
+        glide12.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+        glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+      }
+    }
+  }
+}
+
+void endVoice(int voice) {
+  switch (voice) {
+    case 1:
+      filterEnvelope1.noteOff();
+      ampEnvelope1.noteOff();
+      prevNote = voices[0].note;
+      voices[0].voiceOn = 0;
+      break;
+    case 2:
+      filterEnvelope2.noteOff();
+      ampEnvelope2.noteOff();
+      prevNote = voices[1].note;
+      voices[1].voiceOn = 0;
+      break;
+    case 3:
+      filterEnvelope3.noteOff();
+      ampEnvelope3.noteOff();
+      prevNote = voices[2].note;
+      voices[2].voiceOn = 0;
+      break;
+    case 4:
+      filterEnvelope4.noteOff();
+      ampEnvelope4.noteOff();
+      prevNote = voices[3].note;
+      voices[3].voiceOn = 0;
+      break;
+    case 5:
+      filterEnvelope5.noteOff();
+      ampEnvelope5.noteOff();
+      prevNote = voices[4].note;
+      voices[4].voiceOn = 0;
+      break;
+    case 6:
+      filterEnvelope6.noteOff();
+      ampEnvelope6.noteOff();
+      prevNote = voices[5].note;
+      voices[5].voiceOn = 0;
+      break;
+    case 7:
+      filterEnvelope7.noteOff();
+      ampEnvelope7.noteOff();
+      prevNote = voices[6].note;
+      voices[6].voiceOn = 0;
+      break;
+    case 8:
+      filterEnvelope8.noteOff();
+      ampEnvelope8.noteOff();
+      prevNote = voices[7].note;
+      voices[7].voiceOn = 0;
+      break;
+    case 9:
+      filterEnvelope9.noteOff();
+      ampEnvelope9.noteOff();
+      prevNote = voices[8].note;
+      voices[8].voiceOn = 0;
+      break;
+    case 10:
+      filterEnvelope10.noteOff();
+      ampEnvelope10.noteOff();
+      prevNote = voices[9].note;
+      voices[9].voiceOn = 0;
+      break;
+    case 11:
+      filterEnvelope11.noteOff();
+      ampEnvelope11.noteOff();
+      prevNote = voices[10].note;
+      voices[10].voiceOn = 0;
+      break;
+    case 12:
+      filterEnvelope12.noteOff();
+      ampEnvelope12.noteOff();
+      prevNote = voices[11].note;
+      voices[11].voiceOn = 0;
+      break;
+    default:
+      //Do nothing
+      break;
   }
 }
 
 void myNoteOff(byte channel, byte note, byte velocity) {
+  decNotesOn();
   if (unison == 0) {
-    switch (getVoiceNo(note)) {
-      case 1:
-        filterEnvelope1.noteOff();
-        ampEnvelope1.noteOff();
-        prevNote = voices[0].note;
-        voices[0].voiceOn = 0;
-        break;
-      case 2:
-        filterEnvelope2.noteOff();
-        ampEnvelope2.noteOff();
-        prevNote = voices[1].note;
-        voices[1].voiceOn = 0;
-        break;
-      case 3:
-        filterEnvelope3.noteOff();
-        ampEnvelope3.noteOff();
-        prevNote = voices[2].note;
-        voices[2].voiceOn = 0;
-        break;
-      case 4:
-        filterEnvelope4.noteOff();
-        ampEnvelope4.noteOff();
-        prevNote = voices[3].note;
-        voices[3].voiceOn = 0;
-        break;
-      case 5:
-        filterEnvelope5.noteOff();
-        ampEnvelope5.noteOff();
-        prevNote = voices[4].note;
-        voices[4].voiceOn = 0;
-        break;
-      case 6:
-        filterEnvelope6.noteOff();
-        ampEnvelope6.noteOff();
-        prevNote = voices[5].note;
-        voices[5].voiceOn = 0;
-        break;
-      case 7:
-        filterEnvelope7.noteOff();
-        ampEnvelope7.noteOff();
-        prevNote = voices[6].note;
-        voices[6].voiceOn = 0;
-        break;
-      case 8:
-        filterEnvelope8.noteOff();
-        ampEnvelope8.noteOff();
-        prevNote = voices[7].note;
-        voices[7].voiceOn = 0;
-        break;
-      case 9:
-        filterEnvelope9.noteOff();
-        ampEnvelope9.noteOff();
-        prevNote = voices[8].note;
-        voices[8].voiceOn = 0;
-        break;
-      case 10:
-        filterEnvelope10.noteOff();
-        ampEnvelope10.noteOff();
-        prevNote = voices[9].note;
-        voices[9].voiceOn = 0;
-        break;
-      case 11:
-        filterEnvelope11.noteOff();
-        ampEnvelope11.noteOff();
-        prevNote = voices[10].note;
-        voices[10].voiceOn = 0;
-        break;
-      case 12:
-        filterEnvelope12.noteOff();
-        ampEnvelope12.noteOff();
-        prevNote = voices[11].note;
-        voices[11].voiceOn = 0;
-        break;
-
-    }
-  }
-  else {
+    endVoice(getVoiceNo(note));
+  } else {
     //UNISON MODE
-    //If statement prevents the previous different note
-    //ending the current note when released
-    if (voices[0].note == note)allNotesOff();
-    prevNote = note;
+    for (int i = 0; i < NO_OF_VOICES; i++) {
+      endVoice(getVoiceNo(note));
+    }
   }
 }
 
 void allNotesOff() {
-  filterEnvelope1.noteOff();
-  ampEnvelope1.noteOff();
-  filterEnvelope2.noteOff();
-  ampEnvelope2.noteOff();
-  filterEnvelope3.noteOff();
-  ampEnvelope3.noteOff();
-  filterEnvelope4.noteOff();
-  ampEnvelope4.noteOff();
-  filterEnvelope5.noteOff();
-  ampEnvelope5.noteOff();
-  filterEnvelope6.noteOff();
-  ampEnvelope6.noteOff();
-  filterEnvelope7.noteOff();
-  ampEnvelope7.noteOff();
-  filterEnvelope8.noteOff();
-  ampEnvelope8.noteOff();
-  filterEnvelope9.noteOff();
-  ampEnvelope9.noteOff();
-  filterEnvelope10.noteOff();
-  ampEnvelope10.noteOff();
-  filterEnvelope11.noteOff();
-  ampEnvelope11.noteOff();
-  filterEnvelope12.noteOff();
-  ampEnvelope12.noteOff();
-
-  voices[0].voiceOn = 0;
-  voices[1].voiceOn = 0;
-  voices[2].voiceOn = 0;
-  voices[3].voiceOn = 0;
-  voices[4].voiceOn = 0;
-  voices[5].voiceOn = 0;
-  voices[6].voiceOn = 0;
-  voices[7].voiceOn = 0;
-  voices[8].voiceOn = 0;
-  voices[9].voiceOn = 0;
-  voices[10].voiceOn = 0;
-  voices[11].voiceOn = 0;
+  notesOn = 0;
+  for (int v = 0; v < NO_OF_VOICES; v++) {
+    endVoice(v + 1);
+  }
 }
 
 int getVoiceNo(int note) {
@@ -792,12 +846,9 @@ int getVoiceNo(int note) {
   earliestTime = millis(); //Initialise to now
   if (note == -1) {
     //NoteOn() - Get the oldest free voice (recent voices may be still on release stage)
-    for (int i = 0; i < NO_OF_VOICES; i++)
-    {
-      if (voices[i].voiceOn == 0)
-      {
-        if (voices[i].timeOn < earliestTime)
-        {
+    for (int i = 0; i < NO_OF_VOICES; i++) {
+      if (voices[i].voiceOn == 0) {
+        if (voices[i].timeOn < earliestTime) {
           earliestTime = voices[i].timeOn;
           voiceToReturn = i;
         }
@@ -806,107 +857,81 @@ int getVoiceNo(int note) {
     if (voiceToReturn == -1) {
       //No free voices, need to steal oldest sounding voice
       earliestTime = millis(); //Reinitialise
-      for (int i = 0; i < NO_OF_VOICES; i++)
-      {
-        if (voices[i].timeOn < earliestTime)
-        {
+      for (int i = 0; i < NO_OF_VOICES; i++) {
+        if (voices[i].timeOn < earliestTime) {
           earliestTime = voices[i].timeOn;
           voiceToReturn = i;
         }
       }
     }
     return voiceToReturn + 1;
-  }
-  else {
+  } else {
     //NoteOff() - Get voice number from note
-    for (int i = 0; i < NO_OF_VOICES; i++)
-    {
-      if (voices[i].note == note && voices[i].voiceOn == 1)
-      {
+    for (int i = 0; i < NO_OF_VOICES; i++) {
+      if (voices[i].note == note && voices[i].voiceOn == 1) {
         return i + 1;
       }
     }
+    //Unison - Note on without previous note off?
+    return voiceToReturn;
   }
   //Shouldn't get here, return voice 1
   return 1;
 }
 
 void updateVoice1() {
-
   waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
-  if (unison == 1)
-  {
-    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * (detune + ((1 - detune) * 0.04f)));
-  }
-  else {
+  if (unison == 1) {
+    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][1])));
+  } else {
     waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice2() {
-
-  if (unison == 1)
-  {
-    waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA] * (detune + ((1 - detune) * 0.09f)));
-    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * (detune + ((1 - detune) * 0.13f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][2])));
+    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][3])));
+  } else {
     waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA]);
     waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice3() {
-
-  if (unison == 1)
-  {
-    waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA] * (detune + ((1 - detune) * 0.17f)));
-    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * (detune + ((1 - detune) * 0.22f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][4])));
+    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][5])));
+  } else {
     waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA]);
     waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * detune);
   }
 }
 void updateVoice4() {
-
-  if (unison == 1)
-  {
-    waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA] * (detune + ((1 - detune) * 0.21f)));
-    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * (detune + ((1 - detune) * 0.26f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][6])));
+    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][7])));
+  } else {
     waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA]);
     waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice5() {
-
-  if (unison == 1)
-  {
-    waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA] * (detune + ((1 - detune) * 0.30f)));
-    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * (detune + ((1 - detune) * 0.35f)));
-  }
-  else
-  {
+  if (unison == 1)  {
+    waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][8])));
+    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][9])));
+  } else {
     waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA]);
     waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice6() {
-
-  if (unison == 1)
-  {
-    waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA] * (detune + ((1 - detune) * 0.39f)));
-    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * (detune + ((1 - detune) * 0.43f)));
-  }
-  else
-  {
+  if (unison == 1)  {
+    waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][10])));
+    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][11])));
+  } else {
     waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA]);
     waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * detune);
   }
@@ -914,84 +939,60 @@ void updateVoice6() {
 }
 
 void updateVoice7() {
-
-  if (unison == 1)
-  {
-    waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA] * (detune + ((1 - detune) * 0.48f)));
-    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * (detune + ((1 - detune) * 0.52f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][12])));
+    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][13])));
+  } else {
     waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA]);
     waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice8() {
-
-  if (unison == 1)
-  {
-    waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA] * (detune + ((1 - detune) * 0.57f)));
-    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * (detune + ((1 - detune) * 0.61f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][14])));
+    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][15])));
+  } else {
     waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA]);
     waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice9() {
-
-  if (unison == 1)
-  {
-    waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA] * (detune + ((1 - detune) * 0.65f)));
-    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * (detune + ((1 - detune) * 0.70f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][16])));
+    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][17])));
+  } else {
     waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA]);
     waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice10() {
-
-  if (unison == 1)
-  {
-    waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA] * (detune + ((1 - detune) * 0.74f)));
-    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * (detune + ((1 - detune) * 0.78f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][18])));
+    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][19])));
+  } else {
     waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA]);
     waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice11() {
-
-  if (unison == 1)
-  {
-    waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA] * (detune + ((1 - detune) * 0.83f)));
-    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * (detune + ((1 - detune) * 0.89f)));
-  }
-  else
-  {
+  if (unison == 1) {
+    waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][20])));
+    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][21])));
+  } else {
     waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA]);
     waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * detune);
   }
 }
 
 void updateVoice12() {
-
-  if (unison == 1)
-  {
-    waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA] * (detune + ((1 - detune) * 0.95f)));
+  if (unison == 1) {
+    waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][22])));
     waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
-  }
-  else
-  {
+  } else {
     waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA]);
     waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
   }
@@ -999,35 +1000,23 @@ void updateVoice12() {
 
 
 int getLFOWaveform(int value) {
-  if (value >= 0 && value < 8)
-  {
+  if (value >= 0 && value < 8) {
     return WAVEFORM_SINE;
-  }
-  else if (value >= 8 && value < 30)
-  {
+  } else if (value >= 8 && value < 30) {
     return WAVEFORM_TRIANGLE;
-  }
-  else if (value >= 30 && value < 63)
-  {
+  } else if (value >= 30 && value < 63) {
     return WAVEFORM_SAWTOOTH_REVERSE;
-  }
-  else if (value >= 63 && value < 92)
-  {
+  } else if (value >= 63 && value < 92) {
     return WAVEFORM_SAWTOOTH;
-  }
-  else if (value >= 92 && value < 111)
-  {
+  } else if (value >= 92 && value < 111) {
     return WAVEFORM_SQUARE;
-  }
-  else
-  {
+  } else {
     return WAVEFORM_SAMPLE_HOLD;
   }
 }
 
 String getWaveformStr(int value) {
-  switch (value)
-  {
+  switch (value) {
     case WAVEFORM_SILENT:
       return "Off";
     case WAVEFORM_SAMPLE_HOLD:
@@ -1070,7 +1059,6 @@ void loadArbWaveformA(const int16_t * wavedata) {
   waveformMod10a.arbitraryWaveform(wavedata, AWFREQ);
   waveformMod11a.arbitraryWaveform(wavedata, AWFREQ);
   waveformMod12a.arbitraryWaveform(wavedata, AWFREQ);
-
 }
 
 void loadArbWaveformB(const int16_t * wavedata) {
@@ -1086,7 +1074,6 @@ void loadArbWaveformB(const int16_t * wavedata) {
   waveformMod10b.arbitraryWaveform(wavedata, AWFREQ);
   waveformMod11b.arbitraryWaveform(wavedata, AWFREQ);
   waveformMod12b.arbitraryWaveform(wavedata, AWFREQ);
-
 }
 
 FLASHMEM float getLFOTempoRate(int value) {
@@ -1095,74 +1082,43 @@ FLASHMEM float getLFOTempoRate(int value) {
 }
 
 FLASHMEM int getWaveformA(int value) {
-  if (value >= 0 && value < 7)
-  {
+  if (value >= 0 && value < 7) {
     //This will turn the osc off
     return WAVEFORM_SILENT;
-  }
-  else if (value >= 7 && value < 23)
-  {
+  } else if (value >= 7 && value < 23) {
     return WAVEFORM_TRIANGLE;
-  }
-  else if (value >= 23 && value < 40)
-  {
+  } else if (value >= 23 && value < 40) {
     return WAVEFORM_BANDLIMIT_SQUARE;
-  }
-  else if (value >= 40 && value < 60)
-  {
+  } else if (value >= 40 && value < 60) {
     return WAVEFORM_BANDLIMIT_SAWTOOTH;
-  }
-  else if (value >= 60 && value < 80)
-  {
+  } else if (value >= 60 && value < 80) {
     return WAVEFORM_BANDLIMIT_PULSE;
-  }
-  else if (value >= 80 && value < 100)
-  {
+  } else if (value >= 80 && value < 100) {
     return WAVEFORM_TRIANGLE_VARIABLE;
-  }
-  else if (value >= 100 && value < 120)
-  {
+  } else if (value >= 100 && value < 120) {
     return WAVEFORM_PARABOLIC;
-  }
-  else
-  {
+  } else {
     return WAVEFORM_HARMONIC;
   }
 }
 
-FLASHMEM int getWaveformB(int value)
-{
-  if (value >= 0 && value < 7)
-  {
+FLASHMEM int getWaveformB(int value) {
+  if (value >= 0 && value < 7)  {
     //This will turn the osc off
     return WAVEFORM_SILENT;
-  }
-  else if (value >= 7 && value < 23)
-  {
+  } else if (value >= 7 && value < 23) {
     return WAVEFORM_SAMPLE_HOLD;
-  }
-  else if (value >= 23 && value < 40)
-  {
+  } else if (value >= 23 && value < 40) {
     return WAVEFORM_BANDLIMIT_SQUARE;
-  }
-  else if (value >= 40 && value < 60)
-  {
+  } else if (value >= 40 && value < 60) {
     return WAVEFORM_BANDLIMIT_SAWTOOTH;
-  }
-  else if (value >= 60 && value < 80)
-  {
+  } else if (value >= 60 && value < 80) {
     return WAVEFORM_BANDLIMIT_PULSE;
-  }
-  else if (value >= 80 && value < 100)
-  {
+  } else if (value >= 80 && value < 100) {
     return WAVEFORM_TRIANGLE_VARIABLE;
-  }
-  else if (value >= 100 && value < 120)
-  {
+  } else if (value >= 100 && value < 120) {
     return WAVEFORM_PARABOLIC;
-  }
-  else
-  {
+  } else {
     return WAVEFORM_HARMONIC;
   }
 }
@@ -1184,7 +1140,6 @@ FLASHMEM void setPwmMixerALFO(float value) {
   pwMixer10a.gain(0, value);
   pwMixer11a.gain(0, value);
   pwMixer12a.gain(0, value);
-
   showCurrentParameterPage("1. PWM LFO", String(value));
 }
 
@@ -1201,7 +1156,6 @@ FLASHMEM void setPwmMixerBLFO(float value) {
   pwMixer10b.gain(0, value);
   pwMixer11b.gain(0, value);
   pwMixer12b.gain(0, value);
-
   showCurrentParameterPage("2. PWM LFO", String(value));
 }
 
@@ -1218,7 +1172,6 @@ FLASHMEM void setPwmMixerAPW(float value) {
   pwMixer10a.gain(1, value);
   pwMixer11a.gain(1, value);
   pwMixer12a.gain(1, value);
-
 }
 
 FLASHMEM void setPwmMixerBPW(float value) {
@@ -1234,7 +1187,6 @@ FLASHMEM void setPwmMixerBPW(float value) {
   pwMixer10b.gain(1, value);
   pwMixer11b.gain(1, value);
   pwMixer12b.gain(1, value);
-
 }
 
 FLASHMEM void setPwmMixerAFEnv(float value) {
@@ -1275,31 +1227,26 @@ FLASHMEM void updateUnison() {
     allNotesOff();//Avoid hanging notes
     showCurrentParameterPage("Unison", "Off");
     digitalWriteFast(UNISON_LED, LOW);  // LED off
-  }
-  else
-  {
+  } else {
     setVoiceMixerLevels(UNISONVOICEMIXERLEVEL);
     showCurrentParameterPage("Unison", "On");
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   }
 }
 
-FLASHMEM void updateVolume(float vol)
-{
+FLASHMEM void updateVolume(float vol) {
   showCurrentParameterPage("Volume", vol);
 }
 
 FLASHMEM void updateGlide() {
   if (glideSpeed * GLIDEFACTOR < 1000) {
     showCurrentParameterPage("Glide", String(int(glideSpeed * GLIDEFACTOR)) + " ms");
-  }
-  else {
+  } else {
     showCurrentParameterPage("Glide", String((glideSpeed * GLIDEFACTOR) / 1000) + " s");
   }
 }
 
 FLASHMEM void updateWaveformA() {
-  delay(1);
   int newWaveform = oscWaveformA;//To allow Arbitrary waveforms
   if (oscWaveformA == WAVEFORM_PARABOLIC) {
     loadArbWaveformA(PARABOLIC_WAVE);
@@ -1326,7 +1273,6 @@ FLASHMEM void updateWaveformA() {
 }
 
 FLASHMEM void updateWaveformB() {
-  delay(1);
   int newWaveform = oscWaveformB;//To allow Arbitrary waveforms
   if (oscWaveformB == WAVEFORM_PARABOLIC) {
     loadArbWaveformB(PARABOLIC_WAVE);
@@ -1349,7 +1295,6 @@ FLASHMEM void updateWaveformB() {
   waveformMod10b.begin(newWaveform);
   waveformMod11b.begin(newWaveform);
   waveformMod12b.begin(newWaveform);
-
   showCurrentParameterPage("2. Waveform", getWaveformStr(oscWaveformB));
 }
 
@@ -1381,27 +1326,21 @@ void updatesAllVoices() {
   updateVoice10();
   updateVoice11();
   updateVoice12();
-
 }
 
 FLASHMEM void updatePWMSource() {
-  if (pwmSource == PWMSOURCELFO)
-  {
+  if (pwmSource == PWMSOURCELFO) {
     setPwmMixerAFEnv(0);
     setPwmMixerBFEnv(0);
-    if (pwmRate > -5)
-    {
+    if (pwmRate > -5) {
       setPwmMixerALFO(pwmAmtA);
       setPwmMixerBLFO(pwmAmtB);
     }
     showCurrentParameterPage("PWM Source", "LFO"); //Only shown when updated via MIDI
-  }
-  else
-  {
+  } else {
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
-    if (pwmRate > -5)
-    {
+    if (pwmRate > -5) {
       setPwmMixerAFEnv(pwmAmtA);
       setPwmMixerBFEnv(pwmAmtB);
     }
@@ -1411,8 +1350,7 @@ FLASHMEM void updatePWMSource() {
 
 FLASHMEM void updatePWMRate() {
   pwmLfo.frequency(pwmRate);
-  if (pwmRate < -5)
-  {
+  if (pwmRate < -5) {
     //Set to fixed PW mode
     setPwmMixerALFO(0);//LFO Source off
     setPwmMixerBLFO(0);
@@ -1421,8 +1359,7 @@ FLASHMEM void updatePWMRate() {
     setPwmMixerAPW(1);//Manually adjustable pulse width on
     setPwmMixerBPW(1);
     showCurrentParameterPage("PW Mode", "On");
-  }
-  else if (pwmRate > -10 && pwmRate < 0) {
+  } else if (pwmRate > -10 && pwmRate < 0) {
     //Set to Filter Env Mod source
     pwmSource = PWMSOURCEFENV;
     updatePWMSource();
@@ -1433,7 +1370,6 @@ FLASHMEM void updatePWMRate() {
     setPwmMixerBFEnv(pwmAmtB);
     showCurrentParameterPage("PWM Source", "Filter Env");
   } else {
-
     pwmSource = PWMSOURCELFO;
     updatePWMSource();
     setPwmMixerAPW(0);
@@ -1452,8 +1388,7 @@ FLASHMEM void updatePWMAmount() {
 }
 
 FLASHMEM void updatePWA() {
-  if (pwmRate < -5)
-  {
+  if (pwmRate < -5) {
     //if PWM amount is around zero, fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
@@ -1518,8 +1453,7 @@ FLASHMEM void updatePWB() {
   pwb.amplitude(pwB_Adj);
 }
 
-FLASHMEM void updateOscLevelA()
-{
+FLASHMEM void updateOscLevelA() {
   waveformMixer1.gain(0, oscALevel);
   waveformMixer2.gain(0, oscALevel);
   waveformMixer3.gain(0, oscALevel);
@@ -1582,11 +1516,11 @@ FLASHMEM void updateOscLevelB() {
 }
 
 FLASHMEM void updateNoiseLevel() {
-  if (noiseLevel > 0){
+  if (noiseLevel > 0) {
     pink.amplitude(noiseLevel);
     white.amplitude(0.0f);
     showCurrentParameterPage("Noise Level", "Pink " + String(noiseLevel));
-  } else if (noiseLevel < 0){
+  } else if (noiseLevel < 0) {
     pink.amplitude(0.0f);
     white.amplitude(abs(noiseLevel));
     showCurrentParameterPage("Noise Level", "White " + String(abs(noiseLevel)));
@@ -1597,7 +1531,7 @@ FLASHMEM void updateNoiseLevel() {
   }
 }
 
-FLASHMEM void updateFilterFreq(){
+FLASHMEM void updateFilterFreq() {
   filter1.frequency(filterFreq);
   filter2.frequency(filterFreq);
   filter3.frequency(filterFreq);
@@ -1648,7 +1582,6 @@ FLASHMEM void updateFilterRes() {
   filter10.resonance(filterRes);
   filter11.resonance(filterRes);
   filter12.resonance(filterRes);
-
   showCurrentParameterPage("Resonance", filterRes);
 }
 
@@ -1657,13 +1590,13 @@ FLASHMEM void updateFilterMixer() {
   float BP = 0;
   float HP = 0;
   String filterStr;
-  if (filterMix == LINEAR_FILTERMIXER[127]){
+  if (filterMix == LINEAR_FILTERMIXER[127]) {
     //BP mode
     LP = 0;
     BP = 1.0f;
     HP = 0;
     filterStr = "Band Pass";
-  }else {
+  } else {
     //LP-HP mix mode - a notch filter
     LP = 1.0f - filterMix;
     BP = 0;
@@ -1721,7 +1654,7 @@ FLASHMEM void updateFilterMixer() {
   showCurrentParameterPage("Filter Type", filterStr);
 }
 
-FLASHMEM void updateFilterEnv(){
+FLASHMEM void updateFilterEnv() {
   filterModMixer1.gain(0, filterEnv);
   filterModMixer2.gain(0, filterEnv);
   filterModMixer3.gain(0, filterEnv);
@@ -1738,7 +1671,7 @@ FLASHMEM void updateFilterEnv(){
   showCurrentParameterPage("Filter Env.", String(filterEnv));
 }
 
-FLASHMEM void updatePitchEnv(){
+FLASHMEM void updatePitchEnv() {
   oscModMixer1a.gain(1, pitchEnv);
   oscModMixer1b.gain(1, pitchEnv);
   oscModMixer2a.gain(1, pitchEnv);
@@ -1767,7 +1700,7 @@ FLASHMEM void updatePitchEnv(){
   showCurrentParameterPage("Pitch Env Amt", String(pitchEnv));
 }
 
-FLASHMEM void updateKeyTracking(){
+FLASHMEM void updateKeyTracking() {
   filterModMixer1.gain(2, keytrackingAmount);
   filterModMixer2.gain(2, keytrackingAmount);
   filterModMixer3.gain(2, keytrackingAmount);
@@ -1859,12 +1792,9 @@ FLASHMEM void updateFilterAttack() {
   filterEnvelope11.attack(filterAttack);
   filterEnvelope12.attack(filterAttack);
 
-  if (filterAttack < 1000)
-  {
+  if (filterAttack < 1000) {
     showCurrentParameterPage("Filter Attack", String(int(filterAttack)) + " ms", FILTER_ENV);
-  }
-  else
-  {
+  }  else {
     showCurrentParameterPage("Filter Attack", String(filterAttack * 0.001f) + " s", FILTER_ENV);
   }
 }
@@ -1882,12 +1812,9 @@ FLASHMEM void updateFilterDecay() {
   filterEnvelope10.decay(filterDecay);
   filterEnvelope11.decay(filterDecay);
   filterEnvelope12.decay(filterDecay);
-  if (filterDecay < 1000)
-  {
+  if (filterDecay < 1000) {
     showCurrentParameterPage("Filter Decay", String(int(filterDecay)) + " ms", FILTER_ENV);
-  }
-  else
-  {
+  } else {
     showCurrentParameterPage("Filter Decay", String(filterDecay * 0.001f) + " s", FILTER_ENV);
   }
 }
@@ -1923,12 +1850,9 @@ FLASHMEM void updateFilterRelease() {
   filterEnvelope11.release(filterRelease);
   filterEnvelope12.release(filterRelease);
 
-  if (filterRelease < 1000)
-  {
+  if (filterRelease < 1000) {
     showCurrentParameterPage("Filter Release", String(int(filterRelease)) + " ms", FILTER_ENV);
-  }
-  else
-  {
+  } else {
     showCurrentParameterPage("Filter Release", String(filterRelease * 0.001) + " s", FILTER_ENV);
   }
 }
@@ -1947,12 +1871,9 @@ FLASHMEM void updateAttack() {
   ampEnvelope11.attack(ampAttack);
   ampEnvelope12.attack(ampAttack);
 
-  if (ampAttack < 1000)
-  {
+  if (ampAttack < 1000) {
     showCurrentParameterPage("Attack", String(int(ampAttack)) + " ms", AMP_ENV);
-  }
-  else
-  {
+  } else {
     showCurrentParameterPage("Attack", String(ampAttack * 0.001) + " s", AMP_ENV);
   }
 }
@@ -1971,12 +1892,9 @@ FLASHMEM void updateDecay() {
   ampEnvelope11.decay(ampDecay);
   ampEnvelope12.decay(ampDecay);
 
-  if (ampDecay < 1000)
-  {
+  if (ampDecay < 1000) {
     showCurrentParameterPage("Decay", String(int(ampDecay)) + " ms", AMP_ENV);
-  }
-  else
-  {
+  } else {
     showCurrentParameterPage("Decay", String(ampDecay * 0.001) + " s", AMP_ENV);
   }
 }
@@ -2012,19 +1930,15 @@ FLASHMEM void updateRelease() {
   ampEnvelope11.release(ampRelease);
   ampEnvelope12.release(ampRelease);
 
-  if (ampRelease < 1000)
-  {
+  if (ampRelease < 1000) {
     showCurrentParameterPage("Release", String(int(ampRelease)) + " ms", AMP_ENV);
-  }
-  else
-  {
+  } else {
     showCurrentParameterPage("Release", String(ampRelease * 0.001) + " s", AMP_ENV);
   }
 }
 
 FLASHMEM void updateOscFX() {
-  if (oscFX == 1)
-  {
+  if (oscFX == 1) {
     //XOR 'Ring Mod' type effect
     oscFX1.setCombineMode(AudioEffectDigitalCombine::XOR);
     oscFX2.setCombineMode(AudioEffectDigitalCombine::XOR);
@@ -2052,11 +1966,9 @@ FLASHMEM void updateOscFX() {
     waveformMixer11.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
     waveformMixer12.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
 
-    showCurrentParameterPage("Osc FX", "On");
+    showCurrentParameterPage("Osc FX", "On - XOR");
     digitalWriteFast(OSC_FX_LED, HIGH);  // LED on
-  }
-  else
-  {
+  } else {
     //No FX
     oscFX1.setCombineMode(AudioEffectDigitalCombine::OFF);
     oscFX2.setCombineMode(AudioEffectDigitalCombine::OFF);
@@ -2112,8 +2024,7 @@ void myPitchBend(byte channel, int bend) {
 
 void myControlChange(byte channel, byte control, byte value) {
   //Serial.println("MIDI: " + String(control) + " : " + String(value));
-  switch (control)
-  {
+  switch (control) {
     case CCvolume:
       sgtl5000_1.volume(SGTL_MAXVOLUME * LINEAR[value]); //Headphones
       //sgtl5000_1.lineOutLevel(31 - (18 * LINEAR[value])); //Line out, weird inverted values
@@ -2210,15 +2121,16 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfilterfreq:
       //Experimental feature - Pick up
-      if (pickUp && value < 126 && value > 0 && (filterfreqPrevValue <  FILTERFREQS[value + 1] || filterfreqPrevValue >  FILTERFREQS[value - 1]))return; //PICK-UP
+      if ((pickUp && value < (128 - TOLERANCE) && value > (TOLERANCE - 1)) && (filterfreqPrevValue <  FILTERFREQS[value - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS[value + TOLERANCE])) return; //PICK-UP
+      //Serial.println(String(filterfreqPrevValue) + ":" + String(FILTERFREQS[value]) + " - " + String(filterfreqPrevValue <  FILTERFREQS[value - TOLERANCE]) + String(filterfreqPrevValue >  FILTERFREQS[value + TOLERANCE]));
       filterFreq = FILTERFREQS[value];
-      updateFilterFreq();
       filterfreqPrevValue = filterFreq;//PICK-UP
+      updateFilterFreq();
       break;
 
     case CCfilterres:
       //Pick up
-      if (pickUp && value < 126 && value > 0 && (resonancePrevValue <  ((13.9f * POWER[value + 1]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value - 1]) + 1.1f)))return; //PICK-UP
+      if ((pickUp && value < (128 - TOLERANCE) && value > (TOLERANCE - 1)) && (resonancePrevValue <  ((13.9f * POWER[value - TOLERANCE]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value + TOLERANCE]) + 1.1f))) return; //PICK-UP
       filterRes = (13.9f * POWER[value]) + 1.1f; //If <1.1 there is noise at high cutoff freq
       updateFilterRes();
       resonancePrevValue = filterRes;//PICK-UP
@@ -2392,8 +2304,7 @@ FLASHMEM void myProgramChange(byte channel, byte program) {
   state = PARAMETER;
 }
 
-FLASHMEM void myMIDIClockStart()
-{
+FLASHMEM void myMIDIClockStart() {
   MIDIClkSignal = true;
   //Resync LFOs when MIDI Clock starts.
   //When there's a jump to a different
@@ -2429,9 +2340,36 @@ FLASHMEM void myMIDIClock() {
   if (count < 24) count++; //prevent eventual overflow
 }
 
-FLASHMEM void recallPatch(int patchNo)
-{
+FLASHMEM void closeEnvelopes() {
+  filterEnvelope1.close();
+  filterEnvelope2.close();
+  filterEnvelope3.close();
+  filterEnvelope4.close();
+  filterEnvelope5.close();
+  filterEnvelope6.close();
+  filterEnvelope7.close();
+  filterEnvelope8.close();
+  filterEnvelope9.close();
+  filterEnvelope10.close();
+  filterEnvelope11.close();
+  filterEnvelope12.close();
+  ampEnvelope1.close();
+  ampEnvelope2.close();
+  ampEnvelope3.close();
+  ampEnvelope4.close();
+  ampEnvelope5.close();
+  ampEnvelope6.close();
+  ampEnvelope7.close();
+  ampEnvelope8.close();
+  ampEnvelope9.close();
+  ampEnvelope10.close();
+  ampEnvelope11.close();
+  ampEnvelope12.close();
+}
+
+FLASHMEM void recallPatch(int patchNo) {
   allNotesOff();
+  closeEnvelopes();
   File patchFile = SD.open(String(patchNo).c_str());
   if (!patchFile)
   {
@@ -2471,7 +2409,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   pwB = data[21].toFloat();
   filterRes = data[22].toFloat();
   resonancePrevValue = filterRes;//Pick-up
-  filterFreq = data[23].toFloat();
+  filterFreq = data[23].toInt();
   filterfreqPrevValue = filterFreq; //Pick-up
   filterMix = data[24].toFloat();
   filterEnv = data[25].toFloat();
@@ -2551,13 +2489,10 @@ FLASHMEM String getCurrentPatchData() {
 
 void checkMux() {
   mux1Read = analogRead(MUX1_S);
-  if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR))
-  {
+  if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR)) {
     mux1ValuesPrev[muxInput] = mux1Read;
     mux1Read = (mux1Read >> 3); //Change range to 0-127
-
-    switch (muxInput)
-    {
+    switch (muxInput) {
       case MUX1_noiseLevel:
         myControlChange(midiChannel, CCnoiseLevel, mux1Read);
         break;
@@ -2610,13 +2545,10 @@ void checkMux() {
     }
   }
   mux2Read = analogRead(MUX2_S);
-  if (mux2Read > (mux2ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux2Read < (mux2ValuesPrev[muxInput] - QUANTISE_FACTOR))
-  {
+  if (mux2Read > (mux2ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux2Read < (mux2ValuesPrev[muxInput] - QUANTISE_FACTOR)) {
     mux2ValuesPrev[muxInput] = mux2Read;
     mux2Read = (mux2Read >> 3); //Change range to 0-127
-
-    switch (muxInput)
-    {
+    switch (muxInput) {
       case MUX2_attack:
         myControlChange(midiChannel, CCampattack, mux2Read);
         break;
@@ -2674,6 +2606,8 @@ void checkMux() {
     if (!firstPatchLoaded) {
       recallPatch(patchNo); //Load first patch after all controls read
       firstPatchLoaded = true;
+      sgtl5000_1.unmuteHeadphone();
+      sgtl5000_1.unmuteLineout();
     }
   }
   digitalWriteFast(MUX_0, muxInput & B0001);
@@ -2684,8 +2618,7 @@ void checkMux() {
 
 void checkVolumePot() {
   volumeRead = analogRead(VOLUME_POT);
-  if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))
-  {
+  if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))  {
     volumePrevious = volumeRead;
     volumeRead = (volumeRead >> 3); //Change range to 0-127
     myControlChange(midiChannel, CCvolume, volumeRead);
@@ -2694,22 +2627,19 @@ void checkVolumePot() {
 
 void checkSwitches() {
   unisonSwitch.update();
-  if (unisonSwitch.fallingEdge())
-  {
+  if (unisonSwitch.fallingEdge()) {
     unison = !unison;
     myControlChange(midiChannel, CCunison, unison);
   }
 
   oscFXSwitch.update();
-  if (oscFXSwitch.fallingEdge())
-  {
+  if (oscFXSwitch.fallingEdge()) {
     oscFX = !oscFX;
     myControlChange(midiChannel, CCringmod, oscFX);
   }
 
   filterLFORetrigSwitch.update();
-  if (filterLFORetrigSwitch.fallingEdge())
-  {
+  if (filterLFORetrigSwitch.fallingEdge()) {
     filterLfoRetrig = !filterLfoRetrig;
     myControlChange(midiChannel, CCfilterlforetrig, filterLfoRetrig);
   }
@@ -2733,11 +2663,9 @@ void checkSwitches() {
   }
   else if (saveButton.risingEdge()) {
     if (!del) {
-      switch (state)
-      {
+      switch (state) {
         case PARAMETER:
-          if (patches.size() < PATCHES_LIMIT)
-          {
+          if (patches.size() < PATCHES_LIMIT)  {
             resetPatchesOrdering(); //Reset order of patches from first patch
             patches.push({patches.size() + 1, INITPATCHNAME});
             state = SAVE;
@@ -2767,25 +2695,21 @@ void checkSwitches() {
           state = PARAMETER;
           break;
       }
-    }
-    else
-    {
+    } else {
       del = false;
     }
   }
 
   settingsButton.update();
-  if (settingsButton.read() == LOW && settingsButton.duration() > HOLD_DURATION)
-  {
+  if (settingsButton.read() == LOW && settingsButton.duration() > HOLD_DURATION) {
     //If recall held, set current patch to match current hardware state
     //Reinitialise all hardware values to force them to be re-read if different
     state = REINITIALISE;
     reinitialiseToPanel();
     settingsButton.write(HIGH); //Come out of this state
     reini = true;           //Hack
-  }
-  else if (settingsButton.risingEdge())
-  { //cannot be fallingEdge because holding button won't work
+  } else if (settingsButton.risingEdge())  {
+    //cannot be fallingEdge because holding button won't work
     if (!reini) {
       switch (state) {
         case PARAMETER:
@@ -2804,26 +2728,23 @@ void checkSwitches() {
           state = SETTINGS;
           break;
       }
-    }
-    else {
+    } else {
       reini = false;
     }
   }
 
   backButton.update();
-  if (backButton.read() == LOW && backButton.duration() > HOLD_DURATION)
-  {
+  if (backButton.read() == LOW && backButton.duration() > HOLD_DURATION) {
     //If Back button held, Panic - all notes off
     allNotesOff();
+    closeEnvelopes();
     backButton.write(HIGH); //Come out of this state
     panic = true;           //Hack
   }
-  else if (backButton.risingEdge())
-  { //cannot be fallingEdge because holding button won't work
-    if (!panic)
-    {
-      switch (state)
-      {
+  else if (backButton.risingEdge())  {
+    //cannot be fallingEdge because holding button won't work
+    if (!panic) {
+      switch (state) {
         case RECALL:
           setPatchesOrdering(patchNo);
           state = PARAMETER;
@@ -2852,17 +2773,14 @@ void checkSwitches() {
           state = SETTINGS;
           break;
       }
-    }
-    else
-    {
+    } else {
       panic = false;
     }
   }
 
   //Encoder switch
   recallButton.update();
-  if (recallButton.read() == LOW && recallButton.duration() > HOLD_DURATION)
-  {
+  if (recallButton.read() == LOW && recallButton.duration() > HOLD_DURATION) {
     //If Recall button held, return to current patch setting
     //which clears any changes made
     state = PATCH;
@@ -2872,8 +2790,7 @@ void checkSwitches() {
     state = PARAMETER;
     recallButton.write(HIGH); //Come out of this state
     recall = true;            //Hack
-  }
-  else if (recallButton.risingEdge()) {
+  } else if (recallButton.risingEdge()) {
     if (!recall) {
       switch (state) {
         case PARAMETER:
@@ -2902,8 +2819,7 @@ void checkSwitches() {
           break;
         case DELETE:
           //Don't delete final patch
-          if (patches.size() > 1)
-          {
+          if (patches.size() > 1) {
             state = DELETEMSG;
             patchNo = patches.first().patchNo;//PatchNo to delete from SD card
             patches.shift();//Remove patch from circular buffer
@@ -2929,9 +2845,7 @@ void checkSwitches() {
           state = SETTINGS;
           break;
       }
-    }
-    else
-    {
+    } else {
       recall = false;
     }
   }
@@ -2942,8 +2856,7 @@ FLASHMEM void reinitialiseToPanel() {
   //The four button controls stay the same state
   //This reinialises the previous hardware values to force a re-read
   muxInput = 0;
-  for (int i = 0; i < MUXCHANNELS; i++)
-  {
+  for (int i = 0; i < MUXCHANNELS; i++) {
     mux1ValuesPrev[i] = RE_READ;
     mux2ValuesPrev[i] = RE_READ;
   }
@@ -2952,16 +2865,12 @@ FLASHMEM void reinitialiseToPanel() {
   showPatchPage("Initial", "Panel Settings");
 }
 
-void checkEncoder()
-{
+void checkEncoder() {
   //Encoder works with relative inc and dec values
   //Detent encoder goes up in 4 steps, hence +/-3
-
   long encRead = encoder.read();
-  if ((encCW && encRead > encPrevious + 3) || (!encCW && encRead < encPrevious - 3) )
-  {
-    switch (state)
-    {
+  if ((encCW && encRead > encPrevious + 3) || (!encCW && encRead < encPrevious - 3) )  {
+    switch (state) {
       case PARAMETER:
         state = PATCH;
         patches.push(patches.shift());
@@ -2994,11 +2903,8 @@ void checkEncoder()
         break;
     }
     encPrevious = encRead;
-  }
-  else if ((encCW && encRead < encPrevious - 3) || (!encCW && encRead > encPrevious + 3))
-  {
-    switch (state)
-    {
+  } else if ((encCW && encRead < encPrevious - 3) || (!encCW && encRead > encPrevious + 3)) {
+    switch (state) {
       case PARAMETER:
         state = PATCH;
         patches.unshift(patches.pop());

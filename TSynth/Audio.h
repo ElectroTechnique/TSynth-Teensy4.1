@@ -57,17 +57,14 @@
 
 #include "control_sgtl5000.h"
 #include "effect_ensemble.h"
-#include "effect_envelope.h"
+#include "effect_envelope.h"//Local version
 #include "effect_combine.h"//Local version
 #include "filter_variable.h"//Local version
-#include "input_adc.h"
-#include "input_adcs.h"
 #include "mixer.h"
 #include "output_i2s.h"
-#include "synth_sine.h"
 #include "synth_waveform.h"//Local version
 #include "synth_dc.h"
 #include "synth_whitenoise.h"
 #include "synth_pinknoise.h"
-
+#include "Oscilloscope.h"
 #endif

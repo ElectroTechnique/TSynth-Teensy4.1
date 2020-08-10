@@ -47,8 +47,8 @@ public:
   };
   AudioEffectDigitalCombine() : AudioStream(2, inputQueueArray), mode_sel(OR) { }
   void setCombineMode(int mode_in) {
-    if (mode_in > 4) {
-        mode_in = 4;
+    if (mode_in > OFF) {
+        mode_in = OFF;
       }
       mode_sel = mode_in;
   }

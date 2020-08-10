@@ -38,7 +38,7 @@
 
 
 
-void AudioSynthWaveform::update(void)
+void AudioSynthWaveformTS::update(void)
 {
   audio_block_t *block;
   int16_t *bp, *end;
@@ -229,7 +229,7 @@ void AudioSynthWaveform::update(void)
 
 //--------------------------------------------------------------------------------
 
-void AudioSynthWaveformModulated::update(void)
+void AudioSynthWaveformModulatedTS::update(void)
 {
   audio_block_t *block, *moddata, *shapedata;
   int16_t *bp, *end;

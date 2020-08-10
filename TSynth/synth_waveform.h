@@ -97,10 +97,10 @@ private:
 };
 
 
-class AudioSynthWaveform : public AudioStream
+class AudioSynthWaveformTS : public AudioStream
 {
 public:
-  AudioSynthWaveform(void) : AudioStream(0,NULL),
+  AudioSynthWaveformTS(void) : AudioStream(0,NULL),
     phase_accumulator(0), phase_increment(0), phase_offset(0),
     magnitude(0), pulse_width(0x40000000),
     arbdata(NULL), sample(0), tone_type(WAVEFORM_SINE),
@@ -188,10 +188,10 @@ private:
 };
 
 
-class AudioSynthWaveformModulated : public AudioStream
+class AudioSynthWaveformModulatedTS : public AudioStream
 {
 public:
-  AudioSynthWaveformModulated(void) : AudioStream(2, inputQueueArray),
+  AudioSynthWaveformModulatedTS(void) : AudioStream(2, inputQueueArray),
     phase_accumulator(0), phase_increment(0), modulation_factor(32768),
     magnitude(0), arbdata(NULL), sample(0), tone_offset(0),
     tone_type(WAVEFORM_SINE), modulation_type(0), syncFlag(0) {
