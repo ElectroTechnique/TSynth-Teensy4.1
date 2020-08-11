@@ -565,7 +565,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking1.amplitude(note * DIV127 * keytrackingAmount);
       voices[0].note = note;
       voices[0].timeOn = millis();
-      updateVoice1();
       filterEnvelope1.noteOn();
       ampEnvelope1.noteOn();
       voices[0].voiceOn = 1;
@@ -580,7 +579,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking2.amplitude(note * DIV127 * keytrackingAmount);
       voices[1].note = note;
       voices[1].timeOn = millis();
-      updateVoice2();
       filterEnvelope2.noteOn();
       ampEnvelope2.noteOn();
       voices[1].voiceOn = 1;
@@ -595,7 +593,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking3.amplitude(note * DIV127 * keytrackingAmount);
       voices[2].note = note;
       voices[2].timeOn = millis();
-      updateVoice3();
       filterEnvelope3.noteOn();
       ampEnvelope3.noteOn();
       voices[2].voiceOn = 1;
@@ -610,7 +607,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking4.amplitude(note * DIV127 * keytrackingAmount);
       voices[3].note = note;
       voices[3].timeOn = millis();
-      updateVoice4();
       filterEnvelope4.noteOn();
       ampEnvelope4.noteOn();
       voices[3].voiceOn = 1;
@@ -625,7 +621,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking5.amplitude(note * DIV127 * keytrackingAmount);
       voices[4].note = note;
       voices[4].timeOn = millis();
-      updateVoice5();
       filterEnvelope5.noteOn();
       ampEnvelope5.noteOn();
       voices[4].voiceOn = 1;
@@ -640,7 +635,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking6.amplitude(note * DIV127 * keytrackingAmount);
       voices[5].note = note;
       voices[5].timeOn = millis();
-      updateVoice6();
       filterEnvelope6.noteOn();
       ampEnvelope6.noteOn();
       voices[5].voiceOn = 1;
@@ -655,7 +649,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking7.amplitude(note * DIV127 * keytrackingAmount);
       voices[6].note = note;
       voices[6].timeOn = millis();
-      updateVoice7();
       filterEnvelope7.noteOn();
       ampEnvelope7.noteOn();
       voices[6].voiceOn = 1;
@@ -670,7 +663,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking8.amplitude(note * DIV127 * keytrackingAmount);
       voices[7].note = note;
       voices[7].timeOn = millis();
-      updateVoice8();
       filterEnvelope8.noteOn();
       ampEnvelope8.noteOn();
       voices[7].voiceOn = 1;
@@ -685,7 +677,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking9.amplitude(note * DIV127 * keytrackingAmount);
       voices[8].note = note;
       voices[8].timeOn = millis();
-      updateVoice9();
       filterEnvelope9.noteOn();
       ampEnvelope9.noteOn();
       voices[8].voiceOn = 1;
@@ -700,7 +691,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking10.amplitude(note * DIV127 * keytrackingAmount);
       voices[9].note = note;
       voices[9].timeOn = millis();
-      updateVoice10();
       filterEnvelope10.noteOn();
       ampEnvelope10.noteOn();
       voices[9].voiceOn = 1;
@@ -715,7 +705,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking11.amplitude(note * DIV127 * keytrackingAmount);
       voices[10].note = note;
       voices[10].timeOn = millis();
-      updateVoice11();
       filterEnvelope11.noteOn();
       ampEnvelope11.noteOn();
       voices[10].voiceOn = 1;
@@ -730,7 +719,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       keytracking12.amplitude(note * DIV127 * keytrackingAmount);
       voices[11].note = note;
       voices[11].timeOn = millis();
-      updateVoice12();
       filterEnvelope12.noteOn();
       ampEnvelope12.noteOn();
       voices[11].voiceOn = 1;
@@ -739,6 +727,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
         glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
       }
     }
+    updatesAllVoices();//Set detune values
   }
 }
 
