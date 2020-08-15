@@ -1,4 +1,4 @@
-#define SETTINGSOPTIONSNO 8
+#define SETTINGSOPTIONSNO 9
 #define SETTINGSVALUESNO 18//Maximum number of settings option values needed
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
@@ -11,6 +11,7 @@ struct SettingsOption
 };
 
 void settingsMIDICh(char * value);
+void settingsVelocitySens(char * value);
 void settingsKeyTracking(char * value);
 void settingsPitchBend(char * value);
 void settingsModWheelDepth(char * value);
@@ -21,6 +22,7 @@ void settingsScopeEnable(char * value);
 void settingsHandler(char * s, void (*f)(char*));
 
 int currentIndexMIDICh();
+int currentIndexVelocitySens();
 int currentIndexKeyTracking();
 int currentIndexPitchBend();
 int currentIndexModWheelDepth();
@@ -40,11 +42,18 @@ FLASHMEM void settingsMIDICh(char * value) {
   storeMidiChannel(midiChannel);
 }
 
+FLASHMEM void settingsVelocitySens(char * value) {
+  if (strcmp(value, "Off") == 0) {
+    velocitySens = 0;
+  } else {
+    velocitySens = atoi(value);
+  }
+}
+
 FLASHMEM void settingsKeyTracking(char * value) {
   if (strcmp(value, "None") == 0) keytrackingAmount = 0;
   if (strcmp(value, "Half") == 0)  keytrackingAmount =  0.5;
   if (strcmp(value, "Full") == 0) keytrackingAmount =  1.0;
-  storeKeyTracking(keytrackingAmount);
 }
 
 FLASHMEM void settingsPitchBend(char * value) {
@@ -104,11 +113,14 @@ FLASHMEM int currentIndexMIDICh() {
   return getMIDIChannel();
 }
 
+FLASHMEM int currentIndexVelocitySens() {
+  return velocitySens;
+}
+
 FLASHMEM int currentIndexKeyTracking() {
-  float value = getKeyTracking();
-  if (value == 0.0f) return 0;
-  if (value == 0.5f)  return 1;
-  if (value == 1.0f) return 2;
+  if (keytrackingAmount == 0.0f) return 0;
+  if (keytrackingAmount == 0.5f)  return 1;
+  if (keytrackingAmount == 1.0f) return 2;
   return 0;
 }
 
@@ -147,6 +159,7 @@ CircularBuffer<SettingsOption, SETTINGSOPTIONSNO>  settingsOptions;
 FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"MIDI Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", '\0'}, settingsMIDICh, currentIndexMIDICh});
   settingsOptions.push(SettingsOption{"Key Tracking", {"None", "Half", "Full", '\0'}, settingsKeyTracking, currentIndexKeyTracking});
+  settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", '\0'}, settingsVelocitySens, currentIndexVelocitySens});
   settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", '\0'}, settingsPitchBend, currentIndexPitchBend});
   settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", '\0'}, settingsModWheelDepth, currentIndexModWheelDepth});
   settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", '\0'}, settingsEncoderDir, currentIndexEncoderDir});

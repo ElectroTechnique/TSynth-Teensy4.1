@@ -11,6 +11,7 @@ class Oscilloscope : public AudioStream
     virtual void update(void);
     void ScreenSetup(ST7735_t3*);
     void AudioToPixel(int16_t*);
+    int count = 0;
 
   private:
     audio_block_t *inputQueueArray[5];;
@@ -31,15 +32,26 @@ void Oscilloscope::AudioToPixel(int16_t *audio) {
   const int16_t *begin = audio;
   const int16_t *end = audio + AUDIO_BLOCK_SAMPLES;
   __disable_irq();
+  boolean rising = false;
+  int16_t pixel_x = 0;
   do {
     int16_t wave_data = *audio;
-    int16_t pixel_y = map(wave_data, 32767, -32768, -100, 100) + 63;
-    int16_t pixel_x = audio - begin;
-    display->drawPixel(pixel_x + 15, old_val[pixel_x], 0);//Remove previous pixel
-    display->drawPixel(pixel_x + 15, pixel_y, 0x07A0);//New pixel
-    old_val[pixel_x] = {pixel_y};
+    if (rising || (wave_data > 0 && wave_data < 10)) {
+      audio++;
+      wave_data = *audio;
+      if (rising || wave_data > 10) {
+        rising = true;
+        int16_t pixel_y = map(wave_data, 32767, -32768, -100, 100) + 63;
+        //int16_t pixel_x = audio - begin;
+        display->drawPixel(pixel_x + 15, old_val[pixel_x], 0);//Remove previous pixel
+        display->drawPixel(pixel_x + 15, pixel_y, 0x07A0);//New pixel
+        old_val[pixel_x] = {pixel_y};
+        pixel_x++;
+      }
+    }
     audio++;
   } while (audio < end);
+
   __enable_irq();
 }
 

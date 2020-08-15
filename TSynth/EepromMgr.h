@@ -1,13 +1,12 @@
 #include <EEPROM.h>
 
 #define EEPROM_MIDI_CH 0
-#define EEPROM_KEY_TRACKING 1
-#define EEPROM_PITCHBEND 2
-#define EEPROM_MODWHEEL_DEPTH 3
-#define EEPROM_ENCODER_DIR 4
-#define EEPROM_PICKUP_ENABLE 5
-#define EEPROM_BASSENHANCE_ENABLE 6
-#define EEPROM_SCOPE_ENABLE 7
+#define EEPROM_PITCHBEND 1
+#define EEPROM_MODWHEEL_DEPTH 2
+#define EEPROM_ENCODER_DIR 3
+#define EEPROM_PICKUP_ENABLE 4
+#define EEPROM_BASSENHANCE_ENABLE 5
+#define EEPROM_SCOPE_ENABLE 6
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
@@ -17,19 +16,6 @@ FLASHMEM int getMIDIChannel() {
 
 FLASHMEM void storeMidiChannel(byte channel){
   EEPROM.update(EEPROM_MIDI_CH, channel);
-}
-
-FLASHMEM float getKeyTracking() {
-  byte keyTracking = EEPROM.read(EEPROM_KEY_TRACKING);
-  if (keyTracking == 0) return 0.0f;
-  if (keyTracking == 1) return 0.5f;
-  if (keyTracking == 2) return 1.0f;
-  return keytrackingAmount; //If EEPROM has no key tracking stored
-}
-
-FLASHMEM void storeKeyTracking(float keyTracking){
-  byte keyTrackingByte = keyTracking * 2;//Key tracking is only 0, 0.5, 1.0 at present
-  EEPROM.update(EEPROM_KEY_TRACKING, keyTrackingByte);
 }
 
 FLASHMEM int getPitchBendRange() {

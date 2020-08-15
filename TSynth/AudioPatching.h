@@ -1,3 +1,5 @@
+//waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM
+//WAVEFORMLEVEL        oscA/BLevel             VELOCITY             VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=2356,593
 AudioSynthWaveformDc     constant1Dc;    //xy=69.5,437

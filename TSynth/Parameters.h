@@ -13,7 +13,7 @@ float midiClkTimeInterval = 0.0f;
 float lfoTempoValue = 1.0f;
 int pitchBendRange = 12;
 float modWheelDepth = 0.2f;
-float keytrackingAmount = 0.5;//MIDI CC & settings option (EEPROM)
+float keytrackingAmount = 0.5;//Half - MIDI CC & settings option (EEPROM)
 float glideSpeed = 0.0f;
 int oscPitchA = 0;
 int oscPitchB = 12;
@@ -59,10 +59,12 @@ float ampRelease = 300.0f;
 float fxAmt = 1.0f;
 float fxMix = 0.0f;
 
+int velocitySens = 0;//Default off - settings option (EEPROM)
+
 //Pick-up - Experimental feature
 //Control will only start changing when the Knob/MIDI control reaches the current parameter value
 //Prevents jumps in value when the patch parameter and control are different values
-boolean pickUp = true;
+boolean pickUp = false;//settings option (EEPROM)
 #define TOLERANCE 2 //Gives a window of when pick-up occurs, this is due to the speed of control changing and Mux reading
 uint32_t filterfreqPrevValue = 0;//Need to set these when patch loaded
 float resonancePrevValue = 0.0f;

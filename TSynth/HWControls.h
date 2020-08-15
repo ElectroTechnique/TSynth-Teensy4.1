@@ -66,7 +66,7 @@
 #define OSC_FX_LED 14
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 8
+#define QUANTISE_FACTOR 9
 
 #define DEBOUNCE 30
 

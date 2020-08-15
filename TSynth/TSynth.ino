@@ -9,8 +9,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          50    79
-  600MHz Fastest         44    79
+  600MHz Faster          40    80
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -37,6 +36,7 @@
 #include "HWControls.h"
 #include "EepromMgr.h"
 #include "Detune.h"
+#include "Velocity.h"
 
 #define PARAMETER 0 //The main page for displaying the current patch and control (parameter) changes
 #define RECALL 1 //Patches list
@@ -160,12 +160,10 @@ void setup() {
 
   constant1Dc.amplitude(ONE);
 
-  noiseMixer.gain(0, ONE);
-  noiseMixer.gain(1, ONE);
-  noiseMixer.gain(2, 0);
-  noiseMixer.gain(3, 0);
-
-  setVoiceMixerLevels(VOICEMIXERLEVEL);
+  //  noiseMixer.gain(0, ONE);
+  //  noiseMixer.gain(1, ONE);
+  //  noiseMixer.gain(2, 0);
+  //  noiseMixer.gain(3, 0);
 
   voiceMixerM.gain(0, 0.25f);
   voiceMixerM.gain(1, 0.25f);
@@ -177,73 +175,50 @@ void setup() {
 
   waveformMod1a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod1a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod1b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod1b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod2a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod2a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod2b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod2b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod3a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod3a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod3b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod3b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod4a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod4a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod4b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod4b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod5a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod5a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod5b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod5b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod6a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod6a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod6b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod6b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod7a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod7a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod7b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod7b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod8a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod8a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod8b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod8b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod9a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod9a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod9b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod9b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod10a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod10a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod10b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod10b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod11a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod11a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod11b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod11b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-
   waveformMod12a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod12a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-
   waveformMod12b.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod12b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
 
@@ -251,68 +226,10 @@ void setup() {
   loadArbWaveformA(PARABOLIC_WAVE);
   loadArbWaveformB(PARABOLIC_WAVE);
 
-  waveformMixer1.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer1.gain(3, 0);           //Osc FX
-  waveformMixer2.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer2.gain(3, 0);           //Osc FX
-  waveformMixer3.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer3.gain(3, 0);           //Osc FX
-  waveformMixer4.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer4.gain(3, 0);           //Osc FX
-  waveformMixer5.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer5.gain(3, 0);           //Osc FX
-  waveformMixer6.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer6.gain(3, 0);           //Osc FX
-  waveformMixer7.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer7.gain(3, 0);           //Osc FX
-  waveformMixer8.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer8.gain(3, 0);           //Osc FX
-  waveformMixer9.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer9.gain(3, 0);           //Osc FX
-  waveformMixer10.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer10.gain(3, 0);           //Osc FX
-  waveformMixer11.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer11.gain(3, 0);           //Osc FX
-  waveformMixer12.gain(2, WAVEFORMLEVEL); //Noise
-  waveformMixer12.gain(3, 0);           //Osc FX
-
-  filterModMixer1.gain(1, ONE); //LFO
-  filterModMixer1.gain(3, 0);           //Not used
-  filterModMixer2.gain(1, ONE); //LFO
-  filterModMixer2.gain(3, 0);           //Not used
-  filterModMixer3.gain(1, ONE); //LFO
-  filterModMixer3.gain(3, 0);           //Not used
-  filterModMixer4.gain(1, ONE); //LFO
-  filterModMixer4.gain(3, 0);           //Not used
-  filterModMixer5.gain(1, ONE); //LFO
-  filterModMixer5.gain(3, 0);           //Not used
-  filterModMixer6.gain(1, ONE); //LFO
-  filterModMixer6.gain(3, 0);           //Not used
-  filterModMixer7.gain(1, ONE); //LFO
-  filterModMixer7.gain(3, 0);           //Not used
-  filterModMixer8.gain(1, ONE); //LFO
-  filterModMixer8.gain(3, 0);           //Not used
-  filterModMixer9.gain(1, ONE); //LFO
-  filterModMixer9.gain(3, 0);           //Not used
-  filterModMixer10.gain(1, ONE); //LFO
-  filterModMixer10.gain(3, 0);           //Not used
-  filterModMixer11.gain(1, ONE); //LFO
-  filterModMixer11.gain(3, 0);           //Not used
-  filterModMixer12.gain(1, ONE); //LFO
-  filterModMixer12.gain(3, 0);           //Not used
-
-  filterMixer1.gain(3, 0); //Not used
-  filterMixer2.gain(3, 0); //Not used
-  filterMixer3.gain(3, 0); //Not used
-  filterMixer4.gain(3, 0); //Not used
-  filterMixer5.gain(3, 0); //Not used
-  filterMixer6.gain(3, 0); //Not used
-  filterMixer7.gain(3, 0); //Not used
-  filterMixer8.gain(3, 0); //Not used
-  filterMixer9.gain(3, 0); //Not used
-  filterMixer10.gain(3, 0); //Not used
-  filterMixer11.gain(3, 0); //Not used
-  filterMixer12.gain(3, 0); //Not used
+  voiceMixerM.gain(0, VOICEMIXERLEVEL);
+  voiceMixerM.gain(1, VOICEMIXERLEVEL);
+  voiceMixerM.gain(2, VOICEMIXERLEVEL);
+  voiceMixerM.gain(3, VOICEMIXERLEVEL);
 
   //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
   dcOffsetFilter.octaveControl(1.0f);
@@ -320,15 +237,8 @@ void setup() {
 
   ensemble.lfoRate(fxAmt);
 
-  effectMixerL.gain(2, 0);//Not used
-  effectMixerL.gain(3, 0);//Not used
-  effectMixerR.gain(2, 0);//Not used
-  effectMixerR.gain(3, 0);//Not used
-
   volumePrevious = RE_READ; //Force volume control to be read and set to current
 
-  //Read Key Tracking from EEPROM, this can be set individually by each patch.
-  keytrackingAmount = getKeyTracking();
   //Read Pitch Bend Range from EEPROM
   pitchBendRange = getPitchBendRange();
   //Read Mod Wheel Depth from EEPROM
@@ -343,23 +253,6 @@ void setup() {
   enableScope(getScopeEnable());
 
   recallPatch(patchNo); //Load first patch
-}
-
-void setVoiceMixerLevels(float level) {
-  voiceMixer1.gain(0, level);
-  voiceMixer1.gain(1, level);
-  voiceMixer1.gain(2, level);
-  voiceMixer1.gain(3, level);
-
-  voiceMixer2.gain(0, level);
-  voiceMixer2.gain(1, level);
-  voiceMixer2.gain(2, level);
-  voiceMixer2.gain(3, level);
-
-  voiceMixer3.gain(0, level);
-  voiceMixer3.gain(1, level);
-  voiceMixer3.gain(2, level);
-  voiceMixer3.gain(3, level);
 }
 
 void incNotesOn() {
@@ -387,160 +280,52 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   if (unison == 0) {
     switch (getVoiceNo(-1))  {
       case 1:
-        keytracking1.amplitude(note * DIV127 * keytrackingAmount);
-        voices[0].note = note;
-        voices[0].timeOn = millis();
+        voice1On(note, velocity, VOICEMIXERLEVEL);
         updateVoice1();
-        filterEnvelope1.noteOn();
-        ampEnvelope1.noteOn();
-        voices[0].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide1.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 2:
-        keytracking2.amplitude(note * DIV127 * keytrackingAmount);
-        voices[1].note = note;
-        voices[1].timeOn = millis();
+        voice2On(note, velocity, VOICEMIXERLEVEL);
         updateVoice2();
-        filterEnvelope2.noteOn();
-        ampEnvelope2.noteOn();
-        voices[1].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide2.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 3:
-        keytracking3.amplitude(note * DIV127 * keytrackingAmount);
-        voices[2].note = note;
-        voices[2].timeOn = millis();
+        voice3On(note, velocity, VOICEMIXERLEVEL);
         updateVoice3();
-        filterEnvelope3.noteOn();
-        ampEnvelope3.noteOn();
-        voices[2].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide3.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 4:
-        keytracking4.amplitude(note * DIV127 * keytrackingAmount);
-        voices[3].note = note;
-        voices[3].timeOn = millis();
+        voice4On(note, velocity, VOICEMIXERLEVEL);
         updateVoice4();
-        filterEnvelope4.noteOn();
-        ampEnvelope4.noteOn();
-        voices[3].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide4.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 5:
-        keytracking5.amplitude(note * DIV127 * keytrackingAmount);
-        voices[4].note = note;
-        voices[4].timeOn = millis();
+        voice5On(note, velocity, VOICEMIXERLEVEL);
         updateVoice5();
-        filterEnvelope5.noteOn();
-        ampEnvelope5.noteOn();
-        voices[4].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide5.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 6:
-        keytracking6.amplitude(note * DIV127 * keytrackingAmount);
-        voices[5].note = note;
-        voices[5].timeOn = millis();
+        voice6On(note, velocity, VOICEMIXERLEVEL);
         updateVoice6();
-        filterEnvelope6.noteOn();
-        ampEnvelope6.noteOn();
-        voices[5].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide6.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 7:
-        keytracking7.amplitude(note * DIV127 * keytrackingAmount);
-        voices[6].note = note;
-        voices[6].timeOn = millis();
+        voice7On(note, velocity, VOICEMIXERLEVEL);
         updateVoice7();
-        filterEnvelope7.noteOn();
-        ampEnvelope7.noteOn();
-        voices[6].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide7.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 8:
-        keytracking8.amplitude(note * DIV127 * keytrackingAmount);
-        voices[7].note = note;
-        voices[7].timeOn = millis();
+        voice8On(note, velocity, VOICEMIXERLEVEL);
         updateVoice8();
-        filterEnvelope8.noteOn();
-        ampEnvelope8.noteOn();
-        voices[7].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide8.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 9:
-        keytracking9.amplitude(note * DIV127 * keytrackingAmount);
-        voices[8].note = note;
-        voices[8].timeOn = millis();
+        voice9On(note, velocity, VOICEMIXERLEVEL);
         updateVoice9();
-        filterEnvelope9.noteOn();
-        ampEnvelope9.noteOn();
-        voices[8].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide9.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 10:
-        keytracking10.amplitude(note * DIV127 * keytrackingAmount);
-        voices[9].note = note;
-        voices[9].timeOn = millis();
+        voice10On(note, velocity, VOICEMIXERLEVEL);
         updateVoice10();
-        filterEnvelope10.noteOn();
-        ampEnvelope10.noteOn();
-        voices[9].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide10.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 11:
-        keytracking11.amplitude(note * DIV127 * keytrackingAmount);
-        voices[10].note = note;
-        voices[10].timeOn = millis();
+        voice11On(note, velocity, VOICEMIXERLEVEL);
         updateVoice11();
-        filterEnvelope11.noteOn();
-        ampEnvelope11.noteOn();
-        voices[10].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide11.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
       case 12:
-        keytracking12.amplitude(note * DIV127 * keytrackingAmount);
-        voices[11].note = note;
-        voices[11].timeOn = millis();
+        voice12On(note, velocity, VOICEMIXERLEVEL);
         updateVoice12();
-        filterEnvelope12.noteOn();
-        ampEnvelope12.noteOn();
-        voices[11].voiceOn = 1;
-        if (glideSpeed > 0 && note != prevNote) {
-          glide12.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-          glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-        }
         break;
 
     }
@@ -560,174 +345,214 @@ void myNoteOn(byte channel, byte note, byte velocity) {
     //    4       x       x x
 
 
-    //Voice 1
+    //Voice 1,2,3
     if (notesOn == 1) {
-      keytracking1.amplitude(note * DIV127 * keytrackingAmount);
-      voices[0].note = note;
-      voices[0].timeOn = millis();
-      filterEnvelope1.noteOn();
-      ampEnvelope1.noteOn();
-      voices[0].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide1.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
-    }
-
-    //Voice 2
-    if (notesOn == 1)  {
-      keytracking2.amplitude(note * DIV127 * keytrackingAmount);
-      voices[1].note = note;
-      voices[1].timeOn = millis();
-      filterEnvelope2.noteOn();
-      ampEnvelope2.noteOn();
-      voices[1].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide2.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
-    }
-
-    //Voice 3
-    if (notesOn == 1) {
-      keytracking3.amplitude(note * DIV127 * keytrackingAmount);
-      voices[2].note = note;
-      voices[2].timeOn = millis();
-      filterEnvelope3.noteOn();
-      ampEnvelope3.noteOn();
-      voices[2].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide3.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice1On(note, velocity, UNISONVOICEMIXERLEVEL);
+      voice2On(note, velocity, UNISONVOICEMIXERLEVEL);
+      voice3On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 4
     if (notesOn == 1 || notesOn == 4)  {
-      keytracking4.amplitude(note * DIV127 * keytrackingAmount);
-      voices[3].note = note;
-      voices[3].timeOn = millis();
-      filterEnvelope4.noteOn();
-      ampEnvelope4.noteOn();
-      voices[3].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide4.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice4On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
-    //Voice 5
+    //Voice 5,6
     if (notesOn == 1 || notesOn == 3)  {
-      keytracking5.amplitude(note * DIV127 * keytrackingAmount);
-      voices[4].note = note;
-      voices[4].timeOn = millis();
-      filterEnvelope5.noteOn();
-      ampEnvelope5.noteOn();
-      voices[4].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide5.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
-    }
-
-    //Voice 6
-    if (notesOn == 1 || notesOn == 3)  {
-      keytracking6.amplitude(note * DIV127 * keytrackingAmount);
-      voices[5].note = note;
-      voices[5].timeOn = millis();
-      filterEnvelope6.noteOn();
-      ampEnvelope6.noteOn();
-      voices[5].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide6.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice5On(note, velocity, UNISONVOICEMIXERLEVEL);
+      voice6On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 7
     if (notesOn == 1 || notesOn == 2 || notesOn == 3)  {
-      keytracking7.amplitude(note * DIV127 * keytrackingAmount);
-      voices[6].note = note;
-      voices[6].timeOn = millis();
-      filterEnvelope7.noteOn();
-      ampEnvelope7.noteOn();
-      voices[6].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide7.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice7On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 8
     if (notesOn == 1 || notesOn == 2 || notesOn == 3 || notesOn == 4)  {
-      keytracking8.amplitude(note * DIV127 * keytrackingAmount);
-      voices[7].note = note;
-      voices[7].timeOn = millis();
-      filterEnvelope8.noteOn();
-      ampEnvelope8.noteOn();
-      voices[7].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide8.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice8On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 9
     if (notesOn == 1 || notesOn == 2 || notesOn == 4)  {
-      keytracking9.amplitude(note * DIV127 * keytrackingAmount);
-      voices[8].note = note;
-      voices[8].timeOn = millis();
-      filterEnvelope9.noteOn();
-      ampEnvelope9.noteOn();
-      voices[8].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide9.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice9On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
-    //Voice 10
+    //Voice 10,11,12
     if (notesOn == 1 || notesOn == 2)  {
-      keytracking10.amplitude(note * DIV127 * keytrackingAmount);
-      voices[9].note = note;
-      voices[9].timeOn = millis();
-      filterEnvelope10.noteOn();
-      ampEnvelope10.noteOn();
-      voices[9].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide10.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
-    }
-
-    //Voice 11
-    if (notesOn == 1 || notesOn == 2)  {
-      keytracking11.amplitude(note * DIV127 * keytrackingAmount);
-      voices[10].note = note;
-      voices[10].timeOn = millis();
-      filterEnvelope11.noteOn();
-      ampEnvelope11.noteOn();
-      voices[10].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide11.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
-    }
-
-    //Voice 12
-    if (notesOn == 1 || notesOn == 2)  {
-      keytracking12.amplitude(note * DIV127 * keytrackingAmount);
-      voices[11].note = note;
-      voices[11].timeOn = millis();
-      filterEnvelope12.noteOn();
-      ampEnvelope12.noteOn();
-      voices[11].voiceOn = 1;
-      if (glideSpeed > 0 && note != prevNote) {
-        glide12.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
-        glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-      }
+      voice10On(note, velocity, UNISONVOICEMIXERLEVEL);
+      voice11On(note, velocity, UNISONVOICEMIXERLEVEL);
+      voice12On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
     updatesAllVoices();//Set detune values
+  }
+}
+
+void voice1On(byte note, byte velocity, float level) {
+  keytracking1.amplitude(note * DIV127 * keytrackingAmount);
+  voices[0].note = note;
+  voices[0].timeOn = millis();
+  voiceMixer1.gain(0, VELOCITY[velocitySens][velocity] * level);
+  filterEnvelope1.noteOn();
+  ampEnvelope1.noteOn();
+  voices[0].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide1.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice2On(byte note, byte velocity, float level) {
+  keytracking2.amplitude(note * DIV127 * keytrackingAmount);
+  voices[1].note = note;
+  voices[1].timeOn = millis();
+  voiceMixer1.gain(1, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope2.noteOn();
+  ampEnvelope2.noteOn();
+  voices[1].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide2.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice3On(byte note, byte velocity, float level) {
+  keytracking3.amplitude(note * DIV127 * keytrackingAmount);
+  voices[2].note = note;
+  voices[2].timeOn = millis();
+  voiceMixer1.gain(2, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope3.noteOn();
+  ampEnvelope3.noteOn();
+  voices[2].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide3.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice4On(byte note, byte velocity, float level) {
+  keytracking4.amplitude(note * DIV127 * keytrackingAmount);
+  voices[3].note = note;
+  voices[3].timeOn = millis();
+  voiceMixer1.gain(3, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope4.noteOn();
+  ampEnvelope4.noteOn();
+  voices[3].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide4.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice5On(byte note, byte velocity, float level) {
+  keytracking5.amplitude(note * DIV127 * keytrackingAmount);
+  voices[4].note = note;
+  voices[4].timeOn = millis();
+  voiceMixer2.gain(0, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope5.noteOn();
+  ampEnvelope5.noteOn();
+  voices[4].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide5.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice6On(byte note, byte velocity, float level) {
+  keytracking6.amplitude(note * DIV127 * keytrackingAmount);
+  voices[5].note = note;
+  voices[5].timeOn = millis();
+  voiceMixer2.gain(1, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope6.noteOn();
+  ampEnvelope6.noteOn();
+  voices[5].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide6.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice7On(byte note, byte velocity, float level) {
+  keytracking7.amplitude(note * DIV127 * keytrackingAmount);
+  voices[6].note = note;
+  voices[6].timeOn = millis();
+  voiceMixer2.gain(2, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope7.noteOn();
+  ampEnvelope7.noteOn();
+  voices[6].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide7.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice8On(byte note, byte velocity, float level) {
+  keytracking8.amplitude(note * DIV127 * keytrackingAmount);
+  voices[7].note = note;
+  voices[7].timeOn = millis();
+  voiceMixer2.gain(3, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope8.noteOn();
+  ampEnvelope8.noteOn();
+  voices[7].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide8.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice9On(byte note, byte velocity, float level) {
+  keytracking9.amplitude(note * DIV127 * keytrackingAmount);
+  voices[8].note = note;
+  voices[8].timeOn = millis();
+  voiceMixer3.gain(0, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope9.noteOn();
+  ampEnvelope9.noteOn();
+  voices[8].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide9.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice10On(byte note, byte velocity, float level) {
+  keytracking10.amplitude(note * DIV127 * keytrackingAmount);
+  voices[9].note = note;
+  voices[9].timeOn = millis();
+  voiceMixer3.gain(1, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope10.noteOn();
+  ampEnvelope10.noteOn();
+  voices[9].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide10.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice11On(byte note, byte velocity, float level) {
+  keytracking11.amplitude(note * DIV127 * keytrackingAmount);
+  voices[10].note = note;
+  voices[10].timeOn = millis();
+  voiceMixer3.gain(2, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope11.noteOn();
+  ampEnvelope11.noteOn();
+  voices[10].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide11.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+  }
+}
+
+void voice12On(byte note, byte velocity, float level) {
+  keytracking12.amplitude(note * DIV127 * keytrackingAmount);
+  voices[11].note = note;
+  voices[11].timeOn = millis();
+  voiceMixer3.gain(3, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  filterEnvelope12.noteOn();
+  ampEnvelope12.noteOn();
+  voices[11].voiceOn = 1;
+  if (glideSpeed > 0 && note != prevNote) {
+    glide12.amplitude((prevNote - note) * DIV12);   //Set glide to previous note frequency (limited to 1 octave max)
+    glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
 }
 
@@ -1212,12 +1037,10 @@ FLASHMEM void setPwmMixerBFEnv(float value) {
 
 FLASHMEM void updateUnison() {
   if (unison == 0) {
-    setVoiceMixerLevels(VOICEMIXERLEVEL);
     allNotesOff();//Avoid hanging notes
     showCurrentParameterPage("Unison", "Off");
     digitalWriteFast(UNISON_LED, LOW);  // LED off
   } else {
-    setVoiceMixerLevels(UNISONVOICEMIXERLEVEL);
     showCurrentParameterPage("Unison", "On");
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   }
@@ -1319,19 +1142,19 @@ void updatesAllVoices() {
 
 FLASHMEM void updatePWMSource() {
   if (pwmSource == PWMSOURCELFO) {
-    setPwmMixerAFEnv(0);
-    setPwmMixerBFEnv(0);
+    setPwmMixerAFEnv(0);//Set filter mod to zero
+    setPwmMixerBFEnv(0);//Set filter mod to zero
     if (pwmRate > -5) {
-      setPwmMixerALFO(pwmAmtA);
-      setPwmMixerBLFO(pwmAmtB);
+      setPwmMixerALFO(pwmAmtA);//Set LFO mod
+      setPwmMixerBLFO(pwmAmtB);//Set LFO mod
     }
     showCurrentParameterPage("PWM Source", "LFO"); //Only shown when updated via MIDI
   } else {
-    setPwmMixerALFO(0);
-    setPwmMixerBLFO(0);
+    setPwmMixerALFO(0);//Set LFO mod to zero
+    setPwmMixerBLFO(0);//Set LFO mod to zero
     if (pwmRate > -5) {
-      setPwmMixerAFEnv(pwmAmtA);
-      setPwmMixerBFEnv(pwmAmtB);
+      setPwmMixerAFEnv(pwmAmtA);//Set filter mod
+      setPwmMixerBFEnv(pwmAmtB);//Set filter mod
     }
     showCurrentParameterPage("PWM Source", "Filter Env");
   }
@@ -1403,7 +1226,7 @@ FLASHMEM void updatePWA() {
       showCurrentParameterPage("1. PWM Amt", "F. Env " + String(pwmAmtA));
     }
   }
-  float pwA_Adj = pwA;//Prevent silence when pw = +/-1 on pulse
+  float pwA_Adj = pwA;//Prevent silence when pw = +/-1.0 on pulse
   if (pwA > 0.98) pwA_Adj = 0.98f;
   if (pwA < -0.98) pwA_Adj = -0.98f;
   pwa.amplitude(pwA_Adj);
@@ -2156,13 +1979,11 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCoscLfoRate:
       //Pick up
-      if (oscLFOMidiClkSync == 1)
-      {
+      if (oscLFOMidiClkSync == 1){
         oscLfoRate = getLFOTempoRate(value);
         oscLFOTimeDivStr = LFOTEMPOSTR[value];
       }
-      else
-      {
+      else {
         oscLfoRate = LFOMAXRATE * POWER[value];
       }
       updatePitchLFORate();
@@ -2186,13 +2007,10 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfilterlforate:
       //Pick up
-      if (filterLFOMidiClkSync == 1)
-      {
+      if (filterLFOMidiClkSync == 1) {
         filterLfoRate = getLFOTempoRate(value);
         filterLFOTimeDivStr = LFOTEMPOSTR[value];
-      }
-      else
-      {
+      }else{
         filterLfoRate = LFOMAXRATE * POWER[value];
       }
       updateFilterLfoRate();
@@ -2299,12 +2117,10 @@ FLASHMEM void myMIDIClockStart() {
   //When there's a jump to a different
   //part of a track, such as in a DAW, the DAW must have same
   //rhythmic quantisation as Tempo Div.
-  if (oscLFOMidiClkSync == 1)
-  {
+  if (oscLFOMidiClkSync == 1) {
     pitchLfo.sync();
   }
-  if (filterLFOMidiClkSync == 1)
-  {
+  if (filterLFOMidiClkSync == 1){
     filterLfo.sync();
   }
 }
@@ -2315,8 +2131,7 @@ FLASHMEM void myMIDIClockStop() {
 
 FLASHMEM void myMIDIClock() {
   //This recalculates the LFO frequencies if the tempo changes (MIDI cLock is 24ppq)
-  if ((oscLFOMidiClkSync == 1 || filterLFOMidiClkSync == 1) && count > 23)
-  {
+  if ((oscLFOMidiClkSync == 1 || filterLFOMidiClkSync == 1) && count > 23){
     MIDIClkSignal = !MIDIClkSignal;
     float timeNow = millis();
     midiClkTimeInterval = (timeNow - previousMillis);
@@ -2360,12 +2175,9 @@ FLASHMEM void recallPatch(int patchNo) {
   allNotesOff();
   closeEnvelopes();
   File patchFile = SD.open(String(patchNo).c_str());
-  if (!patchFile)
-  {
+  if (!patchFile) {
     Serial.println(F("File not found"));
-  }
-  else
-  {
+  }else {
     String data[NO_OF_PARAMS]; //Array of data read in
     recallPatchData(patchFile, data);
     setCurrentPatchData(data);
@@ -2423,6 +2235,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxAmt = data[44].toFloat();
   fxMix = data[45].toFloat();
   pitchEnv = data[46].toFloat();
+  velocitySens = data[47].toFloat();
 
   updatePatchname();
   updateUnison();
@@ -2473,7 +2286,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
          String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt) + "," + String(oscLfoRate) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv);
+         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens);
 }
 
 void checkMux() {
