@@ -8,13 +8,13 @@
 #include <Adafruit_GFX.h>
 #include "ST7735_t3.h" // Local copy from TD1.48 that works for 0.96" IPS 160x80 display
 
-#include <Fonts/Org_01.h>
+#include "Fonts/Org_01.h"
 #include "Yeysk16pt7b.h"
-#include <Fonts/FreeSansBold18pt7b.h>
-#include <Fonts/FreeSans12pt7b.h>
-#include <Fonts/FreeSans9pt7b.h>
-#include <Fonts/FreeSansOblique24pt7b.h>
-#include <Fonts/FreeSansBoldOblique24pt7b.h>
+#include "Fonts/FreeSansBold18pt7b.h"
+#include "Fonts/FreeSans12pt7b.h"
+#include "Fonts/FreeSans9pt7b.h"
+#include "Fonts/FreeSansOblique24pt7b.h"
+#include "Fonts/FreeSansBoldOblique24pt7b.h"
 
 #define PULSE 1
 #define VAR_TRI 2
@@ -116,7 +116,7 @@ FLASHMEM void renderCurrentPatchPage()
   //V7 BYOO
   if (voices[6].voiceOn == 1 && unison && notesOn > 2) {
     colour[6] = ST77XX_ORANGE;
-  } else if (voices[6].voiceOn == 1 && unison && notesOn ==2 && colour[6] != ST77XX_ORANGE) {
+  } else if (voices[6].voiceOn == 1 && unison && notesOn == 2 && colour[6] != ST77XX_ORANGE) {
     colour[6] = ST7735_YELLOW;
   } else if (voices[6].voiceOn == 0) {
     colour[6] = ST7735_BLUE;
@@ -177,8 +177,7 @@ FLASHMEM void renderCurrentPatchPage()
   tft.println(currentPatchName);
 }
 
-FLASHMEM void renderPulseWidth(float value)
-{
+FLASHMEM void renderPulseWidth(float value) {
   tft.drawFastHLine(108, 74, 15 + (value * 13), ST7735_CYAN);
   tft.drawFastVLine(123 + (value * 13), 74, 20, ST7735_CYAN);
   tft.drawFastHLine(123 + (value * 13), 94, 16 - (value * 13), ST7735_CYAN);
@@ -189,24 +188,20 @@ FLASHMEM void renderPulseWidth(float value)
   }
 }
 
-FLASHMEM void renderVarTriangle(float value)
-{
+FLASHMEM void renderVarTriangle(float value) {
   tft.drawLine(110, 94, 123 + (value * 13), 74, ST7735_CYAN);
   tft.drawLine(123 + (value * 13), 74, 136, 94, ST7735_CYAN);
 }
 
-FLASHMEM void renderEnv(float att, float dec, float sus, float rel)
-{
+FLASHMEM void renderEnv(float att, float dec, float sus, float rel) {
   tft.drawLine(100, 94, 100 + (att * 15), 74, ST7735_CYAN);
   tft.drawLine(100 + (att * 15), 74.0, 100 + ((att + dec) * 15), 94 - (sus * 20), ST7735_CYAN);
   tft.drawFastHLine(100 + ((att + dec) * 15), 94 - (sus * 20), 40 - ((att + dec) * 15), ST7735_CYAN);
   tft.drawLine(139, 94 - (sus * 20), 139 + (rel * 13), 94, ST7735_CYAN);
 }
 
-FLASHMEM void renderCurrentParameterPage()
-{
-  switch (state)
-  {
+FLASHMEM void renderCurrentParameterPage() {
+  switch (state) {
     case PARAMETER:
       tft.fillScreen(ST7735_BLACK);
       tft.setFont(&FreeSans12pt7b);
@@ -214,12 +209,21 @@ FLASHMEM void renderCurrentParameterPage()
       tft.setTextColor(ST7735_YELLOW);
       tft.setTextSize(1);
       tft.println(currentParameter);
+
+      if (midiOutCh > 0) {
+        tft.setTextColor(ST77XX_ORANGE);
+        tft.setFont(&Org_01);
+        tft.setTextSize(2);
+        tft.setCursor(140, 35);
+        tft.println(midiOutCh);
+        tft.setFont(&FreeSans12pt7b);
+        tft.setTextSize(1);
+      }
       tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
       tft.setCursor(1, 90);
       tft.setTextColor(ST7735_WHITE);
       tft.println(currentValue);
-      switch (paramType)
-      {
+      switch (paramType) {
         case PULSE:
           renderPulseWidth(currentFloatValue);
           break;
@@ -416,8 +420,10 @@ void displayThread() {
     switch (state) {
       case PARAMETER:
         if ((millis() - timer) > DISPLAYTIMEOUT) {
+          pickUpActive = false;
           renderCurrentPatchPage();
         } else {
+          pickUpActive = pickUp;
           renderCurrentParameterPage();
         }
         break;

@@ -1,4 +1,4 @@
-#define SETTINGSOPTIONSNO 9
+#define SETTINGSOPTIONSNO 10
 #define SETTINGSVALUESNO 18//Maximum number of settings option values needed
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
@@ -15,6 +15,7 @@ void settingsVelocitySens(char * value);
 void settingsKeyTracking(char * value);
 void settingsPitchBend(char * value);
 void settingsModWheelDepth(char * value);
+void settingsMIDIOutCh(char * value);
 void settingsEncoderDir(char * value);
 void settingsPickupEnable(char * value);
 void settingsBassEnhanceEnable(char * value);
@@ -64,6 +65,15 @@ FLASHMEM void settingsPitchBend(char * value) {
 FLASHMEM void settingsModWheelDepth(char * value) {
   modWheelDepth = atoi(value) / 10.0f;
   storeModWheelDepth(modWheelDepth);
+}
+
+FLASHMEM void settingsMIDIOutCh(char * value) {
+  if (strcmp(value, "Off") == 0) {
+    midiOutCh = 0;
+  } else {
+    midiOutCh = atoi(value);
+  }
+  storeMidiOutCh(midiOutCh);
 }
 
 FLASHMEM void settingsEncoderDir(char * value) {
@@ -132,6 +142,10 @@ FLASHMEM int currentIndexModWheelDepth() {
   return (getModWheelDepth() * 10) - 1;
 }
 
+FLASHMEM int currentIndexMIDIOutCh() {
+  return getMIDIOutCh();
+}
+
 FLASHMEM int currentIndexEncoderDir() {
   return getEncoderDir() ? 0 : 1;
 }
@@ -162,6 +176,7 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", '\0'}, settingsVelocitySens, currentIndexVelocitySens});
   settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", '\0'}, settingsPitchBend, currentIndexPitchBend});
   settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", '\0'}, settingsModWheelDepth, currentIndexModWheelDepth});
+  settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", '\0'}, settingsMIDIOutCh, currentIndexMIDIOutCh});
   settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", '\0'}, settingsEncoderDir, currentIndexEncoderDir});
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On (Expt.)", '\0'}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", '\0'}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});

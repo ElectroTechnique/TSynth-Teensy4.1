@@ -1,5 +1,6 @@
 //Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
 byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
+byte midiOutCh = 0;//(EEPROM)
 String patchName = INITPATCHNAME;
 boolean encCW = true;//This is to set the encoder to increment when turned CW - Settings Option
 float oscALevel = 1.0f;
@@ -59,12 +60,20 @@ float ampRelease = 300.0f;
 float fxAmt = 1.0f;
 float fxMix = 0.0f;
 
-int velocitySens = 0;//Default off - settings option (EEPROM)
+int velocitySens = 0;//Default off - settings option
 
 //Pick-up - Experimental feature
 //Control will only start changing when the Knob/MIDI control reaches the current parameter value
 //Prevents jumps in value when the patch parameter and control are different values
-boolean pickUp = false;//settings option (EEPROM)
+volatile boolean pickUp = false;//settings option (EEPROM)
+volatile boolean pickUpActive = false;
 #define TOLERANCE 2 //Gives a window of when pick-up occurs, this is due to the speed of control changing and Mux reading
 uint32_t filterfreqPrevValue = 0;//Need to set these when patch loaded
-float resonancePrevValue = 0.0f;
+float filterMixPrevValue = 0.0f;//Need to set these when patch loaded
+float resonancePrevValue = 0.0f;//Need to set these when patch loaded
+float oscLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
+float oscLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
+float filterLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
+float filterLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
+float fxAmtPrevValue = 0.0f;//Need to set these when patch loaded
+float fxMixPrevValue = 0.0f;//Need to set these when patch loaded

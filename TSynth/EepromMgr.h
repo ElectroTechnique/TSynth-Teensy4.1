@@ -7,6 +7,7 @@
 #define EEPROM_PICKUP_ENABLE 4
 #define EEPROM_BASSENHANCE_ENABLE 5
 #define EEPROM_SCOPE_ENABLE 6
+#define EEPROM_MIDI_OUT_CH 7
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
@@ -37,6 +38,16 @@ FLASHMEM float getModWheelDepth() {
 FLASHMEM void storeModWheelDepth(float mwDepth){
   byte mw =  mwDepth * 10;
   EEPROM.update(EEPROM_MODWHEEL_DEPTH, mw);
+}
+
+FLASHMEM int getMIDIOutCh() {
+  byte mc = EEPROM.read(EEPROM_MIDI_OUT_CH);
+  if (mc < 0 || midiOutCh > 16) mc = 0;//If EEPROM has no MIDI channel stored
+  return mc;
+}
+
+FLASHMEM void storeMidiOutCh(byte channel){
+  EEPROM.update(EEPROM_MIDI_OUT_CH, channel);
 }
 
 FLASHMEM boolean getEncoderDir() {

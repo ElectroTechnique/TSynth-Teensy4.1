@@ -1,5 +1,5 @@
 /*
-  ElectroTechnique TSynth - Firmware Rev 2.0
+  ElectroTechnique TSynth - Firmware Rev 2.00
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -14,7 +14,6 @@
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
-    fmenes - Oscilloscope object basic idea https://forum.pjrc.com/threads/60470-Teensy-4-0-Audio-Library-screen-oscilloscope?highlight=audio+oscilloscope+display
     Mark Tillotson - Special thanks for finally band-limiting the waveforms in the Audio Library
 
   Additional libraries:
@@ -93,13 +92,14 @@ void setup() {
 
   AudioMemory(82);
   sgtl5000_1.enable();
+  sgtl5000_1.dacVolumeRamp();
   sgtl5000_1.muteHeadphone();
   sgtl5000_1.muteLineout();
   sgtl5000_1.volume(SGTL_MAXVOLUME * 0.5f); //Headphones - do not initialise to maximum, but this is re-read
 
   sgtl5000_1.audioPostProcessorEnable();
-  sgtl5000_1.enhanceBass(0.85, 0.7, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
-  sgtl5000_1.enhanceBassDisable();
+  sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
+  sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
 
   cardStatus = SD.begin(BUILTIN_SDCARD);
   if (cardStatus) {
@@ -243,6 +243,8 @@ void setup() {
   pitchBendRange = getPitchBendRange();
   //Read Mod Wheel Depth from EEPROM
   modWheelDepth = getModWheelDepth();
+  //Read MIDI Out Channel from EEPROM
+  midiOutCh = getMIDIOutCh();
   //Read Encoder Direction from EEPROM
   encCW = getEncoderDir();
   //Read Pick-up enable from EEPROM - experimental feature
@@ -1162,7 +1164,7 @@ FLASHMEM void updatePWMSource() {
 
 FLASHMEM void updatePWMRate() {
   pwmLfo.frequency(pwmRate);
-  if (pwmRate < -5) {
+  if (pwmRate == -10) {
     //Set to fixed PW mode
     setPwmMixerALFO(0);//LFO Source off
     setPwmMixerBLFO(0);
@@ -1171,15 +1173,14 @@ FLASHMEM void updatePWMRate() {
     setPwmMixerAPW(1);//Manually adjustable pulse width on
     setPwmMixerBPW(1);
     showCurrentParameterPage("PW Mode", "On");
-  } else if (pwmRate > -10 && pwmRate < 0) {
+  } else if (pwmRate == -5) {
     //Set to Filter Env Mod source
     pwmSource = PWMSOURCEFENV;
     updatePWMSource();
-    //Filter env mod - pwmRate does nothing
-    setPwmMixerALFO(0);
-    setPwmMixerBLFO(0);
     setPwmMixerAFEnv(pwmAmtA);
     setPwmMixerBFEnv(pwmAmtB);
+    setPwmMixerAPW(0);
+    setPwmMixerBPW(0);
     showCurrentParameterPage("PWM Source", "Filter Env");
   } else {
     pwmSource = PWMSOURCELFO;
@@ -1200,7 +1201,7 @@ FLASHMEM void updatePWMAmount() {
 }
 
 FLASHMEM void updatePWA() {
-  if (pwmRate < -5) {
+  if (pwmRate == -10) {
     //if PWM amount is around zero, fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
@@ -1233,7 +1234,7 @@ FLASHMEM void updatePWA() {
 }
 
 FLASHMEM void updatePWB() {
-  if (pwmRate < -5)  {
+  if (pwmRate == -10)  {
     //if PWM amount is around zero, fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
@@ -1881,7 +1882,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCdetune:
-      detune = 1.0f - (MAXDETUNE * LINEAR[value]);
+      detune = 1.0f - (MAXDETUNE * POWER[value]);
       updateDetune();
       break;
 
@@ -1932,17 +1933,16 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCfilterfreq:
-      //Experimental feature - Pick up
-      if ((pickUp && value < (128 - TOLERANCE) && value > (TOLERANCE - 1)) && (filterfreqPrevValue <  FILTERFREQS[value - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS[value + TOLERANCE])) return; //PICK-UP
-      //Serial.println(String(filterfreqPrevValue) + ":" + String(FILTERFREQS[value]) + " - " + String(filterfreqPrevValue <  FILTERFREQS[value - TOLERANCE]) + String(filterfreqPrevValue >  FILTERFREQS[value + TOLERANCE]));
+      //Pick up
+      if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS[value - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS[value + TOLERANCE])) return; //PICK-UP
       filterFreq = FILTERFREQS[value];
-      filterfreqPrevValue = filterFreq;//PICK-UP
       updateFilterFreq();
+      filterfreqPrevValue = filterFreq;//PICK-UP
       break;
 
     case CCfilterres:
       //Pick up
-      if ((pickUp && value < (128 - TOLERANCE) && value > (TOLERANCE - 1)) && (resonancePrevValue <  ((13.9f * POWER[value - TOLERANCE]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value + TOLERANCE]) + 1.1f))) return; //PICK-UP
+      if (!pickUpActive && pickUp && (resonancePrevValue <  ((13.9f * POWER[value - TOLERANCE]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value + TOLERANCE]) + 1.1f))) return; //PICK-UP
       filterRes = (13.9f * POWER[value]) + 1.1f; //If <1.1 there is noise at high cutoff freq
       updateFilterRes();
       resonancePrevValue = filterRes;//PICK-UP
@@ -1950,13 +1950,14 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfiltermixer:
       //Pick up
+      if (!pickUpActive && pickUp && (filterMixPrevValue <  LINEAR_FILTERMIXER[value - TOLERANCE] || filterMixPrevValue >  LINEAR_FILTERMIXER[value + TOLERANCE])) return; //PICK-UP
       filterMix = LINEAR_FILTERMIXER[value];
       filterMixStr = LINEAR_FILTERMIXERSTR[value];
       updateFilterMixer();
+      filterMixPrevValue = filterMix;//PICK-UP
       break;
 
     case CCfilterenv:
-      //Pick up
       filterEnv = LINEARCENTREZERO[value] * FILTERMODMIXERMAX; //Bipolar
       updateFilterEnv();
       break;
@@ -1973,13 +1974,16 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCosclfoamt:
       //Pick up
+      if (!pickUpActive && pickUp && (oscLfoAmtPrevValue <  POWER[value - TOLERANCE] || oscLfoAmtPrevValue >  POWER[value + TOLERANCE])) return; //PICK-UP
       oscLfoAmt = POWER[value];
       updateOscLFOAmt();
+      oscLfoAmtPrevValue = oscLfoAmt;//PICK-UP
       break;
 
     case CCoscLfoRate:
       //Pick up
-      if (oscLFOMidiClkSync == 1){
+      if (!pickUpActive && pickUp && (oscLfoRatePrevValue <  LFOMAXRATE * POWER[value - TOLERANCE] || oscLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE])) return; //PICK-UP
+      if (oscLFOMidiClkSync == 1) {
         oscLfoRate = getLFOTempoRate(value);
         oscLFOTimeDivStr = LFOTEMPOSTR[value];
       }
@@ -1987,6 +1991,7 @@ void myControlChange(byte channel, byte control, byte value) {
         oscLfoRate = LFOMAXRATE * POWER[value];
       }
       updatePitchLFORate();
+      oscLfoRatePrevValue = oscLfoRate;//PICK-UP
       break;
 
     case CCoscLfoWaveform:
@@ -2007,19 +2012,23 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfilterlforate:
       //Pick up
+      if (!pickUpActive && pickUp && (filterLfoRatePrevValue <  LFOMAXRATE * POWER[value - TOLERANCE] || filterLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE])) return; //PICK-UP
       if (filterLFOMidiClkSync == 1) {
         filterLfoRate = getLFOTempoRate(value);
         filterLFOTimeDivStr = LFOTEMPOSTR[value];
-      }else{
+      } else {
         filterLfoRate = LFOMAXRATE * POWER[value];
       }
       updateFilterLfoRate();
+      filterLfoRatePrevValue = filterLfoRate;//PICK-UP
       break;
 
     case CCfilterlfoamt:
       //Pick up
+      if (!pickUpActive && pickUp && (filterLfoAmtPrevValue <  LINEAR[value - TOLERANCE] * FILTERMODMIXERMAX || filterLfoAmtPrevValue >  LINEAR[value + TOLERANCE] * FILTERMODMIXERMAX)) return; //PICK-UP
       filterLfoAmt = LINEAR[value] * FILTERMODMIXERMAX;
       updateFilterLfoAmt();
+      filterLfoAmtPrevValue = filterLfoAmt;//PICK-UP
       break;
 
     case CCfilterlfowaveform:
@@ -2079,21 +2088,25 @@ void myControlChange(byte channel, byte control, byte value) {
       updateRelease();
       break;
 
-    case CCringmod:
+    case CCoscfx:
       value > 0 ? oscFX = 1 : oscFX = 0;
       updateOscFX();
       break;
 
     case CCfxamt:
       //Pick up
+      if (!pickUpActive && pickUp && (fxAmtPrevValue <  ENSEMBLE_LFO[value - TOLERANCE] || fxAmtPrevValue >  ENSEMBLE_LFO[value + TOLERANCE])) return; //PICK-UP
       fxAmt = ENSEMBLE_LFO[value];
       updateFXAmt();
+      fxAmtPrevValue = fxAmt;//PICK-UP
       break;
 
     case CCfxmix:
       //Pick up
+      if (!pickUpActive && pickUp && (fxMixPrevValue <  LINEAR[value - TOLERANCE] || fxMixPrevValue >  LINEAR[value + TOLERANCE])) return; //PICK-UP
       fxMix = LINEAR[value];
       updateFXMix();
+      fxMixPrevValue = fxMix;//PICK-UP
       break;
 
     case CCallnotesoff:
@@ -2120,7 +2133,7 @@ FLASHMEM void myMIDIClockStart() {
   if (oscLFOMidiClkSync == 1) {
     pitchLfo.sync();
   }
-  if (filterLFOMidiClkSync == 1){
+  if (filterLFOMidiClkSync == 1) {
     filterLfo.sync();
   }
 }
@@ -2131,7 +2144,7 @@ FLASHMEM void myMIDIClockStop() {
 
 FLASHMEM void myMIDIClock() {
   //This recalculates the LFO frequencies if the tempo changes (MIDI cLock is 24ppq)
-  if ((oscLFOMidiClkSync == 1 || filterLFOMidiClkSync == 1) && count > 23){
+  if ((oscLFOMidiClkSync == 1 || filterLFOMidiClkSync == 1) && count > 23) {
     MIDIClkSignal = !MIDIClkSignal;
     float timeNow = millis();
     midiClkTimeInterval = (timeNow - previousMillis);
@@ -2177,7 +2190,7 @@ FLASHMEM void recallPatch(int patchNo) {
   File patchFile = SD.open(String(patchNo).c_str());
   if (!patchFile) {
     Serial.println(F("File not found"));
-  }else {
+  } else {
     String data[NO_OF_PARAMS]; //Array of data read in
     recallPatchData(patchFile, data);
     setCurrentPatchData(data);
@@ -2213,16 +2226,21 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   filterFreq = data[23].toInt();
   filterfreqPrevValue = filterFreq; //Pick-up
   filterMix = data[24].toFloat();
+  filterMixPrevValue = filterMix; //Pick-up
   filterEnv = data[25].toFloat();
   oscLfoAmt = data[26].toFloat();
+  oscLfoAmtPrevValue = oscLfoAmt;//PICK-UP
   oscLfoRate = data[27].toFloat();
+  oscLfoRatePrevValue = oscLfoRate;//PICK-UP
   oscLFOWaveform = data[28].toFloat();
   oscLfoRetrig = data[29].toInt();
   oscLFOMidiClkSync = data[30].toFloat(); //MIDI CC Only
   filterLfoRate = data[31].toFloat();
+  filterLfoRatePrevValue = filterLfoRate;//PICK-UP
   filterLfoRetrig = data[32].toInt();
   filterLFOMidiClkSync = data[33].toFloat();
   filterLfoAmt = data[34].toFloat();
+  filterLfoAmtPrevValue = filterLfoAmt;//PICK-UP
   filterLfoWaveform = data[35].toFloat();
   filterAttack = data[36].toFloat();
   filterDecay = data[37].toFloat();
@@ -2233,7 +2251,9 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   ampSustain = data[42].toFloat();
   ampRelease = data[43].toFloat();
   fxAmt = data[44].toFloat();
+  fxAmtPrevValue = fxAmt;//PICK-UP
   fxMix = data[45].toFloat();
+  fxMixPrevValue = fxMix;//PICK-UP
   pitchEnv = data[46].toFloat();
   velocitySens = data[47].toFloat();
 
@@ -2296,52 +2316,69 @@ void checkMux() {
     mux1Read = (mux1Read >> 3); //Change range to 0-127
     switch (muxInput) {
       case MUX1_noiseLevel:
+        midiCCOut(CCnoiseLevel, mux1Read);
         myControlChange(midiChannel, CCnoiseLevel, mux1Read);
         break;
       case MUX1_pitchLfoRate:
+        midiCCOut(CCoscLfoRate, mux1Read);
         myControlChange(midiChannel, CCoscLfoRate, mux1Read);
         break;
       case MUX1_pitchLfoWaveform:
+        midiCCOut(CCoscLfoWaveform, mux1Read);
         myControlChange(midiChannel, CCoscLfoWaveform, mux1Read);
         break;
       case MUX1_pitchLfoAmount:
+        midiCCOut(CCosclfoamt, mux1Read);
         myControlChange(midiChannel, CCosclfoamt, mux1Read);
         break;
       case MUX1_detune:
+        midiCCOut(CCdetune, mux1Read);
         myControlChange(midiChannel, CCdetune, mux1Read);
         break;
       case MUX1_oscMix:
+        midiCCOut(CCoscLevelA, mux1Read);
+        midiCCOut(CCoscLevelB, mux1Read);
         myControlChange(midiChannel, CCoscLevelA, OSCMIXA[mux1Read]);
         myControlChange(midiChannel, CCoscLevelB, OSCMIXB[mux1Read]);
         break;
       case MUX1_filterAttack:
+        midiCCOut(CCfilterattack, mux1Read);
         myControlChange(midiChannel, CCfilterattack, mux1Read);
         break;
       case MUX1_filterDecay:
+        midiCCOut(CCfilterdecay, mux1Read);
         myControlChange(midiChannel, CCfilterdecay, mux1Read);
         break;
       case MUX1_pwmAmountA:
+        midiCCOut(CCpwA, mux1Read);
         myControlChange(midiChannel, CCpwA, mux1Read);
         break;
       case MUX1_waveformA:
+        midiCCOut(CCoscwaveformA, mux1Read);
         myControlChange(midiChannel, CCoscwaveformA, mux1Read);
         break;
       case MUX1_pitchA:
+        midiCCOut(CCpitchA, mux1Read);
         myControlChange(midiChannel, CCpitchA, mux1Read);
         break;
       case MUX1_pwmAmountB:
+        midiCCOut(CCpwB, mux1Read);
         myControlChange(midiChannel, CCpwB, mux1Read);
         break;
       case MUX1_waveformB:
+        midiCCOut(CCoscwaveformB, mux1Read);
         myControlChange(midiChannel, CCoscwaveformB, mux1Read);
         break;
       case MUX1_pitchB:
+        midiCCOut(CCpitchB, mux1Read);
         myControlChange(midiChannel, CCpitchB, mux1Read);
         break;
       case MUX1_pwmRate:
+        midiCCOut(CCpwmRate, mux1Read);
         myControlChange(midiChannel, CCpwmRate, mux1Read);
         break;
       case MUX1_pitchEnv:
+        midiCCOut(CCpitchenv, mux1Read);
         myControlChange(midiChannel, CCpitchenv, mux1Read);
         break;
     }
@@ -2352,51 +2389,67 @@ void checkMux() {
     mux2Read = (mux2Read >> 3); //Change range to 0-127
     switch (muxInput) {
       case MUX2_attack:
+        midiCCOut(CCampattack, mux2Read);
         myControlChange(midiChannel, CCampattack, mux2Read);
         break;
       case MUX2_decay:
+        midiCCOut(CCampdecay, mux2Read);
         myControlChange(midiChannel, CCampdecay, mux2Read);
         break;
       case MUX2_sustain:
+        midiCCOut(CCampsustain, mux2Read);
         myControlChange(midiChannel, CCampsustain, mux2Read);
         break;
       case MUX2_release:
+        midiCCOut(CCamprelease, mux2Read);
         myControlChange(midiChannel, CCamprelease, mux2Read);
         break;
       case MUX2_filterLFOAmount:
+        midiCCOut(CCfilterlfoamt, mux2Read);
         myControlChange(midiChannel, CCfilterlfoamt, mux2Read);
         break;
       case MUX2_FXMix:
+        midiCCOut(CCfxmix, mux2Read);
         myControlChange(midiChannel, CCfxmix, mux2Read);
         break;
       case MUX2_FXAmount:
+        midiCCOut(CCfxamt, mux2Read);
         myControlChange(midiChannel, CCfxamt, mux2Read);
         break;
       case MUX2_glide:
+        midiCCOut(CCglide, mux2Read);
         myControlChange(midiChannel, CCglide, mux2Read);
         break;
       case MUX2_filterEnv:
+        midiCCOut(CCfilterenv, mux2Read);
         myControlChange(midiChannel, CCfilterenv, mux2Read);
         break;
       case MUX2_filterRelease:
+        midiCCOut(CCfilterrelease, mux2Read);
         myControlChange(midiChannel, CCfilterrelease, mux2Read);
         break;
       case MUX2_filterSustain:
+        midiCCOut(CCfiltersustain, mux2Read);
         myControlChange(midiChannel, CCfiltersustain, mux2Read);
         break;
       case MUX2_filterType:
+        midiCCOut(CCfiltermixer, mux2Read);
         myControlChange(midiChannel, CCfiltermixer, mux2Read);
         break;
       case MUX2_resonance:
+        midiCCOut(CCfilterres, mux2Read);
         myControlChange(midiChannel, CCfilterres, mux2Read);
         break;
       case MUX2_cutoff:
+        midiCCOut(CCfilterfreq, mux2Read);
         myControlChange(midiChannel, CCfilterfreq, mux2Read);
         break;
       case MUX2_filterLFORate:
+        midiCCOut(CCfilterlforate, mux2Read);
         myControlChange(midiChannel, CCfilterlforate, mux2Read);
         break;
       case MUX2_filterLFOWaveform:
+        midiCCOut(CCfilterlfowaveform, mux2Read);
         myControlChange(midiChannel, CCfilterlfowaveform, mux2Read);
         break;
     }
@@ -2431,24 +2484,28 @@ void checkSwitches() {
   unisonSwitch.update();
   if (unisonSwitch.fallingEdge()) {
     unison = !unison;
+    midiCCOut(CCunison, unison);
     myControlChange(midiChannel, CCunison, unison);
   }
 
   oscFXSwitch.update();
   if (oscFXSwitch.fallingEdge()) {
     oscFX = !oscFX;
-    myControlChange(midiChannel, CCringmod, oscFX);
+    midiCCOut(CCoscfx, oscFX);
+    myControlChange(midiChannel, CCoscfx, oscFX);
   }
 
   filterLFORetrigSwitch.update();
   if (filterLFORetrigSwitch.fallingEdge()) {
     filterLfoRetrig = !filterLfoRetrig;
+    midiCCOut(CCfilterlforetrig, filterLfoRetrig);
     myControlChange(midiChannel, CCfilterlforetrig, filterLfoRetrig);
   }
 
   tempoSwitch.update();
   if (tempoSwitch.fallingEdge()) {
     filterLFOMidiClkSync = !filterLFOMidiClkSync;
+    midiCCOut(CCfilterLFOMidiClkSync, filterLFOMidiClkSync);
     myControlChange(midiChannel, CCfilterLFOMidiClkSync, filterLFOMidiClkSync);
   }
 
@@ -2741,6 +2798,10 @@ void checkEncoder() {
     }
     encPrevious = encRead;
   }
+}
+
+void midiCCOut(byte cc, byte value) {
+  if (midiOutCh > 0)usbMIDI.sendControlChange(cc, value, midiOutCh);
 }
 
 void CPUMonitor() {
