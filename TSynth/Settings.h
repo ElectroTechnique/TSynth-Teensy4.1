@@ -178,7 +178,7 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", '\0'}, settingsModWheelDepth, currentIndexModWheelDepth});
   settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", '\0'}, settingsMIDIOutCh, currentIndexMIDIOutCh});
   settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", '\0'}, settingsEncoderDir, currentIndexEncoderDir});
-  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On (Expt.)", '\0'}, settingsPickupEnable, currentIndexPickupEnable});
+  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", '\0'}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", '\0'}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On (Expt.)", '\0'}, settingsScopeEnable, currentIndexScopeEnable});
 }

@@ -223,6 +223,13 @@ FLASHMEM void renderCurrentParameterPage() {
       tft.setCursor(1, 90);
       tft.setTextColor(ST7735_WHITE);
       tft.println(currentValue);
+      if (pickUpActive) {
+        tft.setTextColor(ST77XX_ORANGE);
+        tft.setFont(&Org_01);
+        tft.setTextSize(2);
+        tft.setCursor(131, 73);
+        tft.println("PK");
+      }
       switch (paramType) {
         case PULSE:
           renderPulseWidth(currentFloatValue);

@@ -160,11 +160,6 @@ void setup() {
 
   constant1Dc.amplitude(ONE);
 
-  //  noiseMixer.gain(0, ONE);
-  //  noiseMixer.gain(1, ONE);
-  //  noiseMixer.gain(2, 0);
-  //  noiseMixer.gain(3, 0);
-
   voiceMixerM.gain(0, 0.25f);
   voiceMixerM.gain(1, 0.25f);
   voiceMixerM.gain(2, 0.25f);
