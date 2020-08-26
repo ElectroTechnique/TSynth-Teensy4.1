@@ -42,7 +42,7 @@ void Oscilloscope::Display() {
         crossing = true;
         int16_t pixel_y = map(wave_data, 32767, -32768, -100, 100) + 63;
         display->drawPixel(pixel_x + 15, old_val[pixel_x], 0);//Remove previous pixel
-        display->drawPixel(pixel_x + 15, pixel_y, 0x07A0);//New pixel
+        display->drawPixel(pixel_x + 15, pixel_y, 0x07B0);//New pixel
         old_val[pixel_x] = {pixel_y};
         pixel_x++;
       }

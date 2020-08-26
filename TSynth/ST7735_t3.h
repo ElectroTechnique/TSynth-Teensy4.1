@@ -129,6 +129,7 @@
 #define ST77XX_YELLOW     0xFFE0
 #define ST77XX_ORANGE     0xFA00
 #define ST77XX_DARKRED    0xA000
+#define ST77XX_DARKGREY   0x2222
 
 
 #if defined(__IMXRT1062__)  // Teensy 4.x
