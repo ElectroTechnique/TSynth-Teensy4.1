@@ -1,5 +1,5 @@
 - Electrical schematic
-- 3D models - End cheeks and columns
+- 3D models - End cheeks, side panel columns, display standoff, encoder knob (D-shape shaft)
 - Laser cutter plans - Sides and base
 
     T4_1_LaserCutCase3_5Jk.svg - Is for PCBs with 3.5mm headphone sockets
