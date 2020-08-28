@@ -96,8 +96,7 @@ Bounce backButton = Bounce(BACK_SW, DEBOUNCE);
 boolean panic = false; //Hack for back button
 Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
 
-void setupHardware()
-{
+FLASHMEM void setupHardware(){
   //Mux address pins
   pinMode(MUX_0, OUTPUT);
   pinMode(MUX_1, OUTPUT);

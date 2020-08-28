@@ -14,7 +14,7 @@
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
-    Mark Tillotson - Special thanks for finally band-limiting the waveforms in the Audio Library
+    Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
   Additional libraries:
     Agileware CircularBuffer, Adafruit_GFX (available in Arduino libraries manager)
@@ -50,8 +50,8 @@
 
 uint32_t state = PARAMETER;
 
-const static int16_t  WAVEFORM_PARABOLIC = 103;
-const static int16_t WAVEFORM_HARMONIC = 104;
+const static uint32_t  WAVEFORM_PARABOLIC = 103;
+const static uint32_t WAVEFORM_HARMONIC = 104;
 
 struct VoiceAndNote {
   uint32_t note;
@@ -80,12 +80,12 @@ MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
 int prevNote = 48;//This is for glide to use previous note to glide from
 float previousMillis = millis(); //For MIDI Clk Sync
 
-int16_t count = 0;//For MIDI Clk Sync
-int16_t patchNo = 1;//Current patch no
-int voiceToReturn = -1; //Initialise
+uint32_t count = 0;//For MIDI Clk Sync
+uint32_t patchNo = 1;//Current patch no
+int32_t voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
-void setup() {
+FLASHMEM void setup() {
   setupDisplay();
   setUpSettings();
   setupHardware();
@@ -379,6 +379,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       voice11On(note, velocity, UNISONVOICEMIXERLEVEL);
       voice12On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
+    prevNote = note;
     updatesAllVoices();//Set detune values
   }
 }
@@ -395,6 +396,7 @@ void voice1On(byte note, byte velocity, float level) {
     glide1.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice2On(byte note, byte velocity, float level) {
@@ -409,6 +411,7 @@ void voice2On(byte note, byte velocity, float level) {
     glide2.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice3On(byte note, byte velocity, float level) {
@@ -423,6 +426,7 @@ void voice3On(byte note, byte velocity, float level) {
     glide3.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice4On(byte note, byte velocity, float level) {
@@ -437,6 +441,7 @@ void voice4On(byte note, byte velocity, float level) {
     glide4.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice5On(byte note, byte velocity, float level) {
@@ -451,6 +456,7 @@ void voice5On(byte note, byte velocity, float level) {
     glide5.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice6On(byte note, byte velocity, float level) {
@@ -465,6 +471,7 @@ void voice6On(byte note, byte velocity, float level) {
     glide6.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice7On(byte note, byte velocity, float level) {
@@ -479,6 +486,7 @@ void voice7On(byte note, byte velocity, float level) {
     glide7.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice8On(byte note, byte velocity, float level) {
@@ -493,6 +501,7 @@ void voice8On(byte note, byte velocity, float level) {
     glide8.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice9On(byte note, byte velocity, float level) {
@@ -507,6 +516,7 @@ void voice9On(byte note, byte velocity, float level) {
     glide9.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice10On(byte note, byte velocity, float level) {
@@ -521,6 +531,7 @@ void voice10On(byte note, byte velocity, float level) {
     glide10.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice11On(byte note, byte velocity, float level) {
@@ -535,6 +546,7 @@ void voice11On(byte note, byte velocity, float level) {
     glide11.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void voice12On(byte note, byte velocity, float level) {
@@ -549,6 +561,7 @@ void voice12On(byte note, byte velocity, float level) {
     glide12.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
+  if (unison == 0)prevNote = note;
 }
 
 void endVoice(int voice) {
@@ -556,73 +569,61 @@ void endVoice(int voice) {
     case 1:
       filterEnvelope1.noteOff();
       ampEnvelope1.noteOff();
-      prevNote = voices[0].note;
       voices[0].voiceOn = 0;
       break;
     case 2:
       filterEnvelope2.noteOff();
       ampEnvelope2.noteOff();
-      prevNote = voices[1].note;
       voices[1].voiceOn = 0;
       break;
     case 3:
       filterEnvelope3.noteOff();
       ampEnvelope3.noteOff();
-      prevNote = voices[2].note;
       voices[2].voiceOn = 0;
       break;
     case 4:
       filterEnvelope4.noteOff();
       ampEnvelope4.noteOff();
-      prevNote = voices[3].note;
       voices[3].voiceOn = 0;
       break;
     case 5:
       filterEnvelope5.noteOff();
       ampEnvelope5.noteOff();
-      prevNote = voices[4].note;
       voices[4].voiceOn = 0;
       break;
     case 6:
       filterEnvelope6.noteOff();
       ampEnvelope6.noteOff();
-      prevNote = voices[5].note;
       voices[5].voiceOn = 0;
       break;
     case 7:
       filterEnvelope7.noteOff();
       ampEnvelope7.noteOff();
-      prevNote = voices[6].note;
       voices[6].voiceOn = 0;
       break;
     case 8:
       filterEnvelope8.noteOff();
       ampEnvelope8.noteOff();
-      prevNote = voices[7].note;
       voices[7].voiceOn = 0;
       break;
     case 9:
       filterEnvelope9.noteOff();
       ampEnvelope9.noteOff();
-      prevNote = voices[8].note;
       voices[8].voiceOn = 0;
       break;
     case 10:
       filterEnvelope10.noteOff();
       ampEnvelope10.noteOff();
-      prevNote = voices[9].note;
       voices[9].voiceOn = 0;
       break;
     case 11:
       filterEnvelope11.noteOff();
       ampEnvelope11.noteOff();
-      prevNote = voices[10].note;
       voices[10].voiceOn = 0;
       break;
     case 12:
       filterEnvelope12.noteOff();
       ampEnvelope12.noteOff();
-      prevNote = voices[11].note;
       voices[11].voiceOn = 0;
       break;
     default:
@@ -824,34 +825,34 @@ int getLFOWaveform(int value) {
   }
 }
 
-String getWaveformStr(int value) {
+FLASHMEM String getWaveformStr(int value) {
   switch (value) {
     case WAVEFORM_SILENT:
-      return "Off";
+      return F("Off");
     case WAVEFORM_SAMPLE_HOLD:
-      return "Sample & Hold";
+      return F("Sample & Hold");
     case WAVEFORM_SINE:
-      return "Sine";
+      return F("Sine");
     case WAVEFORM_BANDLIMIT_SQUARE:
     case WAVEFORM_SQUARE:
-      return "Square";
+      return F("Square");
     case WAVEFORM_TRIANGLE:
-      return "Triangle";
+      return F("Triangle");
     case WAVEFORM_BANDLIMIT_SAWTOOTH:
     case WAVEFORM_SAWTOOTH:
-      return "Sawtooth";
+      return F("Sawtooth");
     case WAVEFORM_SAWTOOTH_REVERSE:
-      return "Ramp";
+      return F("Ramp");
     case WAVEFORM_BANDLIMIT_PULSE:
-      return "Var. Pulse";
+      return F("Var. Pulse");
     case WAVEFORM_TRIANGLE_VARIABLE:
-      return "Var. Triangle";
+      return F("Var. Triangle");
     case WAVEFORM_PARABOLIC:
-      return "Parabolic";
+      return F("Parabolic");
     case WAVEFORM_HARMONIC:
-      return "Harmonic";
+      return F("Harmonic");
     default:
-      return "ERR_WAVE";
+      return F("ERR_WAVE");
   }
 }
 

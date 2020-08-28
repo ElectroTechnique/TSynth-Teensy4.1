@@ -167,7 +167,7 @@ FLASHMEM int getCurrentIndex(int (*f)() ) {
   return f();
 }
 
-CircularBuffer<SettingsOption, SETTINGSOPTIONSNO>  settingsOptions;
+const CircularBuffer<SettingsOption, SETTINGSOPTIONSNO>  settingsOptions;
 
 // add settings to the circular buffer
 FLASHMEM void setUpSettings() {
