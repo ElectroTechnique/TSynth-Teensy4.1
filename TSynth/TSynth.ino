@@ -1,7 +1,4 @@
 /*
-
-  CHORD DETUNE
-
   ElectroTechnique TSynth - Firmware Rev 2.00
   TEENSY 4.1 - 12 VOICES
 
@@ -699,8 +696,8 @@ void updateVoice1() {
     waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
     waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][1])));
   } else if (unison == 2) {
-    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA + CHORD_DETUNE[0][chordDetune]]);
-    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB + CHORD_DETUNE[0][chordDetune]]);
+    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA + CHORD_DETUNE[0][chordDetune]]) ;
+    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB + CHORD_DETUNE[0][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
     waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * detune);
@@ -713,7 +710,7 @@ void updateVoice2() {
     waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][3])));
   } else if (unison == 2) {
     waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA + CHORD_DETUNE[1][chordDetune]]);
-    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB + CHORD_DETUNE[1][chordDetune]]);
+    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB + CHORD_DETUNE[1][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA]);
     waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * detune);
@@ -726,7 +723,7 @@ void updateVoice3() {
     waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][5])));
   } else if (unison == 2) {
     waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA + CHORD_DETUNE[2][chordDetune]]);
-    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB + CHORD_DETUNE[2][chordDetune]]);
+    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB + CHORD_DETUNE[2][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA]);
     waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * detune);
@@ -738,7 +735,7 @@ void updateVoice4() {
     waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][7])));
   } else if (unison == 2) {
     waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA + CHORD_DETUNE[3][chordDetune]]);
-    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB + CHORD_DETUNE[3][chordDetune]]);
+    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB + CHORD_DETUNE[3][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA]);
     waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * detune);
@@ -751,7 +748,7 @@ void updateVoice5() {
     waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][9])));
   } else if (unison == 2) {
     waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA + CHORD_DETUNE[4][chordDetune]]);
-    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB + CHORD_DETUNE[4][chordDetune]]);
+    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB + CHORD_DETUNE[4][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA]);
     waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * detune);
@@ -764,7 +761,7 @@ void updateVoice6() {
     waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][11])));
   } else if (unison == 2) {
     waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA + CHORD_DETUNE[5][chordDetune]]);
-    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB + CHORD_DETUNE[5][chordDetune]]);
+    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB + CHORD_DETUNE[5][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA]);
     waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * detune);
@@ -778,7 +775,7 @@ void updateVoice7() {
     waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][13])));
   } else if (unison == 2) {
     waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA + CHORD_DETUNE[6][chordDetune]]);
-    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB + CHORD_DETUNE[6][chordDetune]]);
+    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB + CHORD_DETUNE[6][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA]);
     waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * detune);
@@ -791,7 +788,7 @@ void updateVoice8() {
     waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][15])));
   } else if (unison == 2) {
     waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA + CHORD_DETUNE[7][chordDetune]]);
-    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB + CHORD_DETUNE[7][chordDetune]]);
+    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB + CHORD_DETUNE[7][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA]);
     waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * detune);
@@ -804,7 +801,7 @@ void updateVoice9() {
     waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][17])));
   } else if (unison == 2) {
     waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA + CHORD_DETUNE[8][chordDetune]]);
-    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB + CHORD_DETUNE[8][chordDetune]]);
+    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB + CHORD_DETUNE[8][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA]);
     waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * detune);
@@ -817,7 +814,7 @@ void updateVoice10() {
     waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][19])));
   } else if (unison == 2) {
     waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA + CHORD_DETUNE[9][chordDetune]]);
-    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB + CHORD_DETUNE[9][chordDetune]]);
+    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB + CHORD_DETUNE[9][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA]);
     waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * detune);
@@ -830,7 +827,7 @@ void updateVoice11() {
     waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][21])));
   } else if (unison == 2) {
     waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA + CHORD_DETUNE[10][chordDetune]]);
-    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB + CHORD_DETUNE[10][chordDetune]]);
+    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB + CHORD_DETUNE[10][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA]);
     waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * detune);
@@ -843,7 +840,7 @@ void updateVoice12() {
     waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
   } else if (unison == 2) {
     waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA + CHORD_DETUNE[11][chordDetune]]);
-    waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB + CHORD_DETUNE[11][chordDetune]]);
+    waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB + CHORD_DETUNE[11][chordDetune]] * CDT_DETUNE);
   } else {
     waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA]);
     waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
