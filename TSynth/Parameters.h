@@ -9,6 +9,7 @@ float noiseLevel = 0.0f;
 int unison = 0;
 int oscFX = 0;
 float detune = 0.98f;
+uint32_t chordDetune = 0;
 float lfoSyncFreq = 1.0f;
 float midiClkTimeInterval = 0.0f;
 float lfoTempoValue = 1.0f;

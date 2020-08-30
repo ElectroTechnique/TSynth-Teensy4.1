@@ -84,6 +84,7 @@ static long encPrevious = 0;
 Bounce oscFXSwitch = Bounce(OSC_FX_SW, DEBOUNCE);
 Bounce filterLFORetrigSwitch = Bounce(FILTER_LFO_RETRIG_SW, DEBOUNCE);
 Bounce unisonSwitch = Bounce(UNISON_SW, DEBOUNCE);
+boolean unison2 = false; //Hack for unison button
 Bounce tempoSwitch = Bounce(TEMPO_SW, DEBOUNCE);
 
 Bounce recallButton = Bounce(RECALL_SW, DEBOUNCE); //On encoder

@@ -1,4 +1,7 @@
 /*
+
+  CHORD DETUNE
+
   ElectroTechnique TSynth - Firmware Rev 2.00
   TEENSY 4.1 - 12 VOICES
 
@@ -82,7 +85,7 @@ float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;//For MIDI Clk Sync
 uint32_t patchNo = 1;//Current patch no
-int32_t voiceToReturn = -1; //Initialise
+uint32_t voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup() {
@@ -263,7 +266,8 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   if (note + oscPitchA < 0 || note + oscPitchA > 127 || note + oscPitchB < 0 || note + oscPitchB > 127)
     return;
 
-  incNotesOn();//For Unison mode
+  if (unison == 1) incNotesOn();//For Unison mode
+
 
   if (oscLfoRetrig == 1) {
     pitchLfo.sync();
@@ -341,40 +345,40 @@ void myNoteOn(byte channel, byte note, byte velocity) {
 
 
     //Voice 1,2,3
-    if (notesOn == 1) {
+    if (notesOn == 1 || unison == 2) {
       voice1On(note, velocity, UNISONVOICEMIXERLEVEL);
       voice2On(note, velocity, UNISONVOICEMIXERLEVEL);
       voice3On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 4
-    if (notesOn == 1 || notesOn == 4)  {
+    if (notesOn == 1 || notesOn == 4 || unison == 2)  {
       voice4On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 5,6
-    if (notesOn == 1 || notesOn == 3)  {
+    if (notesOn == 1 || notesOn == 3 || unison == 2)  {
       voice5On(note, velocity, UNISONVOICEMIXERLEVEL);
       voice6On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 7
-    if (notesOn == 1 || notesOn == 2 || notesOn == 3)  {
+    if (notesOn == 1 || notesOn == 2 || notesOn == 3 || unison == 2)  {
       voice7On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 8
-    if (notesOn == 1 || notesOn == 2 || notesOn == 3 || notesOn == 4)  {
+    if (notesOn == 1 || notesOn == 2 || notesOn == 3 || notesOn == 4 || unison == 2)  {
       voice8On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 9
-    if (notesOn == 1 || notesOn == 2 || notesOn == 4)  {
+    if (notesOn == 1 || notesOn == 2 || notesOn == 4 || unison == 2)  {
       voice9On(note, velocity, UNISONVOICEMIXERLEVEL);
     }
 
     //Voice 10,11,12
-    if (notesOn == 1 || notesOn == 2)  {
+    if (notesOn == 1 || notesOn == 2 || unison == 2)  {
       voice10On(note, velocity, UNISONVOICEMIXERLEVEL);
       voice11On(note, velocity, UNISONVOICEMIXERLEVEL);
       voice12On(note, velocity, UNISONVOICEMIXERLEVEL);
@@ -589,6 +593,7 @@ void endVoice(int voice) {
     case 5:
       filterEnvelope5.noteOff();
       ampEnvelope5.noteOff();
+      prevNote = voices[4].note;
       voices[4].voiceOn = 0;
       break;
     case 6:
@@ -690,10 +695,14 @@ int getVoiceNo(int note) {
 }
 
 void updateVoice1() {
-  waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
   if (unison == 1) {
+    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
     waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][1])));
+  } else if (unison == 2) {
+    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA + CHORD_DETUNE[0][chordDetune]]);
+    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB + CHORD_DETUNE[0][chordDetune]]);
   } else {
+    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
     waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * detune);
   }
 }
@@ -702,6 +711,9 @@ void updateVoice2() {
   if (unison == 1) {
     waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][2])));
     waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][3])));
+  } else if (unison == 2) {
+    waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA + CHORD_DETUNE[1][chordDetune]]);
+    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB + CHORD_DETUNE[1][chordDetune]]);
   } else {
     waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA]);
     waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * detune);
@@ -712,6 +724,9 @@ void updateVoice3() {
   if (unison == 1) {
     waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][4])));
     waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][5])));
+  } else if (unison == 2) {
+    waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA + CHORD_DETUNE[2][chordDetune]]);
+    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB + CHORD_DETUNE[2][chordDetune]]);
   } else {
     waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA]);
     waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * detune);
@@ -721,6 +736,9 @@ void updateVoice4() {
   if (unison == 1) {
     waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][6])));
     waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][7])));
+  } else if (unison == 2) {
+    waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA + CHORD_DETUNE[3][chordDetune]]);
+    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB + CHORD_DETUNE[3][chordDetune]]);
   } else {
     waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA]);
     waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * detune);
@@ -731,6 +749,9 @@ void updateVoice5() {
   if (unison == 1)  {
     waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][8])));
     waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][9])));
+  } else if (unison == 2) {
+    waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA + CHORD_DETUNE[4][chordDetune]]);
+    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB + CHORD_DETUNE[4][chordDetune]]);
   } else {
     waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA]);
     waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * detune);
@@ -741,6 +762,9 @@ void updateVoice6() {
   if (unison == 1)  {
     waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][10])));
     waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][11])));
+  } else if (unison == 2) {
+    waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA + CHORD_DETUNE[5][chordDetune]]);
+    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB + CHORD_DETUNE[5][chordDetune]]);
   } else {
     waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA]);
     waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * detune);
@@ -752,6 +776,9 @@ void updateVoice7() {
   if (unison == 1) {
     waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][12])));
     waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][13])));
+  } else if (unison == 2) {
+    waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA + CHORD_DETUNE[6][chordDetune]]);
+    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB + CHORD_DETUNE[6][chordDetune]]);
   } else {
     waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA]);
     waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * detune);
@@ -762,6 +789,9 @@ void updateVoice8() {
   if (unison == 1) {
     waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][14])));
     waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][15])));
+  } else if (unison == 2) {
+    waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA + CHORD_DETUNE[7][chordDetune]]);
+    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB + CHORD_DETUNE[7][chordDetune]]);
   } else {
     waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA]);
     waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * detune);
@@ -772,6 +802,9 @@ void updateVoice9() {
   if (unison == 1) {
     waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][16])));
     waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][17])));
+  } else if (unison == 2) {
+    waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA + CHORD_DETUNE[8][chordDetune]]);
+    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB + CHORD_DETUNE[8][chordDetune]]);
   } else {
     waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA]);
     waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * detune);
@@ -782,6 +815,9 @@ void updateVoice10() {
   if (unison == 1) {
     waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][18])));
     waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][19])));
+  } else if (unison == 2) {
+    waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA + CHORD_DETUNE[9][chordDetune]]);
+    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB + CHORD_DETUNE[9][chordDetune]]);
   } else {
     waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA]);
     waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * detune);
@@ -792,6 +828,9 @@ void updateVoice11() {
   if (unison == 1) {
     waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][20])));
     waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][21])));
+  } else if (unison == 2) {
+    waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA + CHORD_DETUNE[10][chordDetune]]);
+    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB + CHORD_DETUNE[10][chordDetune]]);
   } else {
     waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA]);
     waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * detune);
@@ -802,6 +841,9 @@ void updateVoice12() {
   if (unison == 1) {
     waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][22])));
     waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
+  } else if (unison == 2) {
+    waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA + CHORD_DETUNE[11][chordDetune]]);
+    waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB + CHORD_DETUNE[11][chordDetune]]);
   } else {
     waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA]);
     waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
@@ -1036,8 +1078,11 @@ FLASHMEM void updateUnison() {
     allNotesOff();//Avoid hanging notes
     showCurrentParameterPage("Unison", "Off");
     digitalWriteFast(UNISON_LED, LOW);  // LED off
+  } else if (unison == 1) {
+    showCurrentParameterPage("Dyn. Unison", "On");
+    digitalWriteFast(UNISON_LED, HIGH);  // LED on
   } else {
-    showCurrentParameterPage("Unison", "On");
+    showCurrentParameterPage("Chd. Unison", "On");
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   }
 }
@@ -1118,7 +1163,11 @@ FLASHMEM void updatePitchB() {
 
 FLASHMEM void updateDetune() {
   updatesAllVoices();
-  showCurrentParameterPage("Detune", String((1 - detune) * 100) + " %");
+  if (unison == 2) {
+    showCurrentParameterPage("Chord", CDT_STR[chordDetune]);
+  } else {
+    showCurrentParameterPage("Detune", String((1 - detune) * 100) + " %");
+  }
 }
 
 void updatesAllVoices() {
@@ -1839,7 +1888,18 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCunison:
-      value > 0 ? unison = 1 : unison = 0;
+      switch (value) {
+        case 0:
+          unison = 0;
+          break;
+        case 1:
+          unison = 1;
+          break;
+        case 2:
+        default:
+          unison = 2;
+          break;
+      }
       updateUnison();
       break;
 
@@ -1877,6 +1937,7 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCdetune:
       detune = 1.0f - (MAXDETUNE * POWER[value]);
+      chordDetune = value;
       updateDetune();
       break;
 
@@ -2250,6 +2311,10 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxMixPrevValue = fxMix;//PICK-UP
   pitchEnv = data[46].toFloat();
   velocitySens = data[47].toFloat();
+  chordDetune = data[48].toInt();
+  //  SPARE1 = data[49].toFloat();
+  //  SPARE2 = data[50].toFloat();
+  //  SPARE3 = data[51].toFloat();
 
   updatePatchname();
   updateUnison();
@@ -2300,7 +2365,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
          String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt) + "," + String(oscLfoRate) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens);
+         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
@@ -2476,10 +2541,21 @@ void checkVolumePot() {
 
 void checkSwitches() {
   unisonSwitch.update();
-  if (unisonSwitch.fallingEdge()) {
-    unison = !unison;
+  if (unisonSwitch.read() == LOW && unisonSwitch.duration() > HOLD_DURATION) {
+    //If unison held, switch to unison 2
+    unison = 2;
     midiCCOut(CCunison, unison);
     myControlChange(midiChannel, CCunison, unison);
+    unisonSwitch.write(HIGH); //Come out of this state
+    unison2 = true;           //Hack
+  } else  if (unisonSwitch.fallingEdge()) {
+    if (!unison2) {
+      unison > 0 ? unison = 0 : unison = 1;
+      midiCCOut(CCunison, unison);
+      myControlChange(midiChannel, CCunison, unison);
+    } else {
+      unison2 = false;
+    }
   }
 
   oscFXSwitch.update();

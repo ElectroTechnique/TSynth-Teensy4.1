@@ -84,7 +84,7 @@ FLASHMEM void renderCurrentPatchPage()
   tft.setFont(&Org_01);
 
   if (MIDIClkSignal) {
-    tft.fillRect(99, 27, 15, 7, ST77XX_ORANGE);
+    tft.fillRect(100, 27, 14, 7, ST77XX_ORANGE);
     tft.setCursor(101, 32);
     tft.println("CK");
   }
