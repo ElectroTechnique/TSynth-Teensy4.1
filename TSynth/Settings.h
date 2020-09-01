@@ -1,4 +1,4 @@
-#define SETTINGSOPTIONSNO 10
+#define SETTINGSOPTIONSNO 11
 #define SETTINGSVALUESNO 18//Maximum number of settings option values needed
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
@@ -20,6 +20,7 @@ void settingsEncoderDir(char * value);
 void settingsPickupEnable(char * value);
 void settingsBassEnhanceEnable(char * value);
 void settingsScopeEnable(char * value);
+void settingsVUEnable(char * value);
 void settingsHandler(char * s, void (*f)(char*));
 
 int currentIndexMIDICh();
@@ -31,6 +32,7 @@ int currentIndexEncoderDir();
 int currentIndexPickupEnable();
 int currentIndexBassEnhanceEnable();
 int currentIndexScopeEnable();
+int currentIndexVUEnable();
 int getCurrentIndex(int (*f)());
 
 
@@ -114,6 +116,16 @@ FLASHMEM void settingsScopeEnable(char * value) {
   }
 }
 
+FLASHMEM void settingsVUEnable(char * value) {
+  if (strcmp(value, "Off") == 0) {
+    vuMeter = false;
+    storeVUEnable(0);
+  } else {
+    vuMeter = true;
+    storeVUEnable(1);
+  }
+}
+
 //Takes a pointer to a specific method for the settings option and invokes it.
 FLASHMEM void settingsHandler(char * s, void (*f)(char*) ) {
   f(s);
@@ -162,6 +174,10 @@ FLASHMEM int currentIndexScopeEnable() {
   return getScopeEnable() ? 1 : 0;
 }
 
+FLASHMEM int currentIndexVUEnable() {
+  return getVUEnable() ? 1 : 0;
+}
+
 //Takes a pointer to a specific method for the current settings option value and invokes it.
 FLASHMEM int getCurrentIndex(int (*f)() ) {
   return f();
@@ -181,4 +197,5 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", '\0'}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", '\0'}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", '\0'}, settingsScopeEnable, currentIndexScopeEnable});
+  settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", '\0'}, settingsVUEnable, currentIndexVUEnable});
 }

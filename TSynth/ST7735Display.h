@@ -35,6 +35,8 @@ uint32_t currentSettingsPart = SETTINGS;
 uint32_t paramType = PARAMETER;
 
 boolean MIDIClkSignal = false;
+uint32_t peakCount = 0;
+uint16_t prevLen = 0;
 
 uint32_t colour[NO_OF_VOICES] = {ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE};
 
@@ -71,8 +73,23 @@ FLASHMEM void renderBootUpPage()
   tft.println(VERSION);
 }
 
-FLASHMEM void renderCurrentPatchPage()
-{
+FLASHMEM void renderPeak() {
+  if (vuMeter && peak.available()) {
+    uint16_t len = 0;
+    if (peakCount > 1) {
+      len = (int)(peak.read() * 75.0f);
+      prevLen = len;
+      peakCount = 0;
+    } else {
+      len = prevLen;
+      peakCount++;
+    }
+    tft.drawFastVLine(158, 103 - len, len ,  len > 72 ? ST77XX_RED : ST77XX_GREEN);
+    tft.drawFastVLine(159, 103 - len, len ,  len > 72 ? ST77XX_RED : ST77XX_GREEN);
+  }
+}
+
+FLASHMEM void renderCurrentPatchPage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSansBold18pt7b);
   tft.setCursor(5, 53);
@@ -88,12 +105,13 @@ FLASHMEM void renderCurrentPatchPage()
     tft.setCursor(101, 32);
     tft.println("CK");
   }
+  renderPeak();
 
   //      1 2 3 4 5 6 7 8 9 10 11 12
-  //    1 B B B B B B B B B B  B  B
-  //    2 B B B B B B Y Y Y Y  Y  Y
-  //    3 B B B B O O O O Y Y  Y  Y
-  //    4 B B B R O O O R R Y  Y  Y
+  //    1 B B B B B B B B B B B B
+  //    2 B B B B B B Y Y Y Y Y Y
+  //    3 B B B B O O O O Y Y Y Y
+  //    4 B B B R O O O R R Y Y Y
 
   //V4
   if (voices[3].voiceOn == 1 && unison && notesOn == 4) {
@@ -219,6 +237,7 @@ FLASHMEM void renderCurrentParameterPage() {
         tft.setFont(&FreeSans12pt7b);
         tft.setTextSize(1);
       }
+      renderPeak();
       tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
       tft.setCursor(1, 90);
       tft.setTextColor(ST7735_WHITE);
@@ -235,10 +254,10 @@ FLASHMEM void renderCurrentParameterPage() {
           renderVarTriangle(currentFloatValue);
           break;
         case FILTER_ENV:
-          renderEnv(filterAttack * 0.0001, filterDecay * 0.0001, filterSustain, filterRelease * 0.0001);
+          renderEnv(filterAttack * 0.0001f, filterDecay * 0.0001f, filterSustain, filterRelease * 0.0001f);
           break;
         case AMP_ENV:
-          renderEnv(ampAttack * 0.0001, ampDecay * 0.0001, ampSustain, ampRelease * 0.0001);
+          renderEnv(ampAttack * 0.0001f, ampDecay * 0.0001f, ampSustain, ampRelease * 0.0001f);
           break;
       }
       break;

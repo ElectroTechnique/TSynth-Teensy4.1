@@ -63,6 +63,8 @@ float fxMix = 0.0f;
 
 int velocitySens = 0;//Default off - settings option
 
+boolean vuMeter = false;
+
 //Pick-up - Experimental feature
 //Control will only start changing when the Knob/MIDI control reaches the current parameter value
 //Prevents jumps in value when the patch parameter and control are different values

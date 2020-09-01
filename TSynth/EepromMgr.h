@@ -8,6 +8,7 @@
 #define EEPROM_BASSENHANCE_ENABLE 5
 #define EEPROM_SCOPE_ENABLE 6
 #define EEPROM_MIDI_OUT_CH 7
+#define EEPROM_VU_ENABLE 8
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
@@ -88,4 +89,14 @@ FLASHMEM boolean getScopeEnable() {
 
 FLASHMEM void storeScopeEnable(byte ScopeEnable){
   EEPROM.update(EEPROM_SCOPE_ENABLE, ScopeEnable);
+}
+
+FLASHMEM boolean getVUEnable() {
+  byte vu = EEPROM.read(EEPROM_VU_ENABLE); 
+  if (vu < 0 || vu > 1)return false; //If EEPROM has no VU enable stored
+  return vu == 1 ? true : false;
+}
+
+FLASHMEM void storeVUEnable(byte VUEnable){
+  EEPROM.update(EEPROM_VU_ENABLE, VUEnable);
 }

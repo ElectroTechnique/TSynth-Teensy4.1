@@ -248,6 +248,8 @@ FLASHMEM void setup() {
   if (getBassEnhanceEnable()) sgtl5000_1.enhanceBassEnable();
   //Read oscilloscope enable from EEPROM
   enableScope(getScopeEnable());
+  //Read VU enable from EEPROM
+  vuMeter = getVUEnable();
 }
 
 void incNotesOn() {

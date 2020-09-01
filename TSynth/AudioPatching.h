@@ -9,7 +9,7 @@ AudioMixer4              noiseMixer;       //xy=288,369
 AudioSynthWaveformTS       pwmLfo;         //xy=92,208
 AudioSynthWaveformDc     pwa;            //xy=107,256
 AudioSynthWaveformDc     pwb;            //xy=110,301
-
+AudioAnalyzePeak peak;
 AudioEffectEnvelope      filterEnvelope1;   //xy=628,300
 AudioEffectEnvelope      filterEnvelope2;   //xy=640,604
 AudioEffectEnvelope      filterEnvelope3;   //xy=636,857
@@ -663,6 +663,7 @@ AudioConnection          patchCord215(voiceMixer3, 0, voiceMixerM, 2);
 AudioConnection          patchCord203(voiceMixerM, 0, dcOffsetFilter, 0);
 AudioConnection          patchCord112(dcOffsetFilter, 2, ensemble, 0);
 AudioConnection          patchCord415(dcOffsetFilter, 2, scope, 0);
+AudioConnection          patchCord416(dcOffsetFilter, 2, peak, 0);////////////PEAK METER
 AudioConnection          patchCord113(ensemble, 0, effectMixerL, 1);
 AudioConnection          patchCord114(ensemble, 1, effectMixerR, 1);
 AudioConnection          patchCord115(dcOffsetFilter, 2, effectMixerL, 0);
