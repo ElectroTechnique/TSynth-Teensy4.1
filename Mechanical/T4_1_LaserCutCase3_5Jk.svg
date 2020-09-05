@@ -43,9 +43,9 @@
      inkscape:window-maximized="1"
      inkscape:window-y="-8"
      inkscape:window-x="-8"
-     inkscape:cy="289.39726"
-     inkscape:cx="585.7461"
-     inkscape:zoom="0.73443988"
+     inkscape:cy="194.31641"
+     inkscape:cx="562.63937"
+     inkscape:zoom="1.4688798"
      units="mm"
      showgrid="false"
      id="namedview4"
@@ -60,7 +60,7 @@
      bordercolor="#666666"
      pagecolor="#ffffff" /><g
      transform="matrix(1.3333333,0,0,-1.3333333,-17.877333,823.49985)"
-     inkscape:label="LaserCutCase6_35Jk"
+     inkscape:label="LaserCutSides"
      inkscape:groupmode="layer"
      id="g10"><g
        transform="translate(19.6831,527.4121)"
@@ -205,7 +205,7 @@
          id="tspan110"
          sodipodi:role="line"
          y="0.27000001"
-         x="162.64999 170.98 174.11 181.50999 184.64 187.14 190.27">MIDI In</tspan><tspan
+         x="157.64999 165.98 169.11 176.50999 179.64 182.14 185.27">MIDI In</tspan><tspan
          id="tspan112"
          sodipodi:role="line"
          y="0"
@@ -225,7 +225,7 @@
              id="path130"
              style="fill:none;stroke:#ff0000;stroke-width:0.709;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
              d="m 0,0 c 0,-2.661 -2.157,-4.819 -4.819,-4.819 -2.662,0 -4.819,2.158 -4.819,4.819 0,2.661 2.157,4.819 4.819,4.819 C -2.157,4.819 0,2.661 0,0 Z" /></g><g
-           transform="translate(210.9395,583.6475)"
+           transform="translate(208.9395,583.6475)"
            id="g132"><path
              inkscape:connector-curvature="0"
              id="path134"
@@ -233,12 +233,12 @@
              d="m 0,0 c 0,-12.133 9.836,-21.969 21.969,-21.969 12.133,0 21.969,9.836 21.969,21.969 0,12.133 -9.836,21.969 -21.969,21.969 C 9.836,21.969 0,12.133 0,0 Z" /></g></g></g><text
        id="text138"
        style="font-variant:normal;font-weight:normal;font-stretch:normal;font-size:10px;font-family:'Arial Rounded MT Bold';-inkscape-font-specification:ArialRoundedMTBold;writing-mode:lr-tb;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
-       transform="matrix(-1,0,0,1,251.3164,545.5508)"><tspan
+       transform="matrix(-1,0,0,1,256.3164,545.5508)"><tspan
          id="tspan136"
          sodipodi:role="line"
          y="0"
          x="0 8.3299999 11.46 18.860001 21.99 24.49 30.610001 36.650002 40.780998">MIDI Thru</tspan></text><g
-       transform="translate(724.7852,392.7993)"
+       transform="translate(727.7852,388.7993)"
        id="g152"><path
          inkscape:connector-curvature="0"
          id="path154"
