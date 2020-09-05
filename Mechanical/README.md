@@ -1,5 +1,10 @@
 - Electrical schematic
 - 3D models - End cheeks, side panel columns, display standoff, encoder knob (D-shape shaft)
+
+    EncoderKnobEC12_6mm is for 6mm splined encoder shafts
+    
+    EncoderKnobEC12_D_shape is for 6mm D-shaped encoder shafts
+
 - Laser cutter plans - Sides and base
 
     T4_1_LaserCutCase3_5Jk.svg - Is for PCBs with 3.5mm headphone sockets
