@@ -6,7 +6,8 @@ AudioSynthWaveformDc     constant1Dc;    //xy=69.5,437
 AudioSynthNoisePink      pink;           //xy=268,349
 AudioSynthNoiseWhite     white;           //xy=268,359
 AudioMixer4              noiseMixer;       //xy=288,369
-AudioSynthWaveformTS       pwmLfo;         //xy=92,208
+AudioSynthWaveformTS       pwmLfoA;         //xy=92,208
+AudioSynthWaveformTS       pwmLfoB;         //xy=92,208
 AudioSynthWaveformDc     pwa;            //xy=107,256
 AudioSynthWaveformDc     pwb;            //xy=110,301
 AudioAnalyzePeak peak;
@@ -235,30 +236,30 @@ AudioConnection          patchCord231(constant1Dc, filterEnvelope10);
 AudioConnection          patchCord232(constant1Dc, filterEnvelope11);
 AudioConnection          patchCord233(constant1Dc, filterEnvelope12);
 
-AudioConnection          patchCord5(pwmLfo, 0, pwMixer1a, 0);
-AudioConnection          patchCord6(pwmLfo, 0, pwMixer1b, 0);
-AudioConnection          patchCord7(pwmLfo, 0, pwMixer2a, 0);
-AudioConnection          patchCord8(pwmLfo, 0, pwMixer2b, 0);
-AudioConnection          patchCord9(pwmLfo, 0, pwMixer3a, 0);
-AudioConnection          patchCord10(pwmLfo, 0, pwMixer3b, 0);
-AudioConnection          patchCord11(pwmLfo, 0, pwMixer4a, 0);
-AudioConnection          patchCord12(pwmLfo, 0, pwMixer4b, 0);
-AudioConnection          patchCord139(pwmLfo, 0, pwMixer5a, 0);
-AudioConnection          patchCord140(pwmLfo, 0, pwMixer5b, 0);
-AudioConnection          patchCord141(pwmLfo, 0, pwMixer6a, 0);
-AudioConnection          patchCord142(pwmLfo, 0, pwMixer6b, 0);
-AudioConnection          patchCord234(pwmLfo, 0, pwMixer7a, 0);
-AudioConnection          patchCord235(pwmLfo, 0, pwMixer7b, 0);
-AudioConnection          patchCord236(pwmLfo, 0, pwMixer8a, 0);
-AudioConnection          patchCord237(pwmLfo, 0, pwMixer8b, 0);
-AudioConnection          patchCord238(pwmLfo, 0, pwMixer9a, 0);
-AudioConnection          patchCord239(pwmLfo, 0, pwMixer9b, 0);
-AudioConnection          patchCord240(pwmLfo, 0, pwMixer10a, 0);
-AudioConnection          patchCord241(pwmLfo, 0, pwMixer10b, 0);
-AudioConnection          patchCord242(pwmLfo, 0, pwMixer11a, 0);
-AudioConnection          patchCord243(pwmLfo, 0, pwMixer11b, 0);
-AudioConnection          patchCord244(pwmLfo, 0, pwMixer12a, 0);
-AudioConnection          patchCord245(pwmLfo, 0, pwMixer12b, 0);
+AudioConnection          patchCord5(pwmLfoA, 0, pwMixer1a, 0);
+AudioConnection          patchCord6(pwmLfoB, 0, pwMixer1b, 0);
+AudioConnection          patchCord7(pwmLfoA, 0, pwMixer2a, 0);
+AudioConnection          patchCord8(pwmLfoB, 0, pwMixer2b, 0);
+AudioConnection          patchCord9(pwmLfoA, 0, pwMixer3a, 0);
+AudioConnection          patchCord10(pwmLfoB, 0, pwMixer3b, 0);
+AudioConnection          patchCord11(pwmLfoA, 0, pwMixer4a, 0);
+AudioConnection          patchCord12(pwmLfoB, 0, pwMixer4b, 0);
+AudioConnection          patchCord139(pwmLfoA, 0, pwMixer5a, 0);
+AudioConnection          patchCord140(pwmLfoB, 0, pwMixer5b, 0);
+AudioConnection          patchCord141(pwmLfoA, 0, pwMixer6a, 0);
+AudioConnection          patchCord142(pwmLfoB, 0, pwMixer6b, 0);
+AudioConnection          patchCord234(pwmLfoA, 0, pwMixer7a, 0);
+AudioConnection          patchCord235(pwmLfoB, 0, pwMixer7b, 0);
+AudioConnection          patchCord236(pwmLfoA, 0, pwMixer8a, 0);
+AudioConnection          patchCord237(pwmLfoB, 0, pwMixer8b, 0);
+AudioConnection          patchCord238(pwmLfoA, 0, pwMixer9a, 0);
+AudioConnection          patchCord239(pwmLfoB, 0, pwMixer9b, 0);
+AudioConnection          patchCord240(pwmLfoA, 0, pwMixer10a, 0);
+AudioConnection          patchCord241(pwmLfoB, 0, pwMixer10b, 0);
+AudioConnection          patchCord242(pwmLfoA, 0, pwMixer11a, 0);
+AudioConnection          patchCord243(pwmLfoB, 0, pwMixer11b, 0);
+AudioConnection          patchCord244(pwmLfoA, 0, pwMixer12a, 0);
+AudioConnection          patchCord245(pwmLfoB, 0, pwMixer12b, 0);
 
 
 AudioConnection          patchCord13(pwa, 0, pwMixer1a, 1);
@@ -663,7 +664,7 @@ AudioConnection          patchCord215(voiceMixer3, 0, voiceMixerM, 2);
 AudioConnection          patchCord203(voiceMixerM, 0, dcOffsetFilter, 0);
 AudioConnection          patchCord112(dcOffsetFilter, 2, ensemble, 0);
 AudioConnection          patchCord415(dcOffsetFilter, 2, scope, 0);
-AudioConnection          patchCord416(dcOffsetFilter, 2, peak, 0);////////////PEAK METER
+AudioConnection          patchCord416(dcOffsetFilter, 2, peak, 0);
 AudioConnection          patchCord113(ensemble, 0, effectMixerL, 1);
 AudioConnection          patchCord114(ensemble, 1, effectMixerR, 1);
 AudioConnection          patchCord115(dcOffsetFilter, 2, effectMixerL, 0);

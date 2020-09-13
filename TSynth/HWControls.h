@@ -66,7 +66,7 @@
 #define OSC_FX_LED 14
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 10
+#define QUANTISE_FACTOR 3// Sets a tolerance of noise on the ADC
 
 #define DEBOUNCE 30
 
@@ -97,7 +97,19 @@ Bounce backButton = Bounce(BACK_SW, DEBOUNCE);
 boolean panic = false; //Hack for back button
 Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
 
-FLASHMEM void setupHardware(){
+FLASHMEM void setupHardware() {
+  //Volume Pot is on ADC0
+  adc->adc0->setAveraging(16); // set number of averages 0, 4, 8, 16 or 32.
+  adc->adc0->setResolution(10); // set bits of resolution  8, 10, 12 or 16 bits.
+  adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
+  adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
+
+  //MUXs on ADC1
+  adc->adc1->setAveraging(32); // set number of averages 0, 4, 8, 16 or 32.
+  adc->adc1->setResolution(10); // set bits of resolution  8, 10, 12 or 16 bits.
+  adc->adc1->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
+  adc->adc1->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
+
   //Mux address pins
   pinMode(MUX_0, OUTPUT);
   pinMode(MUX_1, OUTPUT);

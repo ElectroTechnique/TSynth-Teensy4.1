@@ -15,7 +15,7 @@ float midiClkTimeInterval = 0.0f;
 float lfoTempoValue = 1.0f;
 int pitchBendRange = 12;
 float modWheelDepth = 0.2f;
-float keytrackingAmount = 0.5;//Half - MIDI CC & settings option (EEPROM)
+float keytrackingAmount = 0.5;//Half - MIDI CC & settings option
 float glideSpeed = 0.0f;
 int oscPitchA = 0;
 int oscPitchB = 12;
@@ -31,7 +31,7 @@ int pwmSource = PWMSOURCELFO;
 
 float filterRes = 1.1f;
 float filterFreq = 12000.0f;
-float filterOctave = 7.0f;
+float filterOctave = 1.0f;
 float filterMix = 0.0f;
 int filterMixStr = 0;//For display
 float filterEnv = 0.0f;

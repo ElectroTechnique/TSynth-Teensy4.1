@@ -28,6 +28,7 @@ int currentIndexVelocitySens();
 int currentIndexKeyTracking();
 int currentIndexPitchBend();
 int currentIndexModWheelDepth();
+int currentIndexMIDIOutCh();
 int currentIndexEncoderDir();
 int currentIndexPickupEnable();
 int currentIndexBassEnhanceEnable();

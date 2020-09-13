@@ -1,4 +1,26 @@
 /*
+   MIT License
+
+  Copyright (c) 2020 ElectroTechnique
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+
   ElectroTechnique TSynth - Firmware Rev 2.00
   TEENSY 4.1 - 12 VOICES
 
@@ -9,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          40    81
+  600MHz Faster          44    81
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -19,11 +41,16 @@
   Additional libraries:
     Agileware CircularBuffer, Adafruit_GFX (available in Arduino libraries manager)
 */
+
+
+#include <ADC.h>
+#include <ADC_util.h>
+ADC *adc = new ADC(); // adc object
+
 #include "Audio.h" //Using local version to override Teensyduino version
 #include <Wire.h>
 #include <SPI.h>
 #include <SD.h>
-#include <SerialFlash.h>
 #include <MIDI.h>
 #include <USBHost_t36.h>
 #include <TeensyThreads.h>
@@ -165,8 +192,11 @@ FLASHMEM void setup() {
   voiceMixerM.gain(2, 0.25f);
   voiceMixerM.gain(3, 0.25f);
 
-  pwmLfo.amplitude(ONE);
-  pwmLfo.begin(PWMWAVEFORM);
+  pwmLfoA.amplitude(ONE);
+  pwmLfoA.begin(PWMWAVEFORM);
+  pwmLfoB.amplitude(ONE);
+  pwmLfoB.begin(PWMWAVEFORM);
+  pwmLfoB.phase(90.0f);
 
   waveformMod1a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod1a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
@@ -333,7 +363,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
     //2 Notes: 1-6, 7-12
     //3 Notes: 1-4, 5-8, 9-12
     //4 Notes: 1-3, 4/8/9, 5-7, 10-12
-    //5 or more: extra notes are ignored and new voices used
+    //5 or more: extra notes are ignored and new voices used for 4 notes
 
     //Retrigger voices
     //      1 2 3 4 5 6 7 8 9 10 11 12
@@ -1205,7 +1235,8 @@ FLASHMEM void updatePWMSource() {
 }
 
 FLASHMEM void updatePWMRate() {
-  pwmLfo.frequency(pwmRate);
+  pwmLfoA.frequency(pwmRate);
+  pwmLfoB.frequency(pwmRate);
   if (pwmRate == -10) {
     //Set to fixed PW mode
     setPwmMixerALFO(0);//LFO Source off
@@ -1400,12 +1431,15 @@ FLASHMEM void updateFilterFreq() {
   filter11.frequency(filterFreq);
   filter12.frequency(filterFreq);
 
-  if (filterFreq > 2500) {
-    filterOctave = 2.0f;//Allows more accurate filter cutoff
-  } else if (filterFreq < 60) {
-    filterOctave = 7.0f; //Allows deeper bass
+  //Altering filterOctave to give more cutoff width for deeper bass, but sharper cuttoff at higher frequncies
+  if (filterFreq <= 2000) {
+    filterOctave = 4.0f + ((2000.0f - filterFreq) / 710.0f);//More bass
+  } else if (filterFreq > 2000 && filterFreq <= 3500) {
+    filterOctave = 3.0f + ((3500.0f - filterFreq) / 1500.0f);//Sharper cutoff
+  } else if (filterFreq > 3500 && filterFreq <= 7000) {
+    filterOctave = 2.0f + ((7000.0f - filterFreq) / 4000.0f);//Sharper cutoff
   } else {
-    filterOctave = 2.0f + ((2560.0f - filterFreq) / 500.0f);//In between
+    filterOctave = 1.0f + ((12000.0f - filterFreq) / 5100.0f);//Sharper cutoff
   }
 
   filter1.octaveControl(filterOctave);
@@ -1988,8 +2022,9 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfilterfreq:
       //Pick up
-      if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS[value - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS[value + TOLERANCE])) return; //PICK-UP
-      filterFreq = FILTERFREQS[value];
+      //MIDI is 7 bit and needs to choose alternate filterfreqs(8 bit)
+      if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[(value - TOLERANCE) * 2] || filterfreqPrevValue >  FILTERFREQS256[(value - TOLERANCE) * 2])) return; //PICK-UP
+      filterFreq = FILTERFREQS256[value * 2];
       updateFilterFreq();
       filterfreqPrevValue = filterFreq;//PICK-UP
       break;
@@ -2368,7 +2403,7 @@ FLASHMEM String getCurrentPatchData() {
 }
 
 void checkMux() {
-  mux1Read = analogRead(MUX1_S);
+  mux1Read = adc->adc1->analogRead(MUX1_S);
   if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR)) {
     mux1ValuesPrev[muxInput] = mux1Read;
     mux1Read = (mux1Read >> 3); //Change range to 0-127
@@ -2441,10 +2476,10 @@ void checkMux() {
         break;
     }
   }
-  mux2Read = analogRead(MUX2_S);
+  mux2Read = adc->adc1->analogRead(MUX2_S);
   if (mux2Read > (mux2ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux2Read < (mux2ValuesPrev[muxInput] - QUANTISE_FACTOR)) {
     mux2ValuesPrev[muxInput] = mux2Read;
-    mux2Read = (mux2Read >> 3); //Change range to 0-127
+    if (muxInput != MUX2_cutoff) mux2Read = (mux2Read >> 3); //Change range to 0-127
     switch (muxInput) {
       case MUX2_attack:
         midiCCOut(CCampattack, mux2Read);
@@ -2499,8 +2534,12 @@ void checkMux() {
         myControlChange(midiChannel, CCfilterres, mux2Read);
         break;
       case MUX2_cutoff:
-        midiCCOut(CCfilterfreq, mux2Read);
-        myControlChange(midiChannel, CCfilterfreq, mux2Read);
+        mux2Read = (mux2Read >> 2);
+        if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[mux2Read - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS256[mux2Read + TOLERANCE])) return; //PICK-UP
+        filterFreq = FILTERFREQS256[mux2Read];
+        updateFilterFreq();
+        filterfreqPrevValue = filterFreq;//PICK-UP
+        midiCCOut(CCfilterfreq, mux2Read >> 1);
         break;
       case MUX2_filterLFORate:
         midiCCOut(CCfilterlforate, mux2Read);
@@ -2530,7 +2569,7 @@ void checkMux() {
 }
 
 void checkVolumePot() {
-  volumeRead = analogRead(VOLUME_POT);
+  volumeRead = adc->adc0->analogRead(VOLUME_POT);
   if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))  {
     volumePrevious = volumeRead;
     volumeRead = (volumeRead >> 3); //Change range to 0-127
@@ -2870,7 +2909,10 @@ void checkEncoder() {
 }
 
 void midiCCOut(byte cc, byte value) {
-  if (midiOutCh > 0)usbMIDI.sendControlChange(cc, value, midiOutCh);
+  if (midiOutCh > 0) {
+    usbMIDI.sendControlChange(cc, value, midiOutCh);
+    midi1.sendControlChange(cc, value, midiOutCh);
+  }
 }
 
 void CPUMonitor() {
@@ -2892,5 +2934,6 @@ void loop() {
   checkMux();
   checkSwitches();
   checkEncoder();
+
   //CPUMonitor();
 }
