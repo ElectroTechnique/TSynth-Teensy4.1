@@ -3,6 +3,10 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 #include <Bounce.h>
+#include <ADC.h>
+#include <ADC_util.h>
+
+ADC *adc = new ADC();
 
 //Teensy 4.1 - Mux Pins
 #define MUX_0 28
@@ -82,6 +86,7 @@ static long encPrevious = 0;
 
 //These are pushbuttons and require debouncing
 Bounce oscFXSwitch = Bounce(OSC_FX_SW, DEBOUNCE);
+boolean oscFXMode = false; //Hack for oscFX button
 Bounce filterLFORetrigSwitch = Bounce(FILTER_LFO_RETRIG_SW, DEBOUNCE);
 Bounce unisonSwitch = Bounce(UNISON_SW, DEBOUNCE);
 boolean unison2 = false; //Hack for unison button

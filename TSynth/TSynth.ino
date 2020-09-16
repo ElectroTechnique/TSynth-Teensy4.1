@@ -31,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          44    81
+  600MHz Faster          58    94
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -41,12 +41,6 @@
   Additional libraries:
     Agileware CircularBuffer, Adafruit_GFX (available in Arduino libraries manager)
 */
-
-
-#include <ADC.h>
-#include <ADC_util.h>
-ADC *adc = new ADC(); // adc object
-
 #include "Audio.h" //Using local version to override Teensyduino version
 #include <Wire.h>
 #include <SPI.h>
@@ -117,7 +111,7 @@ FLASHMEM void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(82);
+  AudioMemory(96);
   sgtl5000_1.enable();
   sgtl5000_1.dacVolumeRamp();
   sgtl5000_1.muteHeadphone();
@@ -1106,13 +1100,17 @@ FLASHMEM void updateUnison() {
   if (unison == 0) {
     allNotesOff();//Avoid hanging notes
     showCurrentParameterPage("Unison", "Off");
+    pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, LOW);  // LED off
   } else if (unison == 1) {
     showCurrentParameterPage("Dyn. Unison", "On");
+    pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   } else {
     showCurrentParameterPage("Chd. Unison", "On");
-    digitalWriteFast(UNISON_LED, HIGH);  // LED on
+    analogWriteFrequency(UNISON_LED, 1);
+    analogWrite(UNISON_LED, 127);
+    // digitalWriteFast(UNISON_LED, HIGH);  // LED on
   }
 }
 
@@ -1340,65 +1338,98 @@ FLASHMEM void updatePWB() {
 }
 
 FLASHMEM void updateOscLevelA() {
-  waveformMixer1.gain(0, oscALevel);
-  waveformMixer2.gain(0, oscALevel);
-  waveformMixer3.gain(0, oscALevel);
-  waveformMixer4.gain(0, oscALevel);
-  waveformMixer5.gain(0, oscALevel);
-  waveformMixer6.gain(0, oscALevel);
-  waveformMixer7.gain(0, oscALevel);
-  waveformMixer8.gain(0, oscALevel);
-  waveformMixer9.gain(0, oscALevel);
-  waveformMixer10.gain(0, oscALevel);
-  waveformMixer11.gain(0, oscALevel);
-  waveformMixer12.gain(0, oscALevel);
-
-  if (oscFX == 1) {
-    waveformMixer1.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer2.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer3.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer4.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer5.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer6.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer7.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer8.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer9.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer10.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer11.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer12.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
+  switch (oscFX) {
+    case 1://XOR
+      setWaveformMixerLevel(0, oscALevel);//Osc 1 (A)
+      setWaveformMixerLevel(3, (oscALevel + oscBLevel) / 2.0f);//oscFX XOR level
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      break;
+    case 2://XMod
+      //osc A sounds with increasing osc B mod
+      if (oscALevel == 1.0f && oscBLevel <= 1.0f) {
+        setOscModMixerA(3, 1 - oscBLevel);//Feed from Osc 2 (B)
+        setWaveformMixerLevel(0, ONE);//Osc 1 (A)
+        setWaveformMixerLevel(1, 0);//Osc 2 (B)
+        showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - oscBLevel));
+      }
+      break;
+    case 0://None
+      setOscModMixerA(3, 0);//Feed from Osc 2 (B)
+      setWaveformMixerLevel(0, oscALevel);//Osc 1 (A)
+      setWaveformMixerLevel(3, 0);//XOR
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      break;
   }
-  showCurrentParameterPage("Osc Levels", "   " + String(oscALevel) + " - " + String(oscBLevel));
 }
 
 FLASHMEM void updateOscLevelB() {
-  waveformMixer1.gain(1, oscBLevel);
-  waveformMixer2.gain(1, oscBLevel);
-  waveformMixer3.gain(1, oscBLevel);
-  waveformMixer4.gain(1, oscBLevel);
-  waveformMixer5.gain(1, oscBLevel);
-  waveformMixer6.gain(1, oscBLevel);
-  waveformMixer7.gain(1, oscBLevel);
-  waveformMixer8.gain(1, oscBLevel);
-  waveformMixer9.gain(1, oscBLevel);
-  waveformMixer10.gain(1, oscBLevel);
-  waveformMixer11.gain(1, oscBLevel);
-  waveformMixer12.gain(1, oscBLevel);
-
-  if (oscFX == 1) {
-    waveformMixer1.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer2.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer3.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer4.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer5.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer6.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer7.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer8.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer9.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer10.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer11.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer12.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
+  switch (oscFX) {
+    case 1://XOR
+      setWaveformMixerLevel(1, oscBLevel);//Osc 2 (B)
+      setWaveformMixerLevel(3, (oscALevel + oscBLevel) / 2.0f);//oscFX XOR level
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      break;
+    case 2://XMod
+      //osc B sounds with increasing osc A mod
+      if (oscBLevel == 1.0f && oscALevel < 1.0f) {
+        setOscModMixerB(3, 1 - oscALevel);//Feed from Osc 1 (A)
+        setWaveformMixerLevel(0, 0);//Osc 1 (A)
+        setWaveformMixerLevel(1, ONE);//Osc 2 (B)
+        showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - oscALevel));
+      }
+      break;
+    case 0://None
+      setOscModMixerB(3, 0);//Feed from Osc 1 (A)
+      setWaveformMixerLevel(1, oscBLevel);//Osc 2 (B)
+      setWaveformMixerLevel(3, 0);//XOR
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      break;
   }
-  showCurrentParameterPage("Osc Levels", "   " + String(oscALevel) + " - " + String(oscBLevel));
+}
+
+FLASHMEM void setWaveformMixerLevel(int channel, float level) {
+  waveformMixer1.gain(channel, level);
+  waveformMixer2.gain(channel, level);
+  waveformMixer3.gain(channel, level);
+  waveformMixer4.gain(channel, level);
+  waveformMixer5.gain(channel, level);
+  waveformMixer6.gain(channel, level);
+  waveformMixer7.gain(channel, level);
+  waveformMixer8.gain(channel, level);
+  waveformMixer9.gain(channel, level);
+  waveformMixer10.gain(channel, level);
+  waveformMixer11.gain(channel, level);
+  waveformMixer12.gain(channel, level);
+}
+
+FLASHMEM void setOscModMixerA(int channel, float level) {
+  oscModMixer1a.gain(channel, level);
+  oscModMixer2a.gain(channel, level);
+  oscModMixer3a.gain(channel, level);
+  oscModMixer4a.gain(channel, level);
+  oscModMixer5a.gain(channel, level);
+  oscModMixer6a.gain(channel, level);
+  oscModMixer7a.gain(channel, level);
+  oscModMixer8a.gain(channel, level);
+  oscModMixer9a.gain(channel, level);
+  oscModMixer10a.gain(channel, level);
+  oscModMixer11a.gain(channel, level);
+  oscModMixer12a.gain(channel, level);
+}
+
+FLASHMEM void setOscModMixerB(int channel, float level) {
+  oscModMixer1b.gain(channel, level);
+  oscModMixer2b.gain(channel, level);
+  oscModMixer3b.gain(channel, level);
+  oscModMixer4b.gain(channel, level);
+  oscModMixer5b.gain(channel, level);
+  oscModMixer6b.gain(channel, level);
+  oscModMixer7b.gain(channel, level);
+  oscModMixer8b.gain(channel, level);
+  oscModMixer9b.gain(channel, level);
+  oscModMixer10b.gain(channel, level);
+  oscModMixer11b.gain(channel, level);
+  oscModMixer12b.gain(channel, level);
 }
 
 FLASHMEM void updateNoiseLevel() {
@@ -1544,66 +1575,34 @@ FLASHMEM void updateFilterMixer() {
 }
 
 FLASHMEM void updateFilterEnv() {
-  filterModMixer1.gain(0, filterEnv);
-  filterModMixer2.gain(0, filterEnv);
-  filterModMixer3.gain(0, filterEnv);
-  filterModMixer4.gain(0, filterEnv);
-  filterModMixer5.gain(0, filterEnv);
-  filterModMixer6.gain(0, filterEnv);
-  filterModMixer7.gain(0, filterEnv);
-  filterModMixer8.gain(0, filterEnv);
-  filterModMixer9.gain(0, filterEnv);
-  filterModMixer10.gain(0, filterEnv);
-  filterModMixer11.gain(0, filterEnv);
-  filterModMixer12.gain(0, filterEnv);
-
+  setFilterModMixer(0, filterEnv);
   showCurrentParameterPage("Filter Env.", String(filterEnv));
 }
 
 FLASHMEM void updatePitchEnv() {
-  oscModMixer1a.gain(1, pitchEnv);
-  oscModMixer1b.gain(1, pitchEnv);
-  oscModMixer2a.gain(1, pitchEnv);
-  oscModMixer2b.gain(1, pitchEnv);
-  oscModMixer3a.gain(1, pitchEnv);
-  oscModMixer3b.gain(1, pitchEnv);
-  oscModMixer4a.gain(1, pitchEnv);
-  oscModMixer4b.gain(1, pitchEnv);
-  oscModMixer5a.gain(1, pitchEnv);
-  oscModMixer5b.gain(1, pitchEnv);
-  oscModMixer6a.gain(1, pitchEnv);
-  oscModMixer6b.gain(1, pitchEnv);
-  oscModMixer7a.gain(1, pitchEnv);
-  oscModMixer7b.gain(1, pitchEnv);
-  oscModMixer8a.gain(1, pitchEnv);
-  oscModMixer8b.gain(1, pitchEnv);
-  oscModMixer9a.gain(1, pitchEnv);
-  oscModMixer9b.gain(1, pitchEnv);
-  oscModMixer10a.gain(1, pitchEnv);
-  oscModMixer10b.gain(1, pitchEnv);
-  oscModMixer11a.gain(1, pitchEnv);
-  oscModMixer11b.gain(1, pitchEnv);
-  oscModMixer12a.gain(1, pitchEnv);
-  oscModMixer12b.gain(1, pitchEnv);
-
+  setOscModMixerA(1, pitchEnv);
+  setOscModMixerB(1, pitchEnv);
   showCurrentParameterPage("Pitch Env Amt", String(pitchEnv));
 }
 
 FLASHMEM void updateKeyTracking() {
-  filterModMixer1.gain(2, keytrackingAmount);
-  filterModMixer2.gain(2, keytrackingAmount);
-  filterModMixer3.gain(2, keytrackingAmount);
-  filterModMixer4.gain(2, keytrackingAmount);
-  filterModMixer5.gain(2, keytrackingAmount);
-  filterModMixer6.gain(2, keytrackingAmount);
-  filterModMixer7.gain(2, keytrackingAmount);
-  filterModMixer8.gain(2, keytrackingAmount);
-  filterModMixer9.gain(2, keytrackingAmount);
-  filterModMixer10.gain(2, keytrackingAmount);
-  filterModMixer11.gain(2, keytrackingAmount);
-  filterModMixer12.gain(2, keytrackingAmount);
-
+  setFilterModMixer(2, keytrackingAmount);
   showCurrentParameterPage("Key Tracking", String(keytrackingAmount));
+}
+
+FLASHMEM void setFilterModMixer(int channel, float level) {
+  filterModMixer1.gain(channel, level);
+  filterModMixer2.gain(channel, level);
+  filterModMixer3.gain(channel, level);
+  filterModMixer4.gain(channel, level);
+  filterModMixer5.gain(channel, level);
+  filterModMixer6.gain(channel, level);
+  filterModMixer7.gain(channel, level);
+  filterModMixer8.gain(channel, level);
+  filterModMixer9.gain(channel, level);
+  filterModMixer10.gain(channel, level);
+  filterModMixer11.gain(channel, level);
+  filterModMixer12.gain(channel, level);
 }
 
 FLASHMEM void updateOscLFOAmt() {
@@ -1827,67 +1826,48 @@ FLASHMEM void updateRelease() {
 }
 
 FLASHMEM void updateOscFX() {
-  if (oscFX == 1) {
+  if (oscFX == 2) {
+    setOscModMixerA(3, 1 - oscBLevel);//Feed from Osc 2 (B)
+    setOscModMixerB(3, 1 - oscALevel);//Feed from Osc 1 (A)
+    //Set XOR type off
+    setOscFXCombineMode(AudioEffectDigitalCombine::OFF);
+    setWaveformMixerLevel(3, 0);//XOR
+    showCurrentParameterPage("Osc FX", "On - X Mod");
+    analogWriteFrequency(OSC_FX_LED, 1);
+    analogWrite(OSC_FX_LED, 127);
+  } else if (oscFX == 1) {
+    setOscModMixerA(3, 0);//XMod off
+    setOscModMixerB(3, 0);//XMod off
     //XOR 'Ring Mod' type effect
-    oscFX1.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX2.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX3.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX4.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX5.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX6.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX7.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX8.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX9.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX10.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX11.setCombineMode(AudioEffectDigitalCombine::XOR);
-    oscFX12.setCombineMode(AudioEffectDigitalCombine::XOR);
-
-    waveformMixer1.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer2.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer3.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer4.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer5.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer6.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer7.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer8.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer9.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer10.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer11.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-    waveformMixer12.gain(3, (oscALevel + oscBLevel) / 2.0f); //Osc FX
-
+    setOscFXCombineMode(AudioEffectDigitalCombine::XOR);
+    setWaveformMixerLevel(3, (oscALevel + oscBLevel) / 2.0f);//XOR
     showCurrentParameterPage("Osc FX", "On - XOR");
+    pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, HIGH);  // LED on
   } else {
-    //No FX
-    oscFX1.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX2.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX3.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX4.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX5.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX6.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX7.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX8.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX9.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX10.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX11.setCombineMode(AudioEffectDigitalCombine::OFF);
-    oscFX12.setCombineMode(AudioEffectDigitalCombine::OFF);
-
-    waveformMixer1.gain(3, 0); //Osc FX
-    waveformMixer2.gain(3, 0); //Osc FX
-    waveformMixer3.gain(3, 0); //Osc FX
-    waveformMixer4.gain(3, 0); //Osc FX
-    waveformMixer5.gain(3, 0); //Osc FX
-    waveformMixer6.gain(3, 0); //Osc FX
-    waveformMixer7.gain(3, 0); //Osc FX
-    waveformMixer8.gain(3, 0); //Osc FX
-    waveformMixer9.gain(3, 0); //Osc FX
-    waveformMixer10.gain(3, 0); //Osc FX
-    waveformMixer11.gain(3, 0); //Osc FX
-    waveformMixer12.gain(3, 0); //Osc FX
-
+    setOscModMixerA(3, 0);//XMod off
+    setOscModMixerB(3, 0);//XMod off
+    setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
+    setWaveformMixerLevel(3, 0);//XOR
     showCurrentParameterPage("Osc FX", "Off");
+    pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, LOW);  // LED off
   }
+}
+
+FLASHMEM void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
+  oscFX1.setCombineMode(mode);
+  oscFX2.setCombineMode(mode);
+  oscFX3.setCombineMode(mode);
+  oscFX4.setCombineMode(mode);
+  oscFX5.setCombineMode(mode);
+  oscFX6.setCombineMode(mode);
+  oscFX7.setCombineMode(mode);
+  oscFX8.setCombineMode(mode);
+  oscFX9.setCombineMode(mode);
+  oscFX10.setCombineMode(mode);
+  oscFX11.setCombineMode(mode);
+  oscFX12.setCombineMode(mode);
 }
 
 FLASHMEM void updateFXAmt() {
@@ -2022,7 +2002,7 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfilterfreq:
       //Pick up
-      //MIDI is 7 bit and needs to choose alternate filterfreqs(8 bit)
+      //MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
       if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[(value - TOLERANCE) * 2] || filterfreqPrevValue >  FILTERFREQS256[(value - TOLERANCE) * 2])) return; //PICK-UP
       filterFreq = FILTERFREQS256[value * 2];
       updateFilterFreq();
@@ -2178,7 +2158,18 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCoscfx:
-      value > 0 ? oscFX = 1 : oscFX = 0;
+      switch (value) {
+        case 0:
+          oscFX = 0;
+          break;
+        case 1:
+          oscFX = 1;
+          break;
+        case 2:
+        default:
+          oscFX = 2;
+          break;
+      }
       updateOscFX();
       break;
 
@@ -2534,6 +2525,7 @@ void checkMux() {
         myControlChange(midiChannel, CCfilterres, mux2Read);
         break;
       case MUX2_cutoff:
+        //Special case - Filter Cutoff is 8 bit, 256 values for smoother changes
         mux2Read = (mux2Read >> 2);
         if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[mux2Read - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS256[mux2Read + TOLERANCE])) return; //PICK-UP
         filterFreq = FILTERFREQS256[mux2Read];
@@ -2597,10 +2589,21 @@ void checkSwitches() {
   }
 
   oscFXSwitch.update();
-  if (oscFXSwitch.fallingEdge()) {
-    oscFX = !oscFX;
+  if (oscFXSwitch.read() == LOW && oscFXSwitch.duration() > HOLD_DURATION) {
+    //If oscFX held, switch to oscFX 2
+    oscFX = 2;
     midiCCOut(CCoscfx, oscFX);
     myControlChange(midiChannel, CCoscfx, oscFX);
+    oscFXSwitch.write(HIGH); //Come out of this state
+    oscFXMode = true;//Hack
+  } else if (oscFXSwitch.fallingEdge()) {
+    if (!oscFXMode) {
+      oscFX > 0 ? oscFX = 0 : oscFX = 1;
+      midiCCOut(CCoscfx, oscFX);
+      myControlChange(midiChannel, CCoscfx, oscFX);
+    } else {
+      oscFXMode = false;
+    }
   }
 
   filterLFORetrigSwitch.update();
