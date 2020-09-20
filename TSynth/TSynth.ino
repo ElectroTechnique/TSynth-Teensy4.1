@@ -31,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          58    94
+  600MHz Faster          58    95
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -116,8 +116,7 @@ FLASHMEM void setup() {
   sgtl5000_1.dacVolumeRamp();
   sgtl5000_1.muteHeadphone();
   sgtl5000_1.muteLineout();
-  sgtl5000_1.volume(SGTL_MAXVOLUME * 0.5f); //Headphones - do not initialise to maximum, but this is re-read
-
+  sgtl5000_1.volume(SGTL_MAXVOLUME);
   sgtl5000_1.audioPostProcessorEnable();
   sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
   sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
@@ -253,6 +252,10 @@ FLASHMEM void setup() {
   //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
   dcOffsetFilter.octaveControl(1.0f);
   dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
+
+  volumeMixer.gain(1, 0);
+  volumeMixer.gain(2, 0);
+  volumeMixer.gain(3, 0);
 
   ensemble.lfoRate(fxAmt);
 
@@ -1827,8 +1830,15 @@ FLASHMEM void updateRelease() {
 
 FLASHMEM void updateOscFX() {
   if (oscFX == 2) {
-    setOscModMixerA(3, 1 - oscBLevel);//Feed from Osc 2 (B)
-    setOscModMixerB(3, 1 - oscALevel);//Feed from Osc 1 (A)
+    if (oscALevel == 1.0f && oscBLevel <= 1.0f) {
+      setOscModMixerA(3, 1 - oscBLevel);//Feed from Osc 2 (B)
+      setWaveformMixerLevel(0, ONE);//Osc 1 (A)
+      setWaveformMixerLevel(1, 0);//Osc 2 (B)
+    } else {
+      setOscModMixerB(3, 1 - oscALevel);//Feed from Osc 1 (A)
+      setWaveformMixerLevel(0, 0);//Osc 1 (A)
+      setWaveformMixerLevel(1, ONE);//Osc 2 (B)
+    }
     //Set XOR type off
     setOscFXCombineMode(AudioEffectDigitalCombine::OFF);
     setWaveformMixerLevel(3, 0);//XOR
@@ -1892,14 +1902,11 @@ void myPitchBend(byte channel, int bend) {
 }
 
 void myControlChange(byte channel, byte control, byte value) {
-  //Serial.println("MIDI: " + String(control) + " : " + String(value));
   switch (control) {
     case CCvolume:
-      sgtl5000_1.volume(SGTL_MAXVOLUME * LINEAR[value]); //Headphones
-      //sgtl5000_1.lineOutLevel(31 - (18 * LINEAR[value])); //Line out, weird inverted values
+      volumeMixer.gain(0, LINEAR[value]);
       updateVolume(LINEAR[value]);
       break;
-
     case CCunison:
       switch (value) {
         case 0:
@@ -2397,7 +2404,7 @@ void checkMux() {
   mux1Read = adc->adc1->analogRead(MUX1_S);
   if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR)) {
     mux1ValuesPrev[muxInput] = mux1Read;
-    mux1Read = (mux1Read >> 3); //Change range to 0-127
+    mux1Read = (mux1Read >> 5); //Change range to 0-127
     switch (muxInput) {
       case MUX1_noiseLevel:
         midiCCOut(CCnoiseLevel, mux1Read);
@@ -2470,7 +2477,7 @@ void checkMux() {
   mux2Read = adc->adc1->analogRead(MUX2_S);
   if (mux2Read > (mux2ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux2Read < (mux2ValuesPrev[muxInput] - QUANTISE_FACTOR)) {
     mux2ValuesPrev[muxInput] = mux2Read;
-    if (muxInput != MUX2_cutoff) mux2Read = (mux2Read >> 3); //Change range to 0-127
+    if (muxInput != MUX2_cutoff) mux2Read = (mux2Read >> 5); //Change range to 0-127
     switch (muxInput) {
       case MUX2_attack:
         midiCCOut(CCampattack, mux2Read);
@@ -2526,7 +2533,7 @@ void checkMux() {
         break;
       case MUX2_cutoff:
         //Special case - Filter Cutoff is 8 bit, 256 values for smoother changes
-        mux2Read = (mux2Read >> 2);
+        mux2Read = (mux2Read >> 4);
         if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[mux2Read - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS256[mux2Read + TOLERANCE])) return; //PICK-UP
         filterFreq = FILTERFREQS256[mux2Read];
         updateFilterFreq();
@@ -2564,7 +2571,7 @@ void checkVolumePot() {
   volumeRead = adc->adc0->analogRead(VOLUME_POT);
   if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))  {
     volumePrevious = volumeRead;
-    volumeRead = (volumeRead >> 3); //Change range to 0-127
+    volumeRead = (volumeRead >> 5); //Change range to 0-127
     myControlChange(midiChannel, CCvolume, volumeRead);
   }
 }
@@ -2926,7 +2933,7 @@ void CPUMonitor() {
   Serial.print(F(")"));
   Serial.print(F("  MEM:"));
   Serial.println(AudioMemoryUsageMax());
-  delayMicroseconds(5);
+  delayMicroseconds(50);
 }
 
 void loop() {

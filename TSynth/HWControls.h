@@ -65,12 +65,12 @@ ADC *adc = new ADC();
 #define ENCODER_PINB 5
 
 #define RETRIG_LED 34
-#define TEMPO_LED 35
+#define TEMPO_LED 35 
 #define UNISON_LED 37
 #define OSC_FX_LED 14
 
 #define MUXCHANNELS 16
-#define QUANTISE_FACTOR 3// Sets a tolerance of noise on the ADC
+#define QUANTISE_FACTOR 15// Sets a tolerance of noise on the ADC. 15 is 4 bits
 
 #define DEBOUNCE 30
 
@@ -105,13 +105,13 @@ Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping
 FLASHMEM void setupHardware() {
   //Volume Pot is on ADC0
   adc->adc0->setAveraging(16); // set number of averages 0, 4, 8, 16 or 32.
-  adc->adc0->setResolution(10); // set bits of resolution  8, 10, 12 or 16 bits.
+  adc->adc0->setResolution(12); // set bits of resolution  8, 10, 12 or 16 bits.
   adc->adc0->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
   adc->adc0->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
 
   //MUXs on ADC1
   adc->adc1->setAveraging(32); // set number of averages 0, 4, 8, 16 or 32.
-  adc->adc1->setResolution(10); // set bits of resolution  8, 10, 12 or 16 bits.
+  adc->adc1->setResolution(12); // set bits of resolution  8, 10, 12 or 16 bits.
   adc->adc1->setConversionSpeed(ADC_CONVERSION_SPEED::VERY_LOW_SPEED); // change the conversion speed
   adc->adc1->setSamplingSpeed(ADC_SAMPLING_SPEED::MED_SPEED); // change the sampling speed
 

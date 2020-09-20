@@ -1,5 +1,5 @@
-//waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM
-//WAVEFORMLEVEL        oscA/BLevel             VELOCITY             VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL
+//waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM  --> volumeMixer
+//WAVEFORMLEVEL        oscA/BLevel             VELOCITY    VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL    volume
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=2356,593
 AudioSynthWaveformDc     constant1Dc;    //xy=69.5,437
@@ -217,6 +217,7 @@ AudioMixer4              voiceMixer2;     //xy=1524,570
 AudioMixer4              voiceMixer3;     //xy=1524,570
 AudioMixer4              voiceMixerM;     //xy=1544,580
 AudioFilterStateVariable dcOffsetFilter;     //xy=1564,580
+AudioMixer4              volumeMixer;     //xy=1544,580
 AudioEffectEnsemble       ensemble;  //xy=1800,600
 Oscilloscope              scope;
 AudioMixer4              effectMixerR;         //xy=1848,625
@@ -692,13 +693,14 @@ AudioConnection          patchCord197(voiceMixer1, 0, voiceMixerM, 0);
 AudioConnection          patchCord198(voiceMixer2, 0, voiceMixerM, 1);
 AudioConnection          patchCord215(voiceMixer3, 0, voiceMixerM, 2);
 AudioConnection          patchCord203(voiceMixerM, 0, dcOffsetFilter, 0);
-AudioConnection          patchCord112(dcOffsetFilter, 2, ensemble, 0);
+AudioConnection          patchCord441(dcOffsetFilter, 2, volumeMixer, 0);
+AudioConnection          patchCord112(volumeMixer, 0, ensemble, 0);
 AudioConnection          patchCord415(dcOffsetFilter, 2, scope, 0);
 AudioConnection          patchCord416(dcOffsetFilter, 2, peak, 0);
 AudioConnection          patchCord113(ensemble, 0, effectMixerL, 1);
 AudioConnection          patchCord114(ensemble, 1, effectMixerR, 1);
-AudioConnection          patchCord115(dcOffsetFilter, 2, effectMixerL, 0);
-AudioConnection          patchCord116(dcOffsetFilter, 2, effectMixerR, 0);
+AudioConnection          patchCord115(volumeMixer, 0, effectMixerL, 0);
+AudioConnection          patchCord116(volumeMixer, 0, effectMixerR, 0);
 AudioConnection          patchCord117(effectMixerR, 0, usbAudio, 1);
 AudioConnection          patchCord118(effectMixerR, 0, i2s, 1);
 AudioConnection          patchCord119(effectMixerL, 0, i2s, 0);
