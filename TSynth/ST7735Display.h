@@ -131,7 +131,7 @@ FLASHMEM void renderCurrentPatchPage() {
     colour[5] = ST7735_BLUE;
   }
 
-  //V7 BYOO
+  //V7
   if (voices[6].voiceOn == 1 && unison && notesOn > 2) {
     colour[6] = ST77XX_ORANGE;
   } else if (voices[6].voiceOn == 1 && unison && notesOn == 2 && colour[6] != ST77XX_ORANGE) {
@@ -160,7 +160,7 @@ FLASHMEM void renderCurrentPatchPage() {
     colour[8] = ST7735_BLUE;
   }
 
-  //10-12
+  //V10-12
   if (voices[9].voiceOn == 1 && unison && notesOn > 1) {
     colour[9] = ST7735_YELLOW;
     colour[10] = ST7735_YELLOW;

@@ -111,7 +111,7 @@ FLASHMEM void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(96);
+  AudioMemory(98);
   sgtl5000_1.enable();
   sgtl5000_1.dacVolumeRamp();
   sgtl5000_1.muteHeadphone();
@@ -189,7 +189,7 @@ FLASHMEM void setup() {
   pwmLfoA.begin(PWMWAVEFORM);
   pwmLfoB.amplitude(ONE);
   pwmLfoB.begin(PWMWAVEFORM);
-  pwmLfoB.phase(90.0f);
+  pwmLfoB.phase(10.0f);//Off set phase of second osc
 
   waveformMod1a.frequencyModulation(PITCHLFOOCTAVERANGE);
   waveformMod1a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
@@ -1261,7 +1261,7 @@ FLASHMEM void updatePWMRate() {
     updatePWMSource();
     setPwmMixerAPW(0);
     setPwmMixerBPW(0);
-    showCurrentParameterPage("PWM Rate", String(pwmRate) + " Hz");
+    showCurrentParameterPage("PWM Rate", String(2* pwmRate) + " Hz");//PWM goes through mid to maximum, sounding effectively twice as fast
   }
 }
 
@@ -1635,12 +1635,9 @@ FLASHMEM void updatePitchLFOMidiClkSync() {
 
 FLASHMEM void updateFilterLfoRate() {
   filterLfo.frequency(filterLfoRate);
-  if (filterLFOMidiClkSync)
-  {
+  if (filterLFOMidiClkSync) {
     showCurrentParameterPage("LFO Time Div", filterLFOTimeDivStr);
-  }
-  else
-  {
+  } else {
     showCurrentParameterPage("F. LFO Rate", String(filterLfoRate) + " Hz");
   }
 }
