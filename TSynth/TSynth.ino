@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.00
+  ElectroTechnique TSynth - Firmware Rev 2.01
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -111,7 +111,7 @@ FLASHMEM void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(98);
+  AudioMemory(96);
   sgtl5000_1.enable();
   sgtl5000_1.dacVolumeRamp();
   sgtl5000_1.muteHeadphone();
@@ -1261,7 +1261,7 @@ FLASHMEM void updatePWMRate() {
     updatePWMSource();
     setPwmMixerAPW(0);
     setPwmMixerBPW(0);
-    showCurrentParameterPage("PWM Rate", String(2* pwmRate) + " Hz");//PWM goes through mid to maximum, sounding effectively twice as fast
+    showCurrentParameterPage("PWM Rate", String(2 * pwmRate) + " Hz"); //PWM goes through mid to maximum, sounding effectively twice as fast
   }
 }
 
@@ -1609,13 +1609,13 @@ FLASHMEM void setFilterModMixer(int channel, float level) {
 }
 
 FLASHMEM void updateOscLFOAmt() {
-  pitchLfo.amplitude(oscLfoAmt);
+  pitchLfo.amplitude(oscLfoAmt + modWhAmt);
   char buf[10];
   showCurrentParameterPage("LFO Amount", dtostrf(oscLfoAmt, 4, 3, buf));
 }
 
 FLASHMEM void updateModWheel() {
-  pitchLfo.amplitude(oscLfoAmt);
+  pitchLfo.amplitude(oscLfoAmt + modWhAmt);
 }
 
 FLASHMEM void updatePitchLFORate() {
@@ -2041,7 +2041,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCmodwheel:
-      oscLfoAmt = POWER[value] * modWheelDepth; //Variable LFO amount from mod wheel - Settings Option
+      modWhAmt = POWER[value] * modWheelDepth; //Variable LFO amount from mod wheel - Settings Option
       updateModWheel();
       break;
 
@@ -2930,7 +2930,7 @@ void CPUMonitor() {
   Serial.print(F(")"));
   Serial.print(F("  MEM:"));
   Serial.println(AudioMemoryUsageMax());
-  delayMicroseconds(50);
+  delayMicroseconds(500);
 }
 
 void loop() {
