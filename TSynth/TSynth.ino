@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.01
+  ElectroTechnique TSynth - Firmware Rev 2.02
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -113,10 +113,10 @@ FLASHMEM void setup() {
 
   AudioMemory(96);
   sgtl5000_1.enable();
+  sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   sgtl5000_1.dacVolumeRamp();
   sgtl5000_1.muteHeadphone();
   sgtl5000_1.muteLineout();
-  sgtl5000_1.volume(SGTL_MAXVOLUME);
   sgtl5000_1.audioPostProcessorEnable();
   sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
   sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
@@ -253,6 +253,7 @@ FLASHMEM void setup() {
   dcOffsetFilter.octaveControl(1.0f);
   dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
 
+  volumeMixer.gain(0, 1.0f);
   volumeMixer.gain(1, 0);
   volumeMixer.gain(2, 0);
   volumeMixer.gain(3, 0);
@@ -433,7 +434,7 @@ void voice2On(byte note, byte velocity, float level) {
   keytracking2.amplitude(note * DIV127 * keytrackingAmount);
   voices[1].note = note;
   voices[1].timeOn = millis();
-  voiceMixer1.gain(1, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer1.gain(1, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope2.noteOn();
   ampEnvelope2.noteOn();
   voices[1].voiceOn = 1;
@@ -448,7 +449,7 @@ void voice3On(byte note, byte velocity, float level) {
   keytracking3.amplitude(note * DIV127 * keytrackingAmount);
   voices[2].note = note;
   voices[2].timeOn = millis();
-  voiceMixer1.gain(2, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer1.gain(2, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope3.noteOn();
   ampEnvelope3.noteOn();
   voices[2].voiceOn = 1;
@@ -463,7 +464,7 @@ void voice4On(byte note, byte velocity, float level) {
   keytracking4.amplitude(note * DIV127 * keytrackingAmount);
   voices[3].note = note;
   voices[3].timeOn = millis();
-  voiceMixer1.gain(3, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer1.gain(3, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope4.noteOn();
   ampEnvelope4.noteOn();
   voices[3].voiceOn = 1;
@@ -478,7 +479,7 @@ void voice5On(byte note, byte velocity, float level) {
   keytracking5.amplitude(note * DIV127 * keytrackingAmount);
   voices[4].note = note;
   voices[4].timeOn = millis();
-  voiceMixer2.gain(0, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer2.gain(0, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope5.noteOn();
   ampEnvelope5.noteOn();
   voices[4].voiceOn = 1;
@@ -493,7 +494,7 @@ void voice6On(byte note, byte velocity, float level) {
   keytracking6.amplitude(note * DIV127 * keytrackingAmount);
   voices[5].note = note;
   voices[5].timeOn = millis();
-  voiceMixer2.gain(1, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer2.gain(1, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope6.noteOn();
   ampEnvelope6.noteOn();
   voices[5].voiceOn = 1;
@@ -508,7 +509,7 @@ void voice7On(byte note, byte velocity, float level) {
   keytracking7.amplitude(note * DIV127 * keytrackingAmount);
   voices[6].note = note;
   voices[6].timeOn = millis();
-  voiceMixer2.gain(2, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer2.gain(2, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope7.noteOn();
   ampEnvelope7.noteOn();
   voices[6].voiceOn = 1;
@@ -523,7 +524,7 @@ void voice8On(byte note, byte velocity, float level) {
   keytracking8.amplitude(note * DIV127 * keytrackingAmount);
   voices[7].note = note;
   voices[7].timeOn = millis();
-  voiceMixer2.gain(3, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer2.gain(3, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope8.noteOn();
   ampEnvelope8.noteOn();
   voices[7].voiceOn = 1;
@@ -538,7 +539,7 @@ void voice9On(byte note, byte velocity, float level) {
   keytracking9.amplitude(note * DIV127 * keytrackingAmount);
   voices[8].note = note;
   voices[8].timeOn = millis();
-  voiceMixer3.gain(0, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer3.gain(0, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope9.noteOn();
   ampEnvelope9.noteOn();
   voices[8].voiceOn = 1;
@@ -553,7 +554,7 @@ void voice10On(byte note, byte velocity, float level) {
   keytracking10.amplitude(note * DIV127 * keytrackingAmount);
   voices[9].note = note;
   voices[9].timeOn = millis();
-  voiceMixer3.gain(1, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer3.gain(1, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope10.noteOn();
   ampEnvelope10.noteOn();
   voices[9].voiceOn = 1;
@@ -568,7 +569,7 @@ void voice11On(byte note, byte velocity, float level) {
   keytracking11.amplitude(note * DIV127 * keytrackingAmount);
   voices[10].note = note;
   voices[10].timeOn = millis();
-  voiceMixer3.gain(2, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer3.gain(2, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope11.noteOn();
   ampEnvelope11.noteOn();
   voices[10].voiceOn = 1;
@@ -583,7 +584,7 @@ void voice12On(byte note, byte velocity, float level) {
   keytracking12.amplitude(note * DIV127 * keytrackingAmount);
   voices[11].note = note;
   voices[11].timeOn = millis();
-  voiceMixer3.gain(3, VELOCITY[velocitySens][velocity] * VOICEMIXERLEVEL);
+  voiceMixer3.gain(3, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope12.noteOn();
   ampEnvelope12.noteOn();
   voices[11].voiceOn = 1;
@@ -1901,7 +1902,8 @@ void myPitchBend(byte channel, int bend) {
 void myControlChange(byte channel, byte control, byte value) {
   switch (control) {
     case CCvolume:
-      volumeMixer.gain(0, LINEAR[value]);
+      //volumeMixer.gain(0, LINEAR[value]);
+      sgtl5000_1.volume(LINEAR[value] * SGTL_MAXVOLUME);
       updateVolume(LINEAR[value]);
       break;
     case CCunison:

@@ -2,7 +2,6 @@
 #define Oscilloscope_h_
 #include "AudioStream.h"
 #include "ST7735_t3.h"
-#define NO_OF_BLOCKS 2
 
 class Oscilloscope : public AudioStream {
   public:
@@ -16,56 +15,38 @@ class Oscilloscope : public AudioStream {
   private:
     audio_block_t *inputQueueArray[1];
     ST7735_t3 *display;
-    int16_t buffer[AUDIO_BLOCK_SAMPLES * NO_OF_BLOCKS];
-    int16_t old_val[AUDIO_BLOCK_SAMPLES];
-    uint32_t count = 0;
+    int16_t buffer[AUDIO_BLOCK_SAMPLES];
 };
 #endif
 
 void Oscilloscope::ScreenSetup(ST7735_t3 *screen) {
-  __disable_irq();
   display = screen;
-  __enable_irq();
 }
 
 void Oscilloscope::Display() {
-  __disable_irq();
-  boolean crossing = false;
-  int16_t pixel_x = 0;
-  uint32_t i = 0;
-  do {
-    int16_t wave_data = buffer[i];
-    if (crossing || wave_data > 0) {
-      i++;
-      wave_data = buffer[i];
-      if (crossing || wave_data <0 ) {
-        crossing = true;
-        int16_t pixel_y = map(wave_data, 32767, -32768, -100, 100) + 63;
-        display->drawPixel(pixel_x + 15, old_val[pixel_x], 0);//Remove previous pixel
-        display->drawPixel(pixel_x + 15, pixel_y, 0x07B0);//New pixel
-        old_val[pixel_x] = {pixel_y};
-        pixel_x++;
-      }
-    }
-    i++;
-  } while (i < AUDIO_BLOCK_SAMPLES * NO_OF_BLOCKS);
-
-  __enable_irq();
+  uint8_t pixel_x = 0;
+  int16_t prev_pixel_y = 63;
+  for (uint8_t i = 0; i < AUDIO_BLOCK_SAMPLES - 1; i++) {
+    int16_t pixel_y = map(buffer[i], 32767, -32768, -120, 120) + 63;
+    if (pixel_y < 30) pixel_y = 30;
+    if (pixel_y > 100)pixel_y = 100;
+    display->drawLine(pixel_x + 15, prev_pixel_y, pixel_x + 16, pixel_y, 0x07B0);
+    prev_pixel_y = pixel_y;
+    pixel_x++;
+  }
 }
 
 void Oscilloscope::AddtoBuffer(int16_t *audio) {
-  const int16_t *begin = audio;
-  const int16_t *end = audio + AUDIO_BLOCK_SAMPLES;
-  __disable_irq();
-  do {
-    buffer[count++] = *audio;
-    audio++;
-  } while (audio < end);
-    if(count > (AUDIO_BLOCK_SAMPLES * NO_OF_BLOCKS) -1){
-      count = 0;
-      Display();
+  int16_t prev_audio = 0;
+  uint32_t count = 0;
+  prev_audio = *audio;
+  audio++;
+  if (prev_audio > 1 && *audio < -1 ) {
+    for (uint8_t i = 0; i < AUDIO_BLOCK_SAMPLES - 1; i++) {
+      buffer[count++] = *audio;
+      audio++;
     }
-  __enable_irq();
+  }
 }
 
 void Oscilloscope::update(void) {
@@ -75,5 +56,6 @@ void Oscilloscope::update(void) {
   if (block) {
     AddtoBuffer(block->data);
     release(block);
+    Display();
   }
 }
