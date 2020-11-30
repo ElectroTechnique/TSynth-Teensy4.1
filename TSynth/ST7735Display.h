@@ -491,5 +491,5 @@ void setupDisplay() {
   tft.invertDisplay(true);
   renderBootUpPage();
   tft.updateScreen();
-  //threads.addThread(displayThread);
+  threads.addThread(displayThread);
 }
