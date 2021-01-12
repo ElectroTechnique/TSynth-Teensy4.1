@@ -228,16 +228,16 @@ FLASHMEM void renderCurrentParameterPage() {
       tft.setTextSize(1);
       tft.println(currentParameter);
 
-// Not a necessary feature perhaps
-//      if (midiOutCh > 0) {
-//        tft.setTextColor(ST77XX_ORANGE);
-//        tft.setFont(&Org_01);
-//        tft.setTextSize(2);
-//        tft.setCursor(140, 35);
-//        tft.println(midiOutCh);
-//        tft.setFont(&FreeSans12pt7b);
-//        tft.setTextSize(1);
-//      }
+      // Not a necessary feature perhaps
+      //      if (midiOutCh > 0) {
+      //        tft.setTextColor(ST77XX_ORANGE);
+      //        tft.setFont(&Org_01);
+      //        tft.setTextSize(2);
+      //        tft.setCursor(140, 35);
+      //        tft.println(midiOutCh);
+      //        tft.setFont(&FreeSans12pt7b);
+      //        tft.setTextSize(1);
+      //      }
       renderPeak();
       tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
       tft.setCursor(1, 90);
@@ -485,8 +485,8 @@ void displayThread() {
 }
 
 void setupDisplay() {
-  tft.useFrameBuffer(true);
   tft.initR(INITR_GREENTAB);
+  tft.useFrameBuffer(true);
   tft.setRotation(3);
   tft.invertDisplay(true);
   renderBootUpPage();

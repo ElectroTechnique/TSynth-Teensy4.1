@@ -1,4 +1,4 @@
-#define SETTINGSOPTIONSNO 11
+#define SETTINGSOPTIONSNO 12//No of options
 #define SETTINGSVALUESNO 18//Maximum number of settings option values needed
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
@@ -16,6 +16,7 @@ void settingsKeyTracking(char * value);
 void settingsPitchBend(char * value);
 void settingsModWheelDepth(char * value);
 void settingsMIDIOutCh(char * value);
+void settingsMIDIThru(char * value);
 void settingsEncoderDir(char * value);
 void settingsPickupEnable(char * value);
 void settingsBassEnhanceEnable(char * value);
@@ -29,6 +30,7 @@ int currentIndexKeyTracking();
 int currentIndexPitchBend();
 int currentIndexModWheelDepth();
 int currentIndexMIDIOutCh();
+int currentIndexMIDIThru();
 int currentIndexEncoderDir();
 int currentIndexPickupEnable();
 int currentIndexBassEnhanceEnable();
@@ -77,6 +79,15 @@ FLASHMEM void settingsMIDIOutCh(char * value) {
     midiOutCh = atoi(value);
   }
   storeMidiOutCh(midiOutCh);
+}
+
+FLASHMEM void settingsMIDIThru(char * value) {
+  if (strcmp(value, "Off") == 0) MIDIThru = midi::Thru::Off;
+  if (strcmp(value, "Full") == 0)  MIDIThru =  midi::Thru::Full;
+  if (strcmp(value, "Same Ch.") == 0) MIDIThru =  midi::Thru::SameChannel;
+  if (strcmp(value, "Diff. Ch.") == 0) MIDIThru =  midi::Thru::DifferentChannel;
+  changeMIDIThruMode();
+  storeMidiThru(MIDIThru);
 }
 
 FLASHMEM void settingsEncoderDir(char * value) {
@@ -159,6 +170,14 @@ FLASHMEM int currentIndexMIDIOutCh() {
   return getMIDIOutCh();
 }
 
+FLASHMEM int currentIndexMIDIThru() {
+  if (MIDIThru == midi::Thru::Off) return 0;
+  if (MIDIThru == midi::Thru::Full)  return 1;
+  if (MIDIThru == midi::Thru::SameChannel) return 2;
+  if (MIDIThru == midi::Thru::DifferentChannel) return 3;
+  return 0;
+}
+
 FLASHMEM int currentIndexEncoderDir() {
   return getEncoderDir() ? 0 : 1;
 }
@@ -194,6 +213,7 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", '\0'}, settingsPitchBend, currentIndexPitchBend});
   settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", '\0'}, settingsModWheelDepth, currentIndexModWheelDepth});
   settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", '\0'}, settingsMIDIOutCh, currentIndexMIDIOutCh});
+  settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", '\0'}, settingsMIDIThru, currentIndexMIDIThru});
   settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", '\0'}, settingsEncoderDir, currentIndexEncoderDir});
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", '\0'}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", '\0'}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});

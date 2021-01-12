@@ -37,9 +37,9 @@
 #endif
 #endif
 
-
+//A compromise of speed vs noise introduced into analogue audio
+//#define ST7735_SPICLOCK 48000000
 #define ST7735_SPICLOCK 24000000
-//#define ST7735_SPICLOCK 16000000
 
 // some flags for initR() :(
 #define INITR_GREENTAB 0x0

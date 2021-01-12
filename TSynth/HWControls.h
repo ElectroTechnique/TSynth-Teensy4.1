@@ -65,9 +65,11 @@ ADC *adc = new ADC();
 #define ENCODER_PINB 5
 
 #define RETRIG_LED 34
-#define TEMPO_LED 35 
+#define TEMPO_LED 35
 #define UNISON_LED 37
 #define OSC_FX_LED 14
+
+#define BACKLIGHT 6
 
 #define MUXCHANNELS 16
 #define QUANTISE_FACTOR 15// Sets a tolerance of noise on the ADC. 15 is 4 bits
@@ -143,4 +145,7 @@ FLASHMEM void setupHardware() {
   pinMode(TEMPO_LED, OUTPUT);
   pinMode(UNISON_LED, OUTPUT);
   pinMode(OSC_FX_LED, OUTPUT);
+
+  //Display backlight - Can be use to turn off or dim using PWM
+  //pinMode(BACKLIGHT, OUTPUT);
 }

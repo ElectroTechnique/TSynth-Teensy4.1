@@ -1,6 +1,7 @@
 //Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
 byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
 byte midiOutCh = 0;//(EEPROM)
+int MIDIThru = midi::Thru::Off;//(EEPROM)
 String patchName = INITPATCHNAME;
 boolean encCW = true;//This is to set the encoder to increment when turned CW - Settings Option
 float oscALevel = 1.0f;

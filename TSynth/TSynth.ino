@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.03
+  ElectroTechnique TSynth - Firmware Rev 2.10
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -84,10 +84,6 @@ struct VoiceAndNote voices[NO_OF_VOICES] = {{ -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0
 uint32_t notesOn = 0;
 
 #include "ST7735Display.h"
-#include "Settings.h"
-
-boolean cardStatus = false;
-boolean firstPatchLoaded = false;
 
 //USB HOST MIDI Class Compliant
 USBHost myusb;
@@ -97,6 +93,15 @@ MIDIDevice midi1(myusb);
 
 //MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
+
+void changeMIDIThruMode() {
+  MIDI.turnThruOn(MIDIThru);
+}
+
+#include "Settings.h"
+
+boolean cardStatus = false;
+boolean firstPatchLoaded = false;
 
 int prevNote = 48;//This is for glide to use previous note to glide from
 float previousMillis = millis(); //For MIDI Clk Sync
@@ -268,6 +273,9 @@ FLASHMEM void setup() {
   modWheelDepth = getModWheelDepth();
   //Read MIDI Out Channel from EEPROM
   midiOutCh = getMIDIOutCh();
+  //Read MIDI Thru mode from EEPROM
+  MIDIThru = getMidiThru();
+  changeMIDIThruMode();
   //Read Encoder Direction from EEPROM
   encCW = getEncoderDir();
   //Read Pick-up enable from EEPROM - experimental feature
@@ -1103,18 +1111,23 @@ FLASHMEM void setPwmMixerBFEnv(float value) {
 FLASHMEM void updateUnison() {
   if (unison == 0) {
     allNotesOff();//Avoid hanging notes
+    noiseMixer.gain(0, ONE);
+    noiseMixer.gain(1, ONE);
     showCurrentParameterPage("Unison", "Off");
     pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, LOW);  // LED off
   } else if (unison == 1) {
+    noiseMixer.gain(0, UNISONNOISEMIXERLEVEL);
+    noiseMixer.gain(1, UNISONNOISEMIXERLEVEL);
     showCurrentParameterPage("Dyn. Unison", "On");
     pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   } else {
+    noiseMixer.gain(0, UNISONNOISEMIXERLEVEL);
+    noiseMixer.gain(1, UNISONNOISEMIXERLEVEL);
     showCurrentParameterPage("Chd. Unison", "On");
     analogWriteFrequency(UNISON_LED, 1);
     analogWrite(UNISON_LED, 127);
-    // digitalWriteFast(UNISON_LED, HIGH);  // LED on
   }
 }
 
@@ -2921,6 +2934,7 @@ void midiCCOut(byte cc, byte value) {
   if (midiOutCh > 0) {
     usbMIDI.sendControlChange(cc, value, midiOutCh);
     midi1.sendControlChange(cc, value, midiOutCh);
+    if (MIDIThru == midi::Thru::Off) MIDI.sendControlChange(cc, value, midiOutCh); //MIDI DIN is set to Out
   }
 }
 
@@ -2937,9 +2951,12 @@ void CPUMonitor() {
 
 void loop() {
   myusb.Task();
-  midi1.read(midiChannel);   //USB HOST MIDI Class Compliant
-  usbMIDI.read(midiChannel); //USB Client MIDI
-  MIDI.read(midiChannel);    //MIDI 5 Pin DIN
+  //USB HOST MIDI Class Compliant
+  midi1.read(midiChannel);
+  //USB Client MIDI
+  usbMIDI.read(midiChannel);
+  //MIDI 5 Pin DIN
+  MIDI.read(midiChannel);
   checkMux();
   checkSwitches();
   checkEncoder();

@@ -9,6 +9,7 @@
 #define EEPROM_SCOPE_ENABLE 6
 #define EEPROM_MIDI_OUT_CH 7
 #define EEPROM_VU_ENABLE 8
+#define EEPROM_MIDI_THRU 9
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
@@ -49,6 +50,16 @@ FLASHMEM int getMIDIOutCh() {
 
 FLASHMEM void storeMidiOutCh(byte channel){
   EEPROM.update(EEPROM_MIDI_OUT_CH, channel);
+}
+
+FLASHMEM midi::Thru::Mode getMidiThru() {
+  byte midiThruMode = EEPROM.read(EEPROM_MIDI_THRU);
+  if (midiThruMode < midi::Thru::Off || midiThruMode > midi::Thru::DifferentChannel) return midi::Thru::Full; //If EEPROM has no MIDI Thru stored
+  return midiThruMode;
+}
+
+FLASHMEM void storeMidiThru(byte thru){
+  EEPROM.update(EEPROM_MIDI_THRU, thru);
 }
 
 FLASHMEM boolean getEncoderDir() {
