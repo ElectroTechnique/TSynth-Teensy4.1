@@ -10,7 +10,7 @@
 #define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
 
 // GUItool: begin automatically generated code
-AudioOutputUSB           usbAudio;       //xy=3197.6666984558105,1821
+AudioOutputUSB           usbAudio;       //xy=3197,1821
 AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
 AudioSynthNoisePink      pink;           //xy=1462
 AudioSynthNoiseWhite     white;          //xy=1460
