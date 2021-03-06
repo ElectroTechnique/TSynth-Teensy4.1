@@ -1,13 +1,22 @@
 //waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM  --> volumeMixer
 //WAVEFORMLEVEL        oscA/BLevel             VELOCITY    VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL    volume
+
+// Make the visual audio design tool work by substituting the *TS locally changed classes by those it knows: 
+// but also ensure all redefined class names are undefined within this scope, if lingering defines exist, raise an error:
+#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated)
+# error "Either AudioSynthWaveform or AudioSynthWaveformModulated are already redefined!"
+#endif
+#define AudioSynthWaveform          AudioSynthWaveformTS
+#define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
+
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=2356,593
 AudioSynthWaveformDc     constant1Dc;    //xy=69.5,437
 AudioSynthNoisePink      pink;           //xy=268,349
 AudioSynthNoiseWhite     white;           //xy=268,359
 AudioMixer4              noiseMixer;       //xy=288,369 
-AudioSynthWaveformTS       pwmLfoA;         //xy=92,208
-AudioSynthWaveformTS       pwmLfoB;         //xy=92,208
+AudioSynthWaveform       pwmLfoA;         //xy=92,208
+AudioSynthWaveform       pwmLfoB;         //xy=92,208
 AudioSynthWaveformDc     pwa;            //xy=107,256
 AudioSynthWaveformDc     pwb;            //xy=110,301
 AudioAnalyzePeak peak;
@@ -50,7 +59,7 @@ AudioMixer4              pwMixer12a;         //xy=353.75,688.75
 AudioMixer4              pwMixer12b;         //xy=358.75,763.75
 
 
-AudioSynthWaveformTS       pitchLfo;         //xy=122,111
+AudioSynthWaveform       pitchLfo;         //xy=122,111
 AudioSynthWaveformDc     glide1;          //xy=124,152
 AudioSynthWaveformDc     glide2;          //xy=124,152
 AudioSynthWaveformDc     glide3;          //xy=124,152
@@ -66,7 +75,7 @@ AudioSynthWaveformDc     glide12;          //xy=124,152
 
 
 AudioSynthWaveformDc     pitchBend;      //xy=128,74
-AudioSynthWaveformTS       filterLfo;         //xy=166,632
+AudioSynthWaveform       filterLfo;         //xy=166,632
 AudioSynthWaveformDc     keytracking1;    //xy=176,745
 AudioSynthWaveformDc     keytracking2;    //xy=196,745
 AudioSynthWaveformDc     keytracking3;    //xy=216,745
@@ -107,30 +116,30 @@ AudioMixer4              oscModMixer11b;         //xy=550,265
 AudioMixer4              oscModMixer12a;         //xy=550,285
 AudioMixer4              oscModMixer12b;         //xy=550,305
 
-AudioSynthWaveformModulatedTS   waveformMod1b;  //xy=503,170
-AudioSynthWaveformModulatedTS  waveformMod1a;  //xy=507,114
-AudioSynthWaveformModulatedTS  waveformMod2b;  //xy=513,550
-AudioSynthWaveformModulatedTS  waveformMod4a;  //xy=519,899
-AudioSynthWaveformModulatedTS  waveformMod2a;  //xy=521,458
-AudioSynthWaveformModulatedTS waveformMod4b;  //xy=525,940
-AudioSynthWaveformModulatedTS waveformMod3a;  //xy=532,678
-AudioSynthWaveformModulatedTS waveformMod3b;  //xy=535,744
-AudioSynthWaveformModulatedTS waveformMod5a;  //xy=521,458
-AudioSynthWaveformModulatedTS waveformMod5b;  //xy=525,940
-AudioSynthWaveformModulatedTS waveformMod6a;  //xy=532,678
-AudioSynthWaveformModulatedTS waveformMod6b;  //xy=535,744
-AudioSynthWaveformModulatedTS waveformMod7b;  //xy=503,170
-AudioSynthWaveformModulatedTS waveformMod7a;  //xy=507,114
-AudioSynthWaveformModulatedTS waveformMod8b;  //xy=513,550
-AudioSynthWaveformModulatedTS waveformMod8a;  //xy=519,899
-AudioSynthWaveformModulatedTS waveformMod9a;  //xy=521,458
-AudioSynthWaveformModulatedTS waveformMod9b;  //xy=525,940
-AudioSynthWaveformModulatedTS waveformMod10a;  //xy=532,678
-AudioSynthWaveformModulatedTS waveformMod10b;  //xy=535,744
-AudioSynthWaveformModulatedTS waveformMod11a;  //xy=521,458
-AudioSynthWaveformModulatedTS waveformMod11b;  //xy=525,940
-AudioSynthWaveformModulatedTS waveformMod12a;  //xy=532,678
-AudioSynthWaveformModulatedTS waveformMod12b;  //xy=535,744
+AudioSynthWaveformModulated   waveformMod1b;  //xy=503,170
+AudioSynthWaveformModulated  waveformMod1a;  //xy=507,114
+AudioSynthWaveformModulated  waveformMod2b;  //xy=513,550
+AudioSynthWaveformModulated  waveformMod4a;  //xy=519,899
+AudioSynthWaveformModulated  waveformMod2a;  //xy=521,458
+AudioSynthWaveformModulated waveformMod4b;  //xy=525,940
+AudioSynthWaveformModulated waveformMod3a;  //xy=532,678
+AudioSynthWaveformModulated waveformMod3b;  //xy=535,744
+AudioSynthWaveformModulated waveformMod5a;  //xy=521,458
+AudioSynthWaveformModulated waveformMod5b;  //xy=525,940
+AudioSynthWaveformModulated waveformMod6a;  //xy=532,678
+AudioSynthWaveformModulated waveformMod6b;  //xy=535,744
+AudioSynthWaveformModulated waveformMod7b;  //xy=503,170
+AudioSynthWaveformModulated waveformMod7a;  //xy=507,114
+AudioSynthWaveformModulated waveformMod8b;  //xy=513,550
+AudioSynthWaveformModulated waveformMod8a;  //xy=519,899
+AudioSynthWaveformModulated waveformMod9a;  //xy=521,458
+AudioSynthWaveformModulated waveformMod9b;  //xy=525,940
+AudioSynthWaveformModulated waveformMod10a;  //xy=532,678
+AudioSynthWaveformModulated waveformMod10b;  //xy=535,744
+AudioSynthWaveformModulated waveformMod11a;  //xy=521,458
+AudioSynthWaveformModulated waveformMod11b;  //xy=525,940
+AudioSynthWaveformModulated waveformMod12a;  //xy=532,678
+AudioSynthWaveformModulated waveformMod12b;  //xy=535,744
 
 AudioEffectDigitalCombine oscFX1;       //xy=663,223
 AudioEffectDigitalCombine oscFX2;       //xy=684,542
@@ -707,3 +716,7 @@ AudioConnection          patchCord119(effectMixerL, 0, i2s, 0);
 AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
 // GUItool: end automatically generated code
+
+// Undefine custom classes renaming:
+#undef AudioSynthWaveform
+#undef AudioSynthWaveformModulated
