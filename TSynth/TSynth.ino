@@ -75,9 +75,9 @@ const static uint32_t  WAVEFORM_PARABOLIC = 103;
 const static uint32_t WAVEFORM_HARMONIC = 104;
 
 struct VoiceAndNote {
-  uint32_t note;
   long timeOn;
-  uint32_t voiceOn;
+  byte note;
+  bool voiceOn;
 };
 
 struct VoiceAndNote voices[NO_OF_VOICES] = {{ -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}};
@@ -108,7 +108,7 @@ float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;//For MIDI Clk Sync
 uint32_t patchNo = 1;//Current patch no
-uint32_t voiceToReturn = -1; //Initialise
+int voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup() {
@@ -430,7 +430,7 @@ void voice1On(byte note, byte velocity, float level) {
   voiceMixer1.gain(0, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope1.noteOn();
   ampEnvelope1.noteOn();
-  voices[0].voiceOn = 1;
+  voices[0].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide1.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -445,7 +445,7 @@ void voice2On(byte note, byte velocity, float level) {
   voiceMixer1.gain(1, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope2.noteOn();
   ampEnvelope2.noteOn();
-  voices[1].voiceOn = 1;
+  voices[1].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide2.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -460,7 +460,7 @@ void voice3On(byte note, byte velocity, float level) {
   voiceMixer1.gain(2, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope3.noteOn();
   ampEnvelope3.noteOn();
-  voices[2].voiceOn = 1;
+  voices[2].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide3.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -475,7 +475,7 @@ void voice4On(byte note, byte velocity, float level) {
   voiceMixer1.gain(3, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope4.noteOn();
   ampEnvelope4.noteOn();
-  voices[3].voiceOn = 1;
+  voices[3].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide4.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -490,7 +490,7 @@ void voice5On(byte note, byte velocity, float level) {
   voiceMixer2.gain(0, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope5.noteOn();
   ampEnvelope5.noteOn();
-  voices[4].voiceOn = 1;
+  voices[4].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide5.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -505,7 +505,7 @@ void voice6On(byte note, byte velocity, float level) {
   voiceMixer2.gain(1, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope6.noteOn();
   ampEnvelope6.noteOn();
-  voices[5].voiceOn = 1;
+  voices[5].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide6.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -520,7 +520,7 @@ void voice7On(byte note, byte velocity, float level) {
   voiceMixer2.gain(2, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope7.noteOn();
   ampEnvelope7.noteOn();
-  voices[6].voiceOn = 1;
+  voices[6].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide7.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -535,7 +535,7 @@ void voice8On(byte note, byte velocity, float level) {
   voiceMixer2.gain(3, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope8.noteOn();
   ampEnvelope8.noteOn();
-  voices[7].voiceOn = 1;
+  voices[7].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide8.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -550,7 +550,7 @@ void voice9On(byte note, byte velocity, float level) {
   voiceMixer3.gain(0, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope9.noteOn();
   ampEnvelope9.noteOn();
-  voices[8].voiceOn = 1;
+  voices[8].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide9.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -565,7 +565,7 @@ void voice10On(byte note, byte velocity, float level) {
   voiceMixer3.gain(1, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope10.noteOn();
   ampEnvelope10.noteOn();
-  voices[9].voiceOn = 1;
+  voices[9].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide10.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -580,7 +580,7 @@ void voice11On(byte note, byte velocity, float level) {
   voiceMixer3.gain(2, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope11.noteOn();
   ampEnvelope11.noteOn();
-  voices[10].voiceOn = 1;
+  voices[10].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide11.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -595,7 +595,7 @@ void voice12On(byte note, byte velocity, float level) {
   voiceMixer3.gain(3, VELOCITY[velocitySens][velocity] * level);
   filterEnvelope12.noteOn();
   ampEnvelope12.noteOn();
-  voices[11].voiceOn = 1;
+  voices[11].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
     glide12.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
     glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
@@ -608,63 +608,63 @@ void endVoice(int voice) {
     case 1:
       filterEnvelope1.noteOff();
       ampEnvelope1.noteOff();
-      voices[0].voiceOn = 0;
+      voices[0].voiceOn = false;
       break;
     case 2:
       filterEnvelope2.noteOff();
       ampEnvelope2.noteOff();
-      voices[1].voiceOn = 0;
+      voices[1].voiceOn = false;
       break;
     case 3:
       filterEnvelope3.noteOff();
       ampEnvelope3.noteOff();
-      voices[2].voiceOn = 0;
+      voices[2].voiceOn = false;
       break;
     case 4:
       filterEnvelope4.noteOff();
       ampEnvelope4.noteOff();
-      voices[3].voiceOn = 0;
+      voices[3].voiceOn = false;
       break;
     case 5:
       filterEnvelope5.noteOff();
       ampEnvelope5.noteOff();
       prevNote = voices[4].note;
-      voices[4].voiceOn = 0;
+      voices[4].voiceOn = false;
       break;
     case 6:
       filterEnvelope6.noteOff();
       ampEnvelope6.noteOff();
-      voices[5].voiceOn = 0;
+      voices[5].voiceOn = false;
       break;
     case 7:
       filterEnvelope7.noteOff();
       ampEnvelope7.noteOff();
-      voices[6].voiceOn = 0;
+      voices[6].voiceOn = false;
       break;
     case 8:
       filterEnvelope8.noteOff();
       ampEnvelope8.noteOff();
-      voices[7].voiceOn = 0;
+      voices[7].voiceOn = false;
       break;
     case 9:
       filterEnvelope9.noteOff();
       ampEnvelope9.noteOff();
-      voices[8].voiceOn = 0;
+      voices[8].voiceOn = false;
       break;
     case 10:
       filterEnvelope10.noteOff();
       ampEnvelope10.noteOff();
-      voices[9].voiceOn = 0;
+      voices[9].voiceOn = false;
       break;
     case 11:
       filterEnvelope11.noteOff();
       ampEnvelope11.noteOff();
-      voices[10].voiceOn = 0;
+      voices[10].voiceOn = false;
       break;
     case 12:
       filterEnvelope12.noteOff();
       ampEnvelope12.noteOff();
-      voices[11].voiceOn = 0;
+      voices[11].voiceOn = false;
       break;
     default:
       //Do nothing
@@ -678,7 +678,7 @@ void myNoteOff(byte channel, byte note, byte velocity) {
     endVoice(getVoiceNo(note));
   } else {
     //UNISON MODE
-    for (int i = 0; i < NO_OF_VOICES; i++) {
+    for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
       endVoice(getVoiceNo(note));
     }
   }
@@ -686,7 +686,7 @@ void myNoteOff(byte channel, byte note, byte velocity) {
 
 void allNotesOff() {
   notesOn = 0;
-  for (int v = 0; v < NO_OF_VOICES; v++) {
+  for (uint32_t v = 0; v < NO_OF_VOICES; v++) {
     endVoice(v + 1);
   }
 }
@@ -696,8 +696,8 @@ int getVoiceNo(int note) {
   earliestTime = millis(); //Initialise to now
   if (note == -1) {
     //NoteOn() - Get the oldest free voice (recent voices may be still on release stage)
-    for (int i = 0; i < NO_OF_VOICES; i++) {
-      if (voices[i].voiceOn == 0) {
+    for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
+      if (!voices[i].voiceOn) {
         if (voices[i].timeOn < earliestTime) {
           earliestTime = voices[i].timeOn;
           voiceToReturn = i;
@@ -707,7 +707,7 @@ int getVoiceNo(int note) {
     if (voiceToReturn == -1) {
       //No free voices, need to steal oldest sounding voice
       earliestTime = millis(); //Reinitialise
-      for (int i = 0; i < NO_OF_VOICES; i++) {
+      for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
         if (voices[i].timeOn < earliestTime) {
           earliestTime = voices[i].timeOn;
           voiceToReturn = i;
@@ -717,8 +717,8 @@ int getVoiceNo(int note) {
     return voiceToReturn + 1;
   } else {
     //NoteOff() - Get voice number from note
-    for (int i = 0; i < NO_OF_VOICES; i++) {
-      if (voices[i].note == note && voices[i].voiceOn == 1) {
+    for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
+      if (voices[i].note == note && voices[i].voiceOn) {
         return i + 1;
       }
     }

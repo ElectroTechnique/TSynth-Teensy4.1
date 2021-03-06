@@ -55,7 +55,7 @@ FLASHMEM void storeMidiOutCh(byte channel){
 FLASHMEM midi::Thru::Mode getMidiThru() {
   byte midiThruMode = EEPROM.read(EEPROM_MIDI_THRU);
   if (midiThruMode < midi::Thru::Off || midiThruMode > midi::Thru::DifferentChannel) return midi::Thru::Full; //If EEPROM has no MIDI Thru stored
-  return midiThruMode;
+  return (midi::Thru::Mode)midiThruMode;
 }
 
 FLASHMEM void storeMidiThru(byte thru){
