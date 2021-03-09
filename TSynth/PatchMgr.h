@@ -9,7 +9,7 @@
 #define TOTALCHARS 64
 
 const static char CHARACTERS[TOTALCHARS] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
-uint32_t charIndex = 0;
+int charIndex = 0;
 char currentCharacter = 0;
 String renamedPatch = "";
 
@@ -44,7 +44,7 @@ FLASHMEM void recallPatchData(File patchFile, String data[]){
   //Read patch data from file and set current patch parameters
   size_t n;     // Length of returned field with delimiter.
   char str[20]; // Must hold longest field with delimiter and zero byte.
-  int i = 0;
+  uint32_t i = 0;
   while (patchFile.available() && i < NO_OF_PARAMS)
   {
     n = readField(&patchFile, str, sizeof(str), ",\n");
@@ -144,7 +144,7 @@ FLASHMEM void savePatch(const char *patchNo, String patchData){
 
 FLASHMEM void savePatch(const char *patchNo, String patchData[]){
   String dataString = patchData[0];
-  for (int i = 1; i < NO_OF_PARAMS; i++)
+  for (uint32_t i = 1; i < NO_OF_PARAMS; i++)
   {
     dataString = dataString + "," + patchData[i];
   }

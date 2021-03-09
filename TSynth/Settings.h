@@ -4,25 +4,25 @@ uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
 struct SettingsOption
 {
-  char * option;//Settings option string
-  char *value[SETTINGSVALUESNO];//Array of strings of settings option values
-  int  handler;//Function to handle the values for this settings option
-  int  currentIndex;//Function to array index of current value for this settings option
+  const char * option;//Settings option string
+  const char *value[SETTINGSVALUESNO];//Array of strings of settings option values
+  void (*handler)(const char*);//Function to handle the values for this settings option
+  int  (*currentIndex)();//Function to array index of current value for this settings option
 };
 
-void settingsMIDICh(char * value);
-void settingsVelocitySens(char * value);
-void settingsKeyTracking(char * value);
-void settingsPitchBend(char * value);
-void settingsModWheelDepth(char * value);
-void settingsMIDIOutCh(char * value);
-void settingsMIDIThru(char * value);
-void settingsEncoderDir(char * value);
-void settingsPickupEnable(char * value);
-void settingsBassEnhanceEnable(char * value);
-void settingsScopeEnable(char * value);
-void settingsVUEnable(char * value);
-void settingsHandler(char * s, void (*f)(char*));
+void settingsMIDICh(const char * value);
+void settingsVelocitySens(const char * value);
+void settingsKeyTracking(const char * value);
+void settingsPitchBend(const char * value);
+void settingsModWheelDepth(const char * value);
+void settingsMIDIOutCh(const char * value);
+void settingsMIDIThru(const char * value);
+void settingsEncoderDir(const char * value);
+void settingsPickupEnable(const char * value);
+void settingsBassEnhanceEnable(const char * value);
+void settingsScopeEnable(const char * value);
+void settingsVUEnable(const char * value);
+void settingsHandler(const char * s, void (*f)(const char*));
 
 int currentIndexMIDICh();
 int currentIndexVelocitySens();
@@ -39,7 +39,7 @@ int currentIndexVUEnable();
 int getCurrentIndex(int (*f)());
 
 
-FLASHMEM void settingsMIDICh(char * value) {
+FLASHMEM void settingsMIDICh(const char * value) {
   if (strcmp(value, "ALL") == 0) {
     midiChannel = MIDI_CHANNEL_OMNI;
   } else {
@@ -48,7 +48,7 @@ FLASHMEM void settingsMIDICh(char * value) {
   storeMidiChannel(midiChannel);
 }
 
-FLASHMEM void settingsVelocitySens(char * value) {
+FLASHMEM void settingsVelocitySens(const char * value) {
   if (strcmp(value, "Off") == 0) {
     velocitySens = 0;
   } else {
@@ -56,23 +56,23 @@ FLASHMEM void settingsVelocitySens(char * value) {
   }
 }
 
-FLASHMEM void settingsKeyTracking(char * value) {
+FLASHMEM void settingsKeyTracking(const char * value) {
   if (strcmp(value, "None") == 0) keytrackingAmount = 0;
   if (strcmp(value, "Half") == 0)  keytrackingAmount =  0.5;
   if (strcmp(value, "Full") == 0) keytrackingAmount =  1.0;
 }
 
-FLASHMEM void settingsPitchBend(char * value) {
+FLASHMEM void settingsPitchBend(const char * value) {
   pitchBendRange = atoi(value);
   storePitchBendRange(pitchBendRange);
 }
 
-FLASHMEM void settingsModWheelDepth(char * value) {
+FLASHMEM void settingsModWheelDepth(const char * value) {
   modWheelDepth = atoi(value) / 10.0f;
   storeModWheelDepth(modWheelDepth);
 }
 
-FLASHMEM void settingsMIDIOutCh(char * value) {
+FLASHMEM void settingsMIDIOutCh(const char * value) {
   if (strcmp(value, "Off") == 0) {
     midiOutCh = 0;
   } else {
@@ -81,7 +81,7 @@ FLASHMEM void settingsMIDIOutCh(char * value) {
   storeMidiOutCh(midiOutCh);
 }
 
-FLASHMEM void settingsMIDIThru(char * value) {
+FLASHMEM void settingsMIDIThru(const char * value) {
   if (strcmp(value, "Off") == 0) MIDIThru = midi::Thru::Off;
   if (strcmp(value, "Full") == 0)  MIDIThru =  midi::Thru::Full;
   if (strcmp(value, "Same Ch.") == 0) MIDIThru =  midi::Thru::SameChannel;
@@ -90,7 +90,7 @@ FLASHMEM void settingsMIDIThru(char * value) {
   storeMidiThru(MIDIThru);
 }
 
-FLASHMEM void settingsEncoderDir(char * value) {
+FLASHMEM void settingsEncoderDir(const char * value) {
   if (strcmp(value, "Type 1") == 0) {
     encCW = true;
   } else {
@@ -99,7 +99,7 @@ FLASHMEM void settingsEncoderDir(char * value) {
   storeEncoderDir(encCW ? 1 : 0);
 }
 
-FLASHMEM void settingsPickupEnable(char * value) {
+FLASHMEM void settingsPickupEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
     pickUp = false;
   } else {
@@ -108,7 +108,7 @@ FLASHMEM void settingsPickupEnable(char * value) {
   storePickupEnable(pickUp ? 1 : 0);
 }
 
-FLASHMEM void settingsBassEnhanceEnable(char * value) {
+FLASHMEM void settingsBassEnhanceEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
     sgtl5000_1.enhanceBassDisable();
     storeBassEnhanceEnable(0);
@@ -118,7 +118,7 @@ FLASHMEM void settingsBassEnhanceEnable(char * value) {
   }
 }
 
-FLASHMEM void settingsScopeEnable(char * value) {
+FLASHMEM void settingsScopeEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
     enableScope(false);
     storeScopeEnable(0);
@@ -128,7 +128,7 @@ FLASHMEM void settingsScopeEnable(char * value) {
   }
 }
 
-FLASHMEM void settingsVUEnable(char * value) {
+FLASHMEM void settingsVUEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
     vuMeter = false;
     storeVUEnable(0);
@@ -139,7 +139,7 @@ FLASHMEM void settingsVUEnable(char * value) {
 }
 
 //Takes a pointer to a specific method for the settings option and invokes it.
-FLASHMEM void settingsHandler(char * s, void (*f)(char*) ) {
+FLASHMEM void settingsHandler(const char * s, void (*f)(const char*) ) {
   f(s);
 }
 
@@ -203,20 +203,20 @@ FLASHMEM int getCurrentIndex(int (*f)() ) {
   return f();
 }
 
-const CircularBuffer<SettingsOption, SETTINGSOPTIONSNO>  settingsOptions;
+CircularBuffer<SettingsOption, SETTINGSOPTIONSNO>  settingsOptions;
 
 // add settings to the circular buffer
 FLASHMEM void setUpSettings() {
-  settingsOptions.push(SettingsOption{"MIDI Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", '\0'}, settingsMIDICh, currentIndexMIDICh});
-  settingsOptions.push(SettingsOption{"Key Tracking", {"None", "Half", "Full", '\0'}, settingsKeyTracking, currentIndexKeyTracking});
-  settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", '\0'}, settingsVelocitySens, currentIndexVelocitySens});
-  settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", '\0'}, settingsPitchBend, currentIndexPitchBend});
-  settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", '\0'}, settingsModWheelDepth, currentIndexModWheelDepth});
-  settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", '\0'}, settingsMIDIOutCh, currentIndexMIDIOutCh});
-  settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", '\0'}, settingsMIDIThru, currentIndexMIDIThru});
-  settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", '\0'}, settingsEncoderDir, currentIndexEncoderDir});
-  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", '\0'}, settingsPickupEnable, currentIndexPickupEnable});
-  settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", '\0'}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
-  settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", '\0'}, settingsScopeEnable, currentIndexScopeEnable});
-  settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", '\0'}, settingsVUEnable, currentIndexVUEnable});
+  settingsOptions.push(SettingsOption{"MIDI Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDICh, currentIndexMIDICh});
+  settingsOptions.push(SettingsOption{"Key Tracking", {"None", "Half", "Full", "\0"}, settingsKeyTracking, currentIndexKeyTracking});
+  settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", "\0"}, settingsVelocitySens, currentIndexVelocitySens});
+  settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "\0"}, settingsPitchBend, currentIndexPitchBend});
+  settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "\0"}, settingsModWheelDepth, currentIndexModWheelDepth});
+  settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDIOutCh, currentIndexMIDIOutCh});
+  settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", "\0"}, settingsMIDIThru, currentIndexMIDIThru});
+  settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
+  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
+  settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
+  settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
+  settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
 }
