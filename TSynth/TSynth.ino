@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.10
+  ElectroTechnique TSynth - Firmware Rev 2.11
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -31,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          58    95
+  600MHz Faster          58    96
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -90,6 +90,7 @@ USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
 MIDIDevice midi1(myusb);
+//MIDIDevice_BigBuffer midi1(myusb);//Try this if your MIDI Compliant controller has problems
 
 //MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
@@ -1280,17 +1281,17 @@ FLASHMEM void updatePWMRate() {
 }
 
 FLASHMEM void updatePWMAmount() {
-  //MIDI only - sets both osc
+  //MIDI only - sets both osc PWM
   pwA = 0;
   pwB = 0;
   setPwmMixerALFO(pwmAmtA);
   setPwmMixerBLFO(pwmAmtB);
-  showCurrentParameterPage("PWM Amt", String(pwmAmtA) + " " + String(pwmAmtB));
+  showCurrentParameterPage("PWM Amt", String(pwmAmtA) + " : " + String(pwmAmtB));
 }
 
 FLASHMEM void updatePWA() {
   if (pwmRate == -10) {
-    //if PWM amount is around zero, fixed PW is enabled
+    //fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
     setPwmMixerAFEnv(0);
@@ -1323,7 +1324,7 @@ FLASHMEM void updatePWA() {
 
 FLASHMEM void updatePWB() {
   if (pwmRate == -10)  {
-    //if PWM amount is around zero, fixed PW is enabled
+    //fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
     setPwmMixerAFEnv(0);
@@ -2368,7 +2369,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePitchB();
   updateDetune();
   updatePWMSource();
-  updatePWMAmount();
+  //updatePWMAmount();//Not needed
   updatePWA();
   updatePWB();
   updatePWMRate();
@@ -2406,8 +2407,8 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 }
 
 FLASHMEM String getCurrentPatchData() {
-  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
-         String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt) + "," + String(oscLfoRate) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate) + "," +
+  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed, 5) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
+         String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
@@ -2950,8 +2951,8 @@ void CPUMonitor() {
 }
 
 void loop() {
-  myusb.Task();
   //USB HOST MIDI Class Compliant
+  myusb.Task();
   midi1.read(midiChannel);
   //USB Client MIDI
   usbMIDI.read(midiChannel);
@@ -2960,6 +2961,5 @@ void loop() {
   checkMux();
   checkSwitches();
   checkEncoder();
-
   //CPUMonitor();
 }
