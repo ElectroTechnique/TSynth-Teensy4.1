@@ -1839,6 +1839,21 @@ FLASHMEM void updateRelease() {
   }
 }
 
+FLASHMEM void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
+  oscFX1.setCombineMode(mode);
+  oscFX2.setCombineMode(mode);
+  oscFX3.setCombineMode(mode);
+  oscFX4.setCombineMode(mode);
+  oscFX5.setCombineMode(mode);
+  oscFX6.setCombineMode(mode);
+  oscFX7.setCombineMode(mode);
+  oscFX8.setCombineMode(mode);
+  oscFX9.setCombineMode(mode);
+  oscFX10.setCombineMode(mode);
+  oscFX11.setCombineMode(mode);
+  oscFX12.setCombineMode(mode);
+}
+
 FLASHMEM void updateOscFX() {
   if (oscFX == 2) {
     if (oscALevel == 1.0f && oscBLevel <= 1.0f) {
@@ -1874,21 +1889,6 @@ FLASHMEM void updateOscFX() {
     pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, LOW);  // LED off
   }
-}
-
-FLASHMEM void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
-  oscFX1.setCombineMode(mode);
-  oscFX2.setCombineMode(mode);
-  oscFX3.setCombineMode(mode);
-  oscFX4.setCombineMode(mode);
-  oscFX5.setCombineMode(mode);
-  oscFX6.setCombineMode(mode);
-  oscFX7.setCombineMode(mode);
-  oscFX8.setCombineMode(mode);
-  oscFX9.setCombineMode(mode);
-  oscFX10.setCombineMode(mode);
-  oscFX11.setCombineMode(mode);
-  oscFX12.setCombineMode(mode);
 }
 
 FLASHMEM void updateFXAmt() {
