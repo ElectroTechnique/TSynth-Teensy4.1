@@ -1,7 +1,7 @@
 /*
    MIT License
 
-  Copyright (c) 2020 ElectroTechnique
+  Copyright (c) 2020-21 ElectroTechnique
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.11
+  ElectroTechnique TSynth - Firmware Rev 2.12
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -31,11 +31,12 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          58    96
+  600MHz Faster        ~62     96
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
-    Alexander Davis - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    Alexander Davis / Vince R. Pearson - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    Github member fab672000 - General improvements to code
     Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
   Additional libraries:
@@ -117,7 +118,7 @@ FLASHMEM void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(96);
+  AudioMemory(97);
   sgtl5000_1.enable();
   sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   sgtl5000_1.dacVolumeRamp();

@@ -1,5 +1,6 @@
 /* Audio Library for Teensy 3.X
-   Copyright (c) 2019, Alexander Davis info@matrixwide.com
+   Portions Copyright (c) 2019, Alexander Davis info@matrixwide.com
+   Portions Copyright (c) 2021, Vince R. Pearson
 
    Permission is hereby granted, free of charge, to any person obtaining a copy
    of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +21,15 @@
    THE SOFTWARE.
 */
 
+// V. Pearson: Implemented delay buffer interpolation with floating point fractional indices and using a larger table
+// to reduce audible delay sweep quantization noise.
+// The fractional indices are stored in flash memory instead of being calculated at runtime and stored in RAM.
+// #define LARGE_ENSEMBLE_LFO_TABLE uses a larger lfo table with only delay buffer interpolation.
+// This is more precise and is slightly faster but takes more flash memory.
+// With it undefined, lfo table and delay buffer interpolation are implemented with some extra processing and a smaller lfo table. 
+
+#define LARGE_ENSEMBLE_LFO_TABLE
+
 #ifndef effect_ensemble_h_
 #define effect_ensemble_h_
 
@@ -28,11 +38,18 @@
 #define ENSEMBLE_BUFFER_SIZE 1024
 // to put a channel 90 degrees out of LFO phase for stereo spread
 #define PHASE_90 367
-#define LFO_SIZE 1470
-#define COUNTS_PER_LFO 200
 
 // LFO wavetable parameters
-#define LFO_SAMPLES 1470
+#ifdef LARGE_ENSEMBLE_LFO_TABLE
+  #define LFO_SAMPLES (1470*4) // number of samples in tablle
+  #define LFO_SIZE (1470*4) // number of effective values (no interpolation so same as table size).
+  #define COUNTS_PER_LFO (200/4) // Adjust for larger table so the rate is the same.
+#else
+  #define LFO_SAMPLES 1470 // number of samples in table
+  #define LFO_SIZE (1470*4) // number of effective values interpolated from table
+  #define COUNTS_PER_LFO (200/4) // Adjust for larger effective table so the rate is the same.
+#endif
+
 #define LFO_RANGE 110
 
 class AudioEffectEnsemble : public AudioStream
@@ -47,8 +64,8 @@ class AudioEffectEnsemble : public AudioStream
     // buffers
     int16_t delayBuffer[ENSEMBLE_BUFFER_SIZE];
 
-    // LFO wavetable until I resolve progmem issues
-    int16_t lfoTable[LFO_SAMPLES];
+    // LFO wavetable
+    const static float PROGMEM lfoTable[];
 
     // input index
     int16_t inIndex;
@@ -69,25 +86,20 @@ class AudioEffectEnsemble : public AudioStream
     // lfo rate counter
     int16_t lfoCount;
     // output index offset
-    int16_t offset1;
-    int16_t offset2;
-    int16_t offset3;
-    int16_t offset4;
-    int16_t offset5;
-    int16_t offsetIndex1;
-    int16_t offsetIndex2;
-    int16_t offsetIndex3;
-    int16_t offsetIndex4;
-    int16_t offsetIndex5;
-    int16_t offsetIndex1B;
-    int16_t offsetIndex2B;
-    int16_t offsetIndex3B;
-    int16_t offsetIndex4B;
-    int16_t offsetIndex5B;
-
-    int16_t iC;
-
+    float offset1;
+    float offset2;
+    float offset3;
+    float offset4;
+    float offset5;
     //Default countsPerLfo
     int countsPerLfo = COUNTS_PER_LFO;
+    int16_t interpBuffer(float findex);
+    
+    #ifndef LARGE_ENSEMBLE_LFO_TABLE
+    float lfoLookup(int16_t lfoIndex);
+    #endif
+
 };
+
+
 #endif
