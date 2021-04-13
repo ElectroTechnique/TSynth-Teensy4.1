@@ -76,6 +76,7 @@ class AudioEffectEnsemble : public AudioStream
     int16_t outIndex3;
     int16_t outIndex4;
     int16_t outIndex5;
+    int16_t outIndex6;
     // lfo index
     // seprated by thirds to approximate 120 degree phase relationship
     int16_t lfoIndex1;
@@ -83,6 +84,7 @@ class AudioEffectEnsemble : public AudioStream
     int16_t lfoIndex3;
     int16_t lfoIndex4;
     int16_t lfoIndex5;
+    int16_t lfoIndex6;
     // lfo rate counter
     int16_t lfoCount;
     // output index offset
@@ -91,6 +93,7 @@ class AudioEffectEnsemble : public AudioStream
     float offset3;
     float offset4;
     float offset5;
+    float offset6;
     //Default countsPerLfo
     int countsPerLfo = COUNTS_PER_LFO;
     int16_t interpBuffer(float findex);
