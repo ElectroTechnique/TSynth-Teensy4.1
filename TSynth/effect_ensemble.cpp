@@ -50,13 +50,15 @@ AudioEffectEnsemble::AudioEffectEnsemble() : AudioStream(1, inputQueueArray){
   outIndex3 = 512;
   outIndex4 = 512;
   outIndex5 = 512;
+  outIndex6 = 512;
   // lfo index
   // seprated by sixths to approximate 60 degree phase relationship
   lfoIndex1 = 0;
-  lfoIndex2 = 122;
-  lfoIndex3 = 245;
-  lfoIndex4 = 368;
-  lfoIndex5 = 490;
+  lfoIndex2 = 245;
+  lfoIndex3 = 490;
+  lfoIndex4 = 735;
+  lfoIndex5 = 980;
+  lfoIndex6 = 1225;
   // lfo rate counter
   lfoCount = 0;
   // input index offset
@@ -65,6 +67,7 @@ AudioEffectEnsemble::AudioEffectEnsemble() : AudioStream(1, inputQueueArray){
   offset3 = 0;
   offset4 = 0;
   offset5 = 0;
+  offset6 = 0;
 }
 
 // TODO: move this to one of the data files, use in output_adat.cpp, output_tdm.cpp, etc
@@ -158,7 +161,11 @@ void AudioEffectEnsemble::update(void)
       lfoIndex5++;
       if (lfoIndex5 > (LFO_SIZE - 1))
         lfoIndex5 = 0;        
-        
+
+      lfoIndex6++;
+      if (lfoIndex6 > (LFO_SIZE - 1))
+        lfoIndex6 = 0;        
+
       // reset the counter
       lfoCount = 0;
     }
@@ -183,19 +190,26 @@ void AudioEffectEnsemble::update(void)
     outIndex5++;
     if (outIndex5 > (ENSEMBLE_BUFFER_SIZE - 1))
       outIndex5 = 0;
-      
+
+    outIndex6++;
+    if (outIndex6 > (ENSEMBLE_BUFFER_SIZE - 1))
+      outIndex6 = 0;
+
+     
 #ifdef LARGE_ENSEMBLE_LFO_TABLE
     offset1 = lfoTable[lfoIndex1];
     offset2 = lfoTable[lfoIndex2];
     offset3 = lfoTable[lfoIndex3];
     offset4 = lfoTable[lfoIndex4];
     offset5 = lfoTable[lfoIndex5];
+    offset6 = lfoTable[lfoIndex6];
 #else
     offset1 = lfoLookup(lfoIndex1);
     offset2 = lfoLookup(lfoIndex2);
     offset3 = lfoLookup(lfoIndex3);
     offset4 = lfoLookup(lfoIndex4);
     offset5 = lfoLookup(lfoIndex5);
+    offset6 = lfoLookup(lfoIndex6);	
 #endif
     
 
@@ -204,17 +218,19 @@ void AudioEffectEnsemble::update(void)
     sum=(int32_t)interpBuffer((float)outIndex1 + offset1);
     sum+=(int32_t)interpBuffer((float)outIndex2 + offset2);
     sum+=(int32_t)interpBuffer((float)outIndex3 + offset3);
-    sum+=(int32_t)interpBuffer((float)outIndex3 + offset4);
-    sum+=(int32_t)interpBuffer((float)outIndex3 + offset5);
-    sum=sum/3;
+    sum+=(int32_t)interpBuffer((float)outIndex4 + offset4);
+    sum+=(int32_t)interpBuffer((float)outIndex5 + offset5);
+    sum+=(int32_t)interpBuffer((float)outIndex6 + offset6);
+    sum=sum/6;
     outblock->data[i]=(uint16_t)sum;
 
     sum=(int32_t)interpBuffer((float)outIndex1 + offset1+PHASE_90);
     sum+=(int32_t)interpBuffer((float)outIndex2 + offset2+PHASE_90);
     sum+=(int32_t)interpBuffer((float)outIndex3 + offset3+PHASE_90);
-    sum+=(int32_t)interpBuffer((float)outIndex3 + offset4+PHASE_90);
-    sum+=(int32_t)interpBuffer((float)outIndex3 + offset5+PHASE_90);
-    sum=sum/3;
+    sum+=(int32_t)interpBuffer((float)outIndex4 + offset4+PHASE_90);
+    sum+=(int32_t)interpBuffer((float)outIndex5 + offset5+PHASE_90);
+    sum+=(int32_t)interpBuffer((float)outIndex6 + offset6+PHASE_90);
+    sum=sum/6;
     outblockB->data[i]=(uint16_t)sum;
   }
 
