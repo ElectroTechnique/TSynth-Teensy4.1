@@ -58,6 +58,7 @@
 #include "EepromMgr.h"
 #include "Detune.h"
 #include "Velocity.h"
+#include "Voice.h"
 
 #define PARAMETER 0 //The main page for displaying the current patch and control (parameter) changes
 #define RECALL 1 //Patches list
@@ -75,13 +76,7 @@ uint32_t state = PARAMETER;
 const static uint32_t  WAVEFORM_PARABOLIC = 103;
 const static uint32_t WAVEFORM_HARMONIC = 104;
 
-struct VoiceAndNote {
-  long timeOn;
-  byte note;
-  bool voiceOn;
-};
-
-struct VoiceAndNote voices[NO_OF_VOICES] = {{ -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}, { -1, 0, 0}};
+Voice voices[NO_OF_VOICES] = {{Oscillators[0]}, {Oscillators[1]}, {Oscillators[2]}, {Oscillators[3]}, {Oscillators[4]}, {Oscillators[5]}, {Oscillators[6]}, {Oscillators[7]}, {Oscillators[8]}, {Oscillators[9]}, {Oscillators[10]}, {Oscillators[11]}};
 uint32_t notesOn = 0;
 
 #include "ST7735Display.h"
@@ -114,7 +109,7 @@ int voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
 // Macros to help do things for each NO_OF_VOICES
-#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(Oscillators[i].CMD)
+#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(voices[i].patch().CMD)
 #define FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < NO_OF_VOICES; i++){ CMD; }
 
 FLASHMEM void setup() {
@@ -203,13 +198,13 @@ FLASHMEM void setup() {
   pwmLfoB.phase(10.0f);//Off set phase of second osc
 
   FOR_EACH_VOICE(
-    Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
-    Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-    Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
-    Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
+    voices[i].patch().waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
+    voices[i].patch().waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
+    voices[i].patch().waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
+    voices[i].patch().waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
   )
 
-  //Arbitary waveform needs initialising to something
+  //Arbitary waveform needs initializing to something
   loadArbWaveformA(PARABOLIC_WAVE);
   loadArbWaveformB(PARABOLIC_WAVE);
 
@@ -338,16 +333,15 @@ void myNoteOn(byte channel, byte note, byte velocity) {
 }
 
 void voiceOn(uint8_t index, byte note, byte velocity, float level) {
-  Oscillators[index].keytracking_.amplitude(note * DIV127 * keytrackingAmount);
-  voices[index].note = note;
-  voices[index].timeOn = millis();
-  Oscillators[index].voiceMixer_.gain(index % 4, VELOCITY[velocitySens][velocity] * level);
-  Oscillators[index].filterEnvelope_.noteOn();
-  Oscillators[index].ampEnvelope_.noteOn();
-  voices[index].voiceOn = true;
+  Patch& osc = voices[index].patch();
+  osc.keytracking_.amplitude(note * DIV127 * keytrackingAmount);
+  osc.voiceMixer_.gain(index % 4, VELOCITY[velocitySens][velocity] * level);
+  osc.filterEnvelope_.noteOn();
+  osc.ampEnvelope_.noteOn();
+  voices[index].noteOn(note);
   if (glideSpeed > 0 && note != prevNote) {
-    Oscillators[index].glide_.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    Oscillators[index].glide_.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+    osc.glide_.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
+    osc.glide_.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
   if (unison == 0)prevNote = note;  
 }
@@ -355,9 +349,9 @@ void voiceOn(uint8_t index, byte note, byte velocity, float level) {
 // renamed from endVoice to match voiceOn
 void voiceOff(uint8_t index) {
   if (index < 0 || index >= NO_OF_VOICES) return;
-  Oscillators[index].filterEnvelope_.noteOff();
-  Oscillators[index].ampEnvelope_.noteOff();
-  voices[index].voiceOn = false;
+  voices[index].patch().filterEnvelope_.noteOff();
+  voices[index].patch().ampEnvelope_.noteOff();
+  voices[index].noteOff();
 }
 
 void myNoteOff(byte channel, byte note, byte velocity) {
@@ -385,9 +379,9 @@ int getVoiceNo(int note) {
   if (note == -1) {
     //NoteOn() - Get the oldest free voice (recent voices may be still on release stage)
     FOR_EACH_VOICE(
-      if (!voices[i].voiceOn) {
-        if (voices[i].timeOn < earliestTime) {
-          earliestTime = voices[i].timeOn;
+      if (!voices[i].on()) {
+        if (voices[i].timeOn() < earliestTime) {
+          earliestTime = voices[i].timeOn();
           voiceToReturn = i;
         }
       }
@@ -395,8 +389,8 @@ int getVoiceNo(int note) {
     if (voiceToReturn == -1) {
       //No free voices, need to steal oldest sounding voice
       FOR_EACH_VOICE(
-        if (voices[i].timeOn < earliestTime) {
-          earliestTime = voices[i].timeOn;
+        if (voices[i].timeOn() < earliestTime) {
+          earliestTime = voices[i].timeOn();
           voiceToReturn = i;
         }
       )
@@ -405,7 +399,7 @@ int getVoiceNo(int note) {
   } else {
     //NoteOff() - Get voice number from note
     FOR_EACH_VOICE(
-      if (voices[i].note == note && voices[i].voiceOn) {
+      if (voices[i].note() == note && voices[i].on()) {
         return i;
       }
     )
@@ -417,17 +411,17 @@ int getVoiceNo(int note) {
 }
 
 void updateVoice(int voiceIdx) {
-  Patch &osc = Oscillators[voiceIdx];
+  Patch &osc = voices[voiceIdx].patch();
   if (unison == 1) {
     int offset = 2 * voiceIdx;
-    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset])));
-    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset + 1])));
+    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset])));
+    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset + 1])));
   } else if (unison == 2) {
-    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchA + CHORD_DETUNE[voiceIdx][chordDetune]]) ;
-    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchB + CHORD_DETUNE[voiceIdx][chordDetune]] * CDT_DETUNE);
+    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchA + CHORD_DETUNE[voiceIdx][chordDetune]]) ;
+    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchB + CHORD_DETUNE[voiceIdx][chordDetune]] * CDT_DETUNE);
   } else {
-    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchA]);
-    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchB] * detune);
+    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchA]);
+    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchB] * detune);
   }
 }
 
@@ -912,9 +906,9 @@ FLASHMEM void updateFilterMixer() {
   }
 
   FOR_EACH_VOICE(
-    Oscillators[i].filterMixer_.gain(0, LP);
-    Oscillators[i].filterMixer_.gain(1, BP);
-    Oscillators[i].filterMixer_.gain(2, HP);
+    voices[i].patch().filterMixer_.gain(0, LP);
+    voices[i].patch().filterMixer_.gain(1, BP);
+    voices[i].patch().filterMixer_.gain(2, HP);
   )
 
   showCurrentParameterPage("Filter Type", filterStr);
@@ -1478,8 +1472,8 @@ FLASHMEM void myMIDIClock() {
 
 FLASHMEM void closeEnvelopes() {
   FOR_EACH_VOICE(
-    Oscillators[i].filterEnvelope_.close();
-    Oscillators[i].ampEnvelope_.close();
+    voices[i].patch().filterEnvelope_.close();
+    voices[i].patch().ampEnvelope_.close();
   )
 }
 

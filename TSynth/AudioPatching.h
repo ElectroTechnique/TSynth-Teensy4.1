@@ -1,3 +1,6 @@
+#ifndef TSYNTH_AUDIO_PATCHING_H
+#define TSYNTH_AUDIO_PATCHING_H
+
 //waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM  --> volumeMixer
 //WAVEFORMLEVEL        oscA/BLevel             VELOCITY    VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL    volume
 
@@ -968,3 +971,5 @@ Patch Oscillators[12] = {
 // Undefine custom classes renaming:
 #undef AudioSynthWaveform
 #undef AudioSynthWaveformModulated
+
+#endif
