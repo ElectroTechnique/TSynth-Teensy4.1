@@ -602,96 +602,30 @@ FLASHMEM int getPitch(int value) {
 }
 
 FLASHMEM void setPwmMixerALFO(float value) {
-  pwMixer1a.gain(0, value);
-  pwMixer2a.gain(0, value);
-  pwMixer3a.gain(0, value);
-  pwMixer4a.gain(0, value);
-  pwMixer5a.gain(0, value);
-  pwMixer6a.gain(0, value);
-  pwMixer7a.gain(0, value);
-  pwMixer8a.gain(0, value);
-  pwMixer9a.gain(0, value);
-  pwMixer10a.gain(0, value);
-  pwMixer11a.gain(0, value);
-  pwMixer12a.gain(0, value);
+  FOR_EACH_OSC(pwMixer_a.gain(0, value));
   showCurrentParameterPage("1. PWM LFO", String(value));
 }
 
 FLASHMEM void setPwmMixerBLFO(float value) {
-  pwMixer1b.gain(0, value);
-  pwMixer2b.gain(0, value);
-  pwMixer3b.gain(0, value);
-  pwMixer4b.gain(0, value);
-  pwMixer5b.gain(0, value);
-  pwMixer6b.gain(0, value);
-  pwMixer7b.gain(0, value);
-  pwMixer8b.gain(0, value);
-  pwMixer9b.gain(0, value);
-  pwMixer10b.gain(0, value);
-  pwMixer11b.gain(0, value);
-  pwMixer12b.gain(0, value);
+  FOR_EACH_OSC(pwMixer_b.gain(0, value));
   showCurrentParameterPage("2. PWM LFO", String(value));
 }
 
 FLASHMEM void setPwmMixerAPW(float value) {
-  pwMixer1a.gain(1, value);
-  pwMixer2a.gain(1, value);
-  pwMixer3a.gain(1, value);
-  pwMixer4a.gain(1, value);
-  pwMixer5a.gain(1, value);
-  pwMixer6a.gain(1, value);
-  pwMixer7a.gain(1, value);
-  pwMixer8a.gain(1, value);
-  pwMixer9a.gain(1, value);
-  pwMixer10a.gain(1, value);
-  pwMixer11a.gain(1, value);
-  pwMixer12a.gain(1, value);
+  FOR_EACH_OSC(pwMixer_a.gain(1, value));
 }
 
 FLASHMEM void setPwmMixerBPW(float value) {
-  pwMixer1b.gain(1, value);
-  pwMixer2b.gain(1, value);
-  pwMixer3b.gain(1, value);
-  pwMixer4b.gain(1, value);
-  pwMixer5b.gain(1, value);
-  pwMixer6b.gain(1, value);
-  pwMixer7b.gain(1, value);
-  pwMixer8b.gain(1, value);
-  pwMixer9b.gain(1, value);
-  pwMixer10b.gain(1, value);
-  pwMixer11b.gain(1, value);
-  pwMixer12b.gain(1, value);
+  FOR_EACH_OSC(pwMixer_b.gain(1, value));
 }
 
 FLASHMEM void setPwmMixerAFEnv(float value) {
-  pwMixer1a.gain(2, value);
-  pwMixer2a.gain(2, value);
-  pwMixer3a.gain(2, value);
-  pwMixer4a.gain(2, value);
-  pwMixer5a.gain(2, value);
-  pwMixer6a.gain(2, value);
-  pwMixer7a.gain(2, value);
-  pwMixer8a.gain(2, value);
-  pwMixer9a.gain(2, value);
-  pwMixer10a.gain(2, value);
-  pwMixer11a.gain(2, value);
-  pwMixer12a.gain(2, value);
+  FOR_EACH_OSC(pwMixer_a.gain(2, value));
   showCurrentParameterPage("1. PWM F Env", String(value));
 }
 
 FLASHMEM void setPwmMixerBFEnv(float value) {
-  pwMixer1b.gain(2, value);
-  pwMixer2b.gain(2, value);
-  pwMixer3b.gain(2, value);
-  pwMixer4b.gain(2, value);
-  pwMixer5b.gain(2, value);
-  pwMixer6b.gain(2, value);
-  pwMixer7b.gain(2, value);
-  pwMixer8b.gain(2, value);
-  pwMixer9b.gain(2, value);
-  pwMixer10b.gain(2, value);
-  pwMixer11b.gain(2, value);
-  pwMixer12b.gain(2, value);
+  FOR_EACH_OSC(pwMixer_b.gain(2, value));
   showCurrentParameterPage("2. PWM F Env", String(value));
 }
 
@@ -741,18 +675,7 @@ FLASHMEM void updateWaveformA() {
     newWaveform = WAVEFORM_ARBITRARY;
   }
 
-  waveformMod1a.begin(newWaveform);
-  waveformMod2a.begin(newWaveform);
-  waveformMod3a.begin(newWaveform);
-  waveformMod4a.begin(newWaveform);
-  waveformMod5a.begin(newWaveform);
-  waveformMod6a.begin(newWaveform);
-  waveformMod7a.begin(newWaveform);
-  waveformMod8a.begin(newWaveform);
-  waveformMod9a.begin(newWaveform);
-  waveformMod10a.begin(newWaveform);
-  waveformMod11a.begin(newWaveform);
-  waveformMod12a.begin(newWaveform);
+  FOR_EACH_OSC(waveformMod_a.begin(newWaveform))
   showCurrentParameterPage("1. Waveform", getWaveformStr(oscWaveformA));
 }
 
@@ -767,18 +690,7 @@ FLASHMEM void updateWaveformB() {
     newWaveform = WAVEFORM_ARBITRARY;
   }
 
-  waveformMod1b.begin(newWaveform);
-  waveformMod2b.begin(newWaveform);
-  waveformMod3b.begin(newWaveform);
-  waveformMod4b.begin(newWaveform);
-  waveformMod5b.begin(newWaveform);
-  waveformMod6b.begin(newWaveform);
-  waveformMod7b.begin(newWaveform);
-  waveformMod8b.begin(newWaveform);
-  waveformMod9b.begin(newWaveform);
-  waveformMod10b.begin(newWaveform);
-  waveformMod11b.begin(newWaveform);
-  waveformMod12b.begin(newWaveform);
+  FOR_EACH_OSC(waveformMod_b.begin(newWaveform))
   showCurrentParameterPage("2. Waveform", getWaveformStr(oscWaveformB));
 }
 
@@ -981,48 +893,15 @@ FLASHMEM void updateOscLevelB() {
 }
 
 FLASHMEM void setWaveformMixerLevel(int channel, float level) {
-  waveformMixer1.gain(channel, level);
-  waveformMixer2.gain(channel, level);
-  waveformMixer3.gain(channel, level);
-  waveformMixer4.gain(channel, level);
-  waveformMixer5.gain(channel, level);
-  waveformMixer6.gain(channel, level);
-  waveformMixer7.gain(channel, level);
-  waveformMixer8.gain(channel, level);
-  waveformMixer9.gain(channel, level);
-  waveformMixer10.gain(channel, level);
-  waveformMixer11.gain(channel, level);
-  waveformMixer12.gain(channel, level);
+  FOR_EACH_OSC(waveformMixer_.gain(channel, level))
 }
 
 FLASHMEM void setOscModMixerA(int channel, float level) {
-  oscModMixer1a.gain(channel, level);
-  oscModMixer2a.gain(channel, level);
-  oscModMixer3a.gain(channel, level);
-  oscModMixer4a.gain(channel, level);
-  oscModMixer5a.gain(channel, level);
-  oscModMixer6a.gain(channel, level);
-  oscModMixer7a.gain(channel, level);
-  oscModMixer8a.gain(channel, level);
-  oscModMixer9a.gain(channel, level);
-  oscModMixer10a.gain(channel, level);
-  oscModMixer11a.gain(channel, level);
-  oscModMixer12a.gain(channel, level);
+  FOR_EACH_OSC(oscModMixer_a.gain(channel, level))
 }
 
 FLASHMEM void setOscModMixerB(int channel, float level) {
-  oscModMixer1b.gain(channel, level);
-  oscModMixer2b.gain(channel, level);
-  oscModMixer3b.gain(channel, level);
-  oscModMixer4b.gain(channel, level);
-  oscModMixer5b.gain(channel, level);
-  oscModMixer6b.gain(channel, level);
-  oscModMixer7b.gain(channel, level);
-  oscModMixer8b.gain(channel, level);
-  oscModMixer9b.gain(channel, level);
-  oscModMixer10b.gain(channel, level);
-  oscModMixer11b.gain(channel, level);
-  oscModMixer12b.gain(channel, level);
+  FOR_EACH_OSC(oscModMixer_b.gain(channel, level))
 }
 
 FLASHMEM void updateNoiseLevel() {
@@ -1042,18 +921,7 @@ FLASHMEM void updateNoiseLevel() {
 }
 
 FLASHMEM void updateFilterFreq() {
-  filter1.frequency(filterFreq);
-  filter2.frequency(filterFreq);
-  filter3.frequency(filterFreq);
-  filter4.frequency(filterFreq);
-  filter5.frequency(filterFreq);
-  filter6.frequency(filterFreq);
-  filter7.frequency(filterFreq);
-  filter8.frequency(filterFreq);
-  filter9.frequency(filterFreq);
-  filter10.frequency(filterFreq);
-  filter11.frequency(filterFreq);
-  filter12.frequency(filterFreq);
+  FOR_EACH_OSC(filter_.frequency(filterFreq))
 
   //Altering filterOctave to give more cutoff width for deeper bass, but sharper cuttoff at higher frequncies
   if (filterFreq <= 2000) {
@@ -1066,35 +934,14 @@ FLASHMEM void updateFilterFreq() {
     filterOctave = 1.0f + ((12000.0f - filterFreq) / 5100.0f);//Sharper cutoff
   }
 
-  filter1.octaveControl(filterOctave);
-  filter2.octaveControl(filterOctave);
-  filter3.octaveControl(filterOctave);
-  filter4.octaveControl(filterOctave);
-  filter5.octaveControl(filterOctave);
-  filter6.octaveControl(filterOctave);
-  filter7.octaveControl(filterOctave);
-  filter8.octaveControl(filterOctave);
-  filter9.octaveControl(filterOctave);
-  filter10.octaveControl(filterOctave);
-  filter11.octaveControl(filterOctave);
-  filter12.octaveControl(filterOctave);
+  FOR_EACH_OSC(filter_.octaveControl(filterOctave))
 
   showCurrentParameterPage("Cutoff", String(int(filterFreq)) + " Hz");
 }
 
 FLASHMEM void updateFilterRes() {
-  filter1.resonance(filterRes);
-  filter2.resonance(filterRes);
-  filter3.resonance(filterRes);
-  filter4.resonance(filterRes);
-  filter5.resonance(filterRes);
-  filter6.resonance(filterRes);
-  filter7.resonance(filterRes);
-  filter8.resonance(filterRes);
-  filter9.resonance(filterRes);
-  filter10.resonance(filterRes);
-  filter11.resonance(filterRes);
-  filter12.resonance(filterRes);
+  FOR_EACH_OSC(filter_.resonance(filterRes))
+
   showCurrentParameterPage("Resonance", filterRes);
 }
 
@@ -1127,42 +974,12 @@ FLASHMEM void updateFilterMixer() {
       filterStr = "LP " + String(100 - filterMixStr) + " - " + String(filterMixStr) + " HP";
     }
   }
-  filterMixer1.gain(0, LP);
-  filterMixer1.gain(1, BP);
-  filterMixer1.gain(2, HP);
-  filterMixer2.gain(0, LP);
-  filterMixer2.gain(1, BP);
-  filterMixer2.gain(2, HP);
-  filterMixer3.gain(0, LP);
-  filterMixer3.gain(1, BP);
-  filterMixer3.gain(2, HP);
-  filterMixer4.gain(0, LP);
-  filterMixer4.gain(1, BP);
-  filterMixer4.gain(2, HP);
-  filterMixer5.gain(0, LP);
-  filterMixer5.gain(1, BP);
-  filterMixer5.gain(2, HP);
-  filterMixer6.gain(0, LP);
-  filterMixer6.gain(1, BP);
-  filterMixer6.gain(2, HP);
-  filterMixer7.gain(0, LP);
-  filterMixer7.gain(1, BP);
-  filterMixer7.gain(2, HP);
-  filterMixer8.gain(0, LP);
-  filterMixer8.gain(1, BP);
-  filterMixer8.gain(2, HP);
-  filterMixer9.gain(0, LP);
-  filterMixer9.gain(1, BP);
-  filterMixer9.gain(2, HP);
-  filterMixer10.gain(0, LP);
-  filterMixer10.gain(1, BP);
-  filterMixer10.gain(2, HP);
-  filterMixer11.gain(0, LP);
-  filterMixer11.gain(1, BP);
-  filterMixer11.gain(2, HP);
-  filterMixer12.gain(0, LP);
-  filterMixer12.gain(1, BP);
-  filterMixer12.gain(2, HP);
+
+  FOR_EACH_VOICE(
+    Oscillators[i].filterMixer_.gain(0, LP);
+    Oscillators[i].filterMixer_.gain(1, BP);
+    Oscillators[i].filterMixer_.gain(2, HP);
+  )
 
   showCurrentParameterPage("Filter Type", filterStr);
 }
@@ -1184,18 +1001,7 @@ FLASHMEM void updateKeyTracking() {
 }
 
 FLASHMEM void setFilterModMixer(int channel, float level) {
-  filterModMixer1.gain(channel, level);
-  filterModMixer2.gain(channel, level);
-  filterModMixer3.gain(channel, level);
-  filterModMixer4.gain(channel, level);
-  filterModMixer5.gain(channel, level);
-  filterModMixer6.gain(channel, level);
-  filterModMixer7.gain(channel, level);
-  filterModMixer8.gain(channel, level);
-  filterModMixer9.gain(channel, level);
-  filterModMixer10.gain(channel, level);
-  filterModMixer11.gain(channel, level);
-  filterModMixer12.gain(channel, level);
+  FOR_EACH_OSC(filterModMixer_.gain(channel, level))
 }
 
 FLASHMEM void updateOscLFOAmt() {
@@ -1257,18 +1063,7 @@ FLASHMEM void updateFilterLFOMidiClkSync() {
 }
 
 FLASHMEM void updateFilterAttack() {
-  filterEnvelope1.attack(filterAttack);
-  filterEnvelope2.attack(filterAttack);
-  filterEnvelope3.attack(filterAttack);
-  filterEnvelope4.attack(filterAttack);
-  filterEnvelope5.attack(filterAttack);
-  filterEnvelope6.attack(filterAttack);
-  filterEnvelope7.attack(filterAttack);
-  filterEnvelope8.attack(filterAttack);
-  filterEnvelope9.attack(filterAttack);
-  filterEnvelope10.attack(filterAttack);
-  filterEnvelope11.attack(filterAttack);
-  filterEnvelope12.attack(filterAttack);
+  FOR_EACH_OSC(filterEnvelope_.attack(filterAttack))
 
   if (filterAttack < 1000) {
     showCurrentParameterPage("Filter Attack", String(int(filterAttack)) + " ms", FILTER_ENV);
@@ -1278,18 +1073,8 @@ FLASHMEM void updateFilterAttack() {
 }
 
 FLASHMEM void updateFilterDecay() {
-  filterEnvelope1.decay(filterDecay);
-  filterEnvelope2.decay(filterDecay);
-  filterEnvelope3.decay(filterDecay);
-  filterEnvelope4.decay(filterDecay);
-  filterEnvelope5.decay(filterDecay);
-  filterEnvelope6.decay(filterDecay);
-  filterEnvelope7.decay(filterDecay);
-  filterEnvelope8.decay(filterDecay);
-  filterEnvelope9.decay(filterDecay);
-  filterEnvelope10.decay(filterDecay);
-  filterEnvelope11.decay(filterDecay);
-  filterEnvelope12.decay(filterDecay);
+  FOR_EACH_OSC(filterEnvelope_.decay(filterDecay))
+
   if (filterDecay < 1000) {
     showCurrentParameterPage("Filter Decay", String(int(filterDecay)) + " ms", FILTER_ENV);
   } else {
@@ -1298,35 +1083,13 @@ FLASHMEM void updateFilterDecay() {
 }
 
 FLASHMEM void updateFilterSustain() {
-  filterEnvelope1.sustain(filterSustain);
-  filterEnvelope2.sustain(filterSustain);
-  filterEnvelope3.sustain(filterSustain);
-  filterEnvelope4.sustain(filterSustain);
-  filterEnvelope5.sustain(filterSustain);
-  filterEnvelope6.sustain(filterSustain);
-  filterEnvelope7.sustain(filterSustain);
-  filterEnvelope8.sustain(filterSustain);
-  filterEnvelope9.sustain(filterSustain);
-  filterEnvelope10.sustain(filterSustain);
-  filterEnvelope11.sustain(filterSustain);
-  filterEnvelope12.sustain(filterSustain);
+  FOR_EACH_OSC(filterEnvelope_.sustain(filterSustain))
 
   showCurrentParameterPage("Filter Sustain", String(filterSustain), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterRelease() {
-  filterEnvelope1.release(filterRelease);
-  filterEnvelope2.release(filterRelease);
-  filterEnvelope3.release(filterRelease);
-  filterEnvelope4.release(filterRelease);
-  filterEnvelope5.release(filterRelease);
-  filterEnvelope6.release(filterRelease);
-  filterEnvelope7.release(filterRelease);
-  filterEnvelope8.release(filterRelease);
-  filterEnvelope9.release(filterRelease);
-  filterEnvelope10.release(filterRelease);
-  filterEnvelope11.release(filterRelease);
-  filterEnvelope12.release(filterRelease);
+  FOR_EACH_OSC(filterEnvelope_.release(filterRelease))
 
   if (filterRelease < 1000) {
     showCurrentParameterPage("Filter Release", String(int(filterRelease)) + " ms", FILTER_ENV);
@@ -1336,18 +1099,7 @@ FLASHMEM void updateFilterRelease() {
 }
 
 FLASHMEM void updateAttack() {
-  ampEnvelope1.attack(ampAttack);
-  ampEnvelope2.attack(ampAttack);
-  ampEnvelope3.attack(ampAttack);
-  ampEnvelope4.attack(ampAttack);
-  ampEnvelope5.attack(ampAttack);
-  ampEnvelope6.attack(ampAttack);
-  ampEnvelope7.attack(ampAttack);
-  ampEnvelope8.attack(ampAttack);
-  ampEnvelope9.attack(ampAttack);
-  ampEnvelope10.attack(ampAttack);
-  ampEnvelope11.attack(ampAttack);
-  ampEnvelope12.attack(ampAttack);
+  FOR_EACH_OSC(ampEnvelope_.release(ampAttack))
 
   if (ampAttack < 1000) {
     showCurrentParameterPage("Attack", String(int(ampAttack)) + " ms", AMP_ENV);
@@ -1357,18 +1109,7 @@ FLASHMEM void updateAttack() {
 }
 
 FLASHMEM void updateDecay() {
-  ampEnvelope1.decay(ampDecay);
-  ampEnvelope2.decay(ampDecay);
-  ampEnvelope3.decay(ampDecay);
-  ampEnvelope4.decay(ampDecay);
-  ampEnvelope5.decay(ampDecay);
-  ampEnvelope6.decay(ampDecay);
-  ampEnvelope7.decay(ampDecay);
-  ampEnvelope8.decay(ampDecay);
-  ampEnvelope9.decay(ampDecay);
-  ampEnvelope10.decay(ampDecay);
-  ampEnvelope11.decay(ampDecay);
-  ampEnvelope12.decay(ampDecay);
+  FOR_EACH_OSC(ampEnvelope_.decay(ampDecay))
 
   if (ampDecay < 1000) {
     showCurrentParameterPage("Decay", String(int(ampDecay)) + " ms", AMP_ENV);
@@ -1378,35 +1119,13 @@ FLASHMEM void updateDecay() {
 }
 
 FLASHMEM void updateSustain() {
-  ampEnvelope1.sustain(ampSustain);
-  ampEnvelope2.sustain(ampSustain);
-  ampEnvelope3.sustain(ampSustain);
-  ampEnvelope4.sustain(ampSustain);
-  ampEnvelope5.sustain(ampSustain);
-  ampEnvelope6.sustain(ampSustain);
-  ampEnvelope7.sustain(ampSustain);
-  ampEnvelope8.sustain(ampSustain);
-  ampEnvelope9.sustain(ampSustain);
-  ampEnvelope10.sustain(ampSustain);
-  ampEnvelope11.sustain(ampSustain);
-  ampEnvelope12.sustain(ampSustain);
+  FOR_EACH_OSC(ampEnvelope_.sustain(ampSustain))
 
   showCurrentParameterPage("Sustain", String(ampSustain), AMP_ENV);
 }
 
 FLASHMEM void updateRelease() {
-  ampEnvelope1.release(ampRelease);
-  ampEnvelope2.release(ampRelease);
-  ampEnvelope3.release(ampRelease);
-  ampEnvelope4.release(ampRelease);
-  ampEnvelope5.release(ampRelease);
-  ampEnvelope6.release(ampRelease);
-  ampEnvelope7.release(ampRelease);
-  ampEnvelope8.release(ampRelease);
-  ampEnvelope9.release(ampRelease);
-  ampEnvelope10.release(ampRelease);
-  ampEnvelope11.release(ampRelease);
-  ampEnvelope12.release(ampRelease);
+  FOR_EACH_OSC(ampEnvelope_.release(ampRelease))
 
   if (ampRelease < 1000) {
     showCurrentParameterPage("Release", String(int(ampRelease)) + " ms", AMP_ENV);
@@ -1822,30 +1541,10 @@ FLASHMEM void myMIDIClock() {
 }
 
 FLASHMEM void closeEnvelopes() {
-  filterEnvelope1.close();
-  filterEnvelope2.close();
-  filterEnvelope3.close();
-  filterEnvelope4.close();
-  filterEnvelope5.close();
-  filterEnvelope6.close();
-  filterEnvelope7.close();
-  filterEnvelope8.close();
-  filterEnvelope9.close();
-  filterEnvelope10.close();
-  filterEnvelope11.close();
-  filterEnvelope12.close();
-  ampEnvelope1.close();
-  ampEnvelope2.close();
-  ampEnvelope3.close();
-  ampEnvelope4.close();
-  ampEnvelope5.close();
-  ampEnvelope6.close();
-  ampEnvelope7.close();
-  ampEnvelope8.close();
-  ampEnvelope9.close();
-  ampEnvelope10.close();
-  ampEnvelope11.close();
-  ampEnvelope12.close();
+  FOR_EACH_VOICE(
+    Oscillators[i].filterEnvelope_.close();
+    Oscillators[i].ampEnvelope_.close();
+  )
 }
 
 FLASHMEM void recallPatch(int patchNo) {
