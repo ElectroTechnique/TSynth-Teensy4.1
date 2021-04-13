@@ -52,6 +52,7 @@
 // at the same time, because AudioNoInterrupts() prevents any updates
 // while you make changes.
 //
+// ElectroTechnique Note: I don't use these as I found they introduced noise(!)
 #define AudioNoInterrupts() (NVIC_DISABLE_IRQ(IRQ_SOFTWARE))
 #define AudioInterrupts()   (NVIC_ENABLE_IRQ(IRQ_SOFTWARE))
 

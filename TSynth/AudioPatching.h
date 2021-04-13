@@ -31,7 +31,7 @@ AudioMixer4              voiceMixerM;    //xy=2431,1798
 AudioFilterStateVariable dcOffsetFilter; //xy=2591,1804
 AudioMixer4              volumeMixer;    //xy=2774,1756
 AudioEffectEnsemble      ensemble;      //xy=1800,600
-Oscilloscope              scope;
+Oscilloscope             scope;
 AudioMixer4              effectMixerR;   //xy=2984,1823
 AudioMixer4              effectMixerL;   //xy=2985,1728
 AudioOutputI2S           i2s;            //xy=3190,1737
@@ -641,7 +641,7 @@ AudioConnection          patchCord204(glide1, 0, oscModMixer1b, 2);
 AudioConnection          patchCord205(glide2, 0, oscModMixer2a, 2);
 AudioConnection          patchCord206(glide2, 0, oscModMixer2b, 2);
 AudioConnection          patchCord207(glide3, 0, oscModMixer3a, 2);
-AudioConnection         patchCord208(glide3, 0, oscModMixer3b, 2);
+AudioConnection          patchCord208(glide3, 0, oscModMixer3b, 2);
 AudioConnection          patchCord209(glide4, 0, oscModMixer4a, 2);
 AudioConnection          patchCord210(glide4, 0, oscModMixer4b, 2);
 AudioConnection          patchCord211(glide5, 0, oscModMixer5a, 2);
@@ -711,6 +711,259 @@ AudioConnection          patchCord119(effectMixerL, 0, i2s, 0);
 AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
 // GUItool: end automatically generated code
+
+// Oscillator configurations.
+struct Patch {
+    // What is this?
+    AudioMixer4 &voiceMixer_; // 1-3
+
+    AudioEffectEnvelope &filterEnvelope_; // 1-12
+
+    AudioMixer4 &pwMixer_a;
+    AudioMixer4 &pwMixer_b;
+
+    AudioSynthWaveformDc &glide_;
+
+    AudioSynthWaveformDc &keytracking_;
+
+    AudioMixer4 &oscModMixer_a;
+    AudioMixer4 &oscModMixer_b;
+
+    AudioSynthWaveformModulated &waveformMod_a;
+    AudioSynthWaveformModulated &waveformMod_b;
+
+    AudioEffectDigitalCombine &oscFX_;
+
+    AudioMixer4 &waveformMixer_;
+
+    AudioMixer4 &filterModMixer_;
+
+    AudioFilterStateVariable &filter_;
+
+    AudioMixer4 &filterMixer_;
+
+    AudioEffectEnvelope &ampEnvelope_;
+};
+
+// The 12 oscillator pairs in one data structure to allow for easier programming.
+Patch Oscillators[12] = {
+    {
+        voiceMixer1,
+        filterEnvelope1,
+        pwMixer1a,
+        pwMixer1b,
+        glide1,
+        keytracking1,
+        oscModMixer1a,
+        oscModMixer1b,
+        waveformMod1a,
+        waveformMod1b,
+        oscFX1,
+        waveformMixer1,
+        filterModMixer1,
+        filter1,
+        filterMixer1,
+        ampEnvelope1
+    },
+    {
+        voiceMixer1,
+        filterEnvelope2,
+        pwMixer2a,
+        pwMixer2b,
+        glide2,
+        keytracking2,
+        oscModMixer2a,
+        oscModMixer2b,
+        waveformMod2a,
+        waveformMod2b,
+        oscFX2,
+        waveformMixer2,
+        filterModMixer2,
+        filter2,
+        filterMixer2,
+        ampEnvelope2
+    },
+    {
+        voiceMixer1,
+        filterEnvelope3,
+        pwMixer3a,
+        pwMixer3b,
+        glide3,
+        keytracking3,
+        oscModMixer3a,
+        oscModMixer3b,
+        waveformMod3a,
+        waveformMod3b,
+        oscFX3,
+        waveformMixer3,
+        filterModMixer3,
+        filter3,
+        filterMixer3,
+        ampEnvelope3
+    },
+    {
+        voiceMixer1,
+        filterEnvelope4,
+        pwMixer4a,
+        pwMixer4b,
+        glide4,
+        keytracking4,
+        oscModMixer4a,
+        oscModMixer4b,
+        waveformMod4a,
+        waveformMod4b,
+        oscFX4,
+        waveformMixer4,
+        filterModMixer4,
+        filter4,
+        filterMixer4,
+        ampEnvelope4
+    },
+    {
+        voiceMixer2,
+        filterEnvelope5,
+        pwMixer5a,
+        pwMixer5b,
+        glide5,
+        keytracking5,
+        oscModMixer5a,
+        oscModMixer5b,
+        waveformMod5a,
+        waveformMod5b,
+        oscFX5,
+        waveformMixer5,
+        filterModMixer5,
+        filter5,
+        filterMixer5,
+        ampEnvelope5
+    },
+    {
+        voiceMixer2,
+        filterEnvelope6,
+        pwMixer6a,
+        pwMixer6b,
+        glide6,
+        keytracking6,
+        oscModMixer6a,
+        oscModMixer6b,
+        waveformMod6a,
+        waveformMod6b,
+        oscFX6,
+        waveformMixer6,
+        filterModMixer6,
+        filter6,
+        filterMixer6,
+        ampEnvelope6
+    },
+    {
+        voiceMixer2,
+        filterEnvelope7,
+        pwMixer7a,
+        pwMixer7b,
+        glide7,
+        keytracking7,
+        oscModMixer7a,
+        oscModMixer7b,
+        waveformMod7a,
+        waveformMod7b,
+        oscFX7,
+        waveformMixer7,
+        filterModMixer7,
+        filter7,
+        filterMixer7,
+        ampEnvelope7
+    },
+    {
+        voiceMixer2,
+        filterEnvelope8,
+        pwMixer8a,
+        pwMixer8b,
+        glide8,
+        keytracking8,
+        oscModMixer8a,
+        oscModMixer8b,
+        waveformMod8a,
+        waveformMod8b,
+        oscFX8,
+        waveformMixer8,
+        filterModMixer8,
+        filter8,
+        filterMixer8,
+        ampEnvelope8
+    },
+    {
+        voiceMixer3,
+        filterEnvelope9,
+        pwMixer9a,
+        pwMixer9b,
+        glide9,
+        keytracking9,
+        oscModMixer9a,
+        oscModMixer9b,
+        waveformMod9a,
+        waveformMod9b,
+        oscFX9,
+        waveformMixer9,
+        filterModMixer9,
+        filter9,
+        filterMixer9,
+        ampEnvelope9
+    },
+    {
+        voiceMixer3,
+        filterEnvelope10,
+        pwMixer10a,
+        pwMixer10b,
+        glide10,
+        keytracking10,
+        oscModMixer10a,
+        oscModMixer10b,
+        waveformMod10a,
+        waveformMod10b,
+        oscFX10,
+        waveformMixer10,
+        filterModMixer10,
+        filter10,
+        filterMixer10,
+        ampEnvelope10
+    },
+    {
+        voiceMixer3,
+        filterEnvelope11,
+        pwMixer11a,
+        pwMixer11b,
+        glide11,
+        keytracking11,
+        oscModMixer11a,
+        oscModMixer11b,
+        waveformMod11a,
+        waveformMod11b,
+        oscFX11,
+        waveformMixer11,
+        filterModMixer11,
+        filter11,
+        filterMixer11,
+        ampEnvelope11
+    },
+    {
+        voiceMixer3,
+        filterEnvelope12,
+        pwMixer12a,
+        pwMixer12b,
+        glide12,
+        keytracking12,
+        oscModMixer12a,
+        oscModMixer12b,
+        waveformMod12a,
+        waveformMod12b,
+        oscFX12,
+        waveformMixer12,
+        filterModMixer12,
+        filter12,
+        filterMixer12,
+        ampEnvelope12
+    }
+};
 
 // Undefine custom classes renaming:
 #undef AudioSynthWaveform

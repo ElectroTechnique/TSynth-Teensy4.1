@@ -107,7 +107,7 @@ FLASHMEM void renderCurrentPatchPage() {
   }
   renderPeak();
 
-  //      1 2 3 4 5 6 7 8 9 10 11 12
+  //    1 2 3 4 5 6 7 8 9 10 11 12
   //    1 B B B B B B B B B B B B
   //    2 B B B B B B Y Y Y Y Y Y
   //    3 B B B B O O O O Y Y Y Y

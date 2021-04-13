@@ -1,7 +1,7 @@
 /*
    MIT License
 
-  Copyright (c) 2020 ElectroTechnique
+  Copyright (c) 2020-21 ElectroTechnique
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.10
+  ElectroTechnique TSynth - Firmware Rev 2.12
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -31,11 +31,12 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster          58    95
+  600MHz Faster        ~62     96
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
-    Alexander Davis - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    Alexander Davis / Vince R. Pearson - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    Github member fab672000 - General improvements to code
     Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
   Additional libraries:
@@ -90,6 +91,7 @@ USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
 MIDIDevice midi1(myusb);
+//MIDIDevice_BigBuffer midi1(myusb);//Try this if your MIDI Compliant controller has problems
 
 //MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
@@ -111,12 +113,16 @@ uint32_t patchNo = 1;//Current patch no
 int voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
+// Macros to help do things for each NO_OF_VOICES
+#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(Oscillators[i].CMD)
+#define FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < NO_OF_VOICES; i++){ CMD; }
+
 FLASHMEM void setup() {
   setupDisplay();
   setUpSettings();
   setupHardware();
 
-  AudioMemory(96);
+  AudioMemory(97);
   sgtl5000_1.enable();
   sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   sgtl5000_1.dacVolumeRamp();
@@ -196,54 +202,12 @@ FLASHMEM void setup() {
   pwmLfoB.begin(PWMWAVEFORM);
   pwmLfoB.phase(10.0f);//Off set phase of second osc
 
-  waveformMod1a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod1a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod1b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod1b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod2a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod2a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod2b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod2b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod3a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod3a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod3b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod3b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod4a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod4a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod4b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod4b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod5a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod5a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod5b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod5b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod6a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod6a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod6b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod6b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod7a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod7a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod7b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod7b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod8a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod8a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod8b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod8b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod9a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod9a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod9b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod9b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod10a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod10a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod10b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod10b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod11a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod11a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod11b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod11b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod12a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod12a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod12b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod12b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
+  FOR_EACH_VOICE(
+    Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
+    Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
+    Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
+    Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
+  )
 
   //Arbitary waveform needs initialising to something
   loadArbWaveformA(PARABOLIC_WAVE);
@@ -312,63 +276,15 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   }
 
   if (unison == 0) {
-    switch (getVoiceNo(-1))  {
-      case 1:
-        voice1On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice1();
-        break;
-      case 2:
-        voice2On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice2();
-        break;
-      case 3:
-        voice3On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice3();
-        break;
-      case 4:
-        voice4On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice4();
-        break;
-      case 5:
-        voice5On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice5();
-        break;
-      case 6:
-        voice6On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice6();
-        break;
-      case 7:
-        voice7On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice7();
-        break;
-      case 8:
-        voice8On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice8();
-        break;
-      case 9:
-        voice9On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice9();
-        break;
-      case 10:
-        voice10On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice10();
-        break;
-      case 11:
-        voice11On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice11();
-        break;
-      case 12:
-        voice12On(note, velocity, VOICEMIXERLEVEL);
-        updateVoice12();
-        break;
-
-    }
+    int voice = getVoiceNo(-1);
+    voiceOn(voice, note, velocity, VOICEMIXERLEVEL);
+    updateVoice(voice);
   } else  {
     //UNISON MODE
-    //1 Note : 1-12
-    //2 Notes: 1-6, 7-12
-    //3 Notes: 1-4, 5-8, 9-12
-    //4 Notes: 1-3, 4/8/9, 5-7, 10-12
+    //1 Note : 0-11
+    //2 Notes: 0-5, 6-11
+    //3 Notes: 0-3, 4-7, 8-11
+    //4 Notes: 0-2, 3/7/8, 4-6, 9-11
     //5 or more: extra notes are ignored and new voices used for 4 notes
 
     //Retrigger voices
@@ -378,513 +294,142 @@ void myNoteOn(byte channel, byte note, byte velocity) {
     //    3         x x x x
     //    4       x       x x
 
+    if (unison == 2 || notesOn == 1) {
+      for (uint8_t i = 0; i < NO_OF_VOICES; i++) {  
+        voiceOn(i, note, velocity, UNISONNOISEMIXERLEVEL);
+      }
+    } else {
+      // Note: This doesn't take into account notes that have been released.
+      // What happens in the scenario:
+      // 1. note 1 played, voice 0-11 activated
+      // 2. note 2 played, voice 6-11 activated
+      // 3. note 1 released, voice 0-5 disabled
+      // 4. note 3 played, voice 6-11 re-activated
 
-    //Voice 1,2,3
-    if (notesOn == 1 || unison == 2) {
-      voice1On(note, velocity, UNISONVOICEMIXERLEVEL);
-      voice2On(note, velocity, UNISONVOICEMIXERLEVEL);
-      voice3On(note, velocity, UNISONVOICEMIXERLEVEL);
+      // TODO: solve by calling getVoiceNo 6 / 4 / 3 times to fetch the best
+      // voices to use based on how many notes are on on. The display code
+      // would need to be updated (or not).
+      switch(notesOn) {
+        case 2:
+          voiceOn(6, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(7, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(8, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(9, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(10, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(11, note, velocity, UNISONNOISEMIXERLEVEL);
+          break;
+        case 3:
+          voiceOn(4, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(5, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(6, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(7, note, velocity, UNISONNOISEMIXERLEVEL);
+          break;
+        case 4:
+          voiceOn(3, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(7, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(8, note, velocity, UNISONNOISEMIXERLEVEL);
+          break;
+      }
     }
 
-    //Voice 4
-    if (notesOn == 1 || notesOn == 4 || unison == 2)  {
-      voice4On(note, velocity, UNISONVOICEMIXERLEVEL);
-    }
-
-    //Voice 5,6
-    if (notesOn == 1 || notesOn == 3 || unison == 2)  {
-      voice5On(note, velocity, UNISONVOICEMIXERLEVEL);
-      voice6On(note, velocity, UNISONVOICEMIXERLEVEL);
-    }
-
-    //Voice 7
-    if (notesOn == 1 || notesOn == 2 || notesOn == 3 || unison == 2)  {
-      voice7On(note, velocity, UNISONVOICEMIXERLEVEL);
-    }
-
-    //Voice 8
-    if (notesOn == 1 || notesOn == 2 || notesOn == 3 || notesOn == 4 || unison == 2)  {
-      voice8On(note, velocity, UNISONVOICEMIXERLEVEL);
-    }
-
-    //Voice 9
-    if (notesOn == 1 || notesOn == 2 || notesOn == 4 || unison == 2)  {
-      voice9On(note, velocity, UNISONVOICEMIXERLEVEL);
-    }
-
-    //Voice 10,11,12
-    if (notesOn == 1 || notesOn == 2 || unison == 2)  {
-      voice10On(note, velocity, UNISONVOICEMIXERLEVEL);
-      voice11On(note, velocity, UNISONVOICEMIXERLEVEL);
-      voice12On(note, velocity, UNISONVOICEMIXERLEVEL);
-    }
     prevNote = note;
     updatesAllVoices();//Set detune values
   }
 }
 
-void voice1On(byte note, byte velocity, float level) {
-  keytracking1.amplitude(note * DIV127 * keytrackingAmount);
-  voices[0].note = note;
-  voices[0].timeOn = millis();
-  voiceMixer1.gain(0, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope1.noteOn();
-  ampEnvelope1.noteOn();
-  voices[0].voiceOn = true;
+void voiceOn(uint8_t index, byte note, byte velocity, float level) {
+  Oscillators[index].keytracking_.amplitude(note * DIV127 * keytrackingAmount);
+  voices[index].note = note;
+  voices[index].timeOn = millis();
+  Oscillators[index].voiceMixer_.gain(index % 4, VELOCITY[velocitySens][velocity] * level);
+  Oscillators[index].filterEnvelope_.noteOn();
+  Oscillators[index].ampEnvelope_.noteOn();
+  voices[index].voiceOn = true;
   if (glideSpeed > 0 && note != prevNote) {
-    glide1.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide1.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
+    Oscillators[index].glide_.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
+    Oscillators[index].glide_.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
   }
-  if (unison == 0)prevNote = note;
+  if (unison == 0)prevNote = note;  
 }
 
-void voice2On(byte note, byte velocity, float level) {
-  keytracking2.amplitude(note * DIV127 * keytrackingAmount);
-  voices[1].note = note;
-  voices[1].timeOn = millis();
-  voiceMixer1.gain(1, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope2.noteOn();
-  ampEnvelope2.noteOn();
-  voices[1].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide2.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide2.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice3On(byte note, byte velocity, float level) {
-  keytracking3.amplitude(note * DIV127 * keytrackingAmount);
-  voices[2].note = note;
-  voices[2].timeOn = millis();
-  voiceMixer1.gain(2, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope3.noteOn();
-  ampEnvelope3.noteOn();
-  voices[2].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide3.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide3.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice4On(byte note, byte velocity, float level) {
-  keytracking4.amplitude(note * DIV127 * keytrackingAmount);
-  voices[3].note = note;
-  voices[3].timeOn = millis();
-  voiceMixer1.gain(3, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope4.noteOn();
-  ampEnvelope4.noteOn();
-  voices[3].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide4.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide4.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice5On(byte note, byte velocity, float level) {
-  keytracking5.amplitude(note * DIV127 * keytrackingAmount);
-  voices[4].note = note;
-  voices[4].timeOn = millis();
-  voiceMixer2.gain(0, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope5.noteOn();
-  ampEnvelope5.noteOn();
-  voices[4].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide5.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide5.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice6On(byte note, byte velocity, float level) {
-  keytracking6.amplitude(note * DIV127 * keytrackingAmount);
-  voices[5].note = note;
-  voices[5].timeOn = millis();
-  voiceMixer2.gain(1, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope6.noteOn();
-  ampEnvelope6.noteOn();
-  voices[5].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide6.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide6.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice7On(byte note, byte velocity, float level) {
-  keytracking7.amplitude(note * DIV127 * keytrackingAmount);
-  voices[6].note = note;
-  voices[6].timeOn = millis();
-  voiceMixer2.gain(2, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope7.noteOn();
-  ampEnvelope7.noteOn();
-  voices[6].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide7.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide7.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice8On(byte note, byte velocity, float level) {
-  keytracking8.amplitude(note * DIV127 * keytrackingAmount);
-  voices[7].note = note;
-  voices[7].timeOn = millis();
-  voiceMixer2.gain(3, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope8.noteOn();
-  ampEnvelope8.noteOn();
-  voices[7].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide8.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide8.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice9On(byte note, byte velocity, float level) {
-  keytracking9.amplitude(note * DIV127 * keytrackingAmount);
-  voices[8].note = note;
-  voices[8].timeOn = millis();
-  voiceMixer3.gain(0, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope9.noteOn();
-  ampEnvelope9.noteOn();
-  voices[8].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide9.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide9.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice10On(byte note, byte velocity, float level) {
-  keytracking10.amplitude(note * DIV127 * keytrackingAmount);
-  voices[9].note = note;
-  voices[9].timeOn = millis();
-  voiceMixer3.gain(1, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope10.noteOn();
-  ampEnvelope10.noteOn();
-  voices[9].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide10.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide10.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice11On(byte note, byte velocity, float level) {
-  keytracking11.amplitude(note * DIV127 * keytrackingAmount);
-  voices[10].note = note;
-  voices[10].timeOn = millis();
-  voiceMixer3.gain(2, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope11.noteOn();
-  ampEnvelope11.noteOn();
-  voices[10].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide11.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide11.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void voice12On(byte note, byte velocity, float level) {
-  keytracking12.amplitude(note * DIV127 * keytrackingAmount);
-  voices[11].note = note;
-  voices[11].timeOn = millis();
-  voiceMixer3.gain(3, VELOCITY[velocitySens][velocity] * level);
-  filterEnvelope12.noteOn();
-  ampEnvelope12.noteOn();
-  voices[11].voiceOn = true;
-  if (glideSpeed > 0 && note != prevNote) {
-    glide12.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    glide12.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;
-}
-
-void endVoice(int voice) {
-  switch (voice) {
-    case 1:
-      filterEnvelope1.noteOff();
-      ampEnvelope1.noteOff();
-      voices[0].voiceOn = false;
-      break;
-    case 2:
-      filterEnvelope2.noteOff();
-      ampEnvelope2.noteOff();
-      voices[1].voiceOn = false;
-      break;
-    case 3:
-      filterEnvelope3.noteOff();
-      ampEnvelope3.noteOff();
-      voices[2].voiceOn = false;
-      break;
-    case 4:
-      filterEnvelope4.noteOff();
-      ampEnvelope4.noteOff();
-      voices[3].voiceOn = false;
-      break;
-    case 5:
-      filterEnvelope5.noteOff();
-      ampEnvelope5.noteOff();
-      prevNote = voices[4].note;
-      voices[4].voiceOn = false;
-      break;
-    case 6:
-      filterEnvelope6.noteOff();
-      ampEnvelope6.noteOff();
-      voices[5].voiceOn = false;
-      break;
-    case 7:
-      filterEnvelope7.noteOff();
-      ampEnvelope7.noteOff();
-      voices[6].voiceOn = false;
-      break;
-    case 8:
-      filterEnvelope8.noteOff();
-      ampEnvelope8.noteOff();
-      voices[7].voiceOn = false;
-      break;
-    case 9:
-      filterEnvelope9.noteOff();
-      ampEnvelope9.noteOff();
-      voices[8].voiceOn = false;
-      break;
-    case 10:
-      filterEnvelope10.noteOff();
-      ampEnvelope10.noteOff();
-      voices[9].voiceOn = false;
-      break;
-    case 11:
-      filterEnvelope11.noteOff();
-      ampEnvelope11.noteOff();
-      voices[10].voiceOn = false;
-      break;
-    case 12:
-      filterEnvelope12.noteOff();
-      ampEnvelope12.noteOff();
-      voices[11].voiceOn = false;
-      break;
-    default:
-      //Do nothing
-      break;
-  }
+// renamed from endVoice to match voiceOn
+void voiceOff(uint8_t index) {
+  if (index < 0 || index >= NO_OF_VOICES) return;
+  Oscillators[index].filterEnvelope_.noteOff();
+  Oscillators[index].ampEnvelope_.noteOff();
+  voices[index].voiceOn = false;
 }
 
 void myNoteOff(byte channel, byte note, byte velocity) {
   decNotesOn();
   if (unison == 0) {
-    endVoice(getVoiceNo(note));
+    voiceOff(getVoiceNo(note));
   } else {
-    //UNISON MODE
-    for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
-      endVoice(getVoiceNo(note));
-    }
+    //UNISON MODE: disable all voices for note.
+    FOR_EACH_VOICE(voiceOff(getVoiceNo(note)))
   }
 }
 
 void allNotesOff() {
   notesOn = 0;
-  for (uint32_t v = 0; v < NO_OF_VOICES; v++) {
-    endVoice(v + 1);
-  }
+
+  FOR_EACH_VOICE(voiceOff(i))
 }
 
+// Get the index into the 'voices' and 'Oscillators' array for a given note.
+// or -1 to get the next free, or oldest active note.
+// TODO: Include a channel for multi-timbral mode.
 int getVoiceNo(int note) {
   voiceToReturn = -1;      //Initialise
   earliestTime = millis(); //Initialise to now
   if (note == -1) {
     //NoteOn() - Get the oldest free voice (recent voices may be still on release stage)
-    for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
+    FOR_EACH_VOICE(
       if (!voices[i].voiceOn) {
         if (voices[i].timeOn < earliestTime) {
           earliestTime = voices[i].timeOn;
           voiceToReturn = i;
         }
       }
-    }
+    )
     if (voiceToReturn == -1) {
       //No free voices, need to steal oldest sounding voice
-      earliestTime = millis(); //Reinitialise
-      for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
+      FOR_EACH_VOICE(
         if (voices[i].timeOn < earliestTime) {
           earliestTime = voices[i].timeOn;
           voiceToReturn = i;
         }
-      }
+      )
     }
-    return voiceToReturn + 1;
+    return voiceToReturn;
   } else {
     //NoteOff() - Get voice number from note
-    for (uint32_t i = 0; i < NO_OF_VOICES; i++) {
+    FOR_EACH_VOICE(
       if (voices[i].note == note && voices[i].voiceOn) {
-        return i + 1;
+        return i;
       }
-    }
+    )
     //Unison - Note on without previous note off?
-    return voiceToReturn;
+    return -1;
   }
   //Shouldn't get here, return voice 1
   return 1;
 }
 
-void updateVoice1() {
+void updateVoice(int voiceIdx) {
+  Patch &osc = Oscillators[voiceIdx];
   if (unison == 1) {
-    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
-    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][1])));
+    int offset = 2 * voiceIdx;
+    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset])));
+    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset + 1])));
   } else if (unison == 2) {
-    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA + CHORD_DETUNE[0][chordDetune]]) ;
-    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB + CHORD_DETUNE[0][chordDetune]] * CDT_DETUNE);
+    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchA + CHORD_DETUNE[voiceIdx][chordDetune]]) ;
+    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchB + CHORD_DETUNE[voiceIdx][chordDetune]] * CDT_DETUNE);
   } else {
-    waveformMod1a.frequency(NOTEFREQS[voices[0].note + oscPitchA]);
-    waveformMod1b.frequency(NOTEFREQS[voices[0].note + oscPitchB] * detune);
+    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchA]);
+    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note + oscPitchB] * detune);
   }
 }
-
-void updateVoice2() {
-  if (unison == 1) {
-    waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][2])));
-    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][3])));
-  } else if (unison == 2) {
-    waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA + CHORD_DETUNE[1][chordDetune]]);
-    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB + CHORD_DETUNE[1][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod2a.frequency(NOTEFREQS[voices[1].note + oscPitchA]);
-    waveformMod2b.frequency(NOTEFREQS[voices[1].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice3() {
-  if (unison == 1) {
-    waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][4])));
-    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][5])));
-  } else if (unison == 2) {
-    waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA + CHORD_DETUNE[2][chordDetune]]);
-    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB + CHORD_DETUNE[2][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod3a.frequency(NOTEFREQS[voices[2].note + oscPitchA]);
-    waveformMod3b.frequency(NOTEFREQS[voices[2].note + oscPitchB] * detune);
-  }
-}
-void updateVoice4() {
-  if (unison == 1) {
-    waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][6])));
-    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][7])));
-  } else if (unison == 2) {
-    waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA + CHORD_DETUNE[3][chordDetune]]);
-    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB + CHORD_DETUNE[3][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod4a.frequency(NOTEFREQS[voices[3].note + oscPitchA]);
-    waveformMod4b.frequency(NOTEFREQS[voices[3].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice5() {
-  if (unison == 1)  {
-    waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][8])));
-    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][9])));
-  } else if (unison == 2) {
-    waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA + CHORD_DETUNE[4][chordDetune]]);
-    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB + CHORD_DETUNE[4][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod5a.frequency(NOTEFREQS[voices[4].note + oscPitchA]);
-    waveformMod5b.frequency(NOTEFREQS[voices[4].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice6() {
-  if (unison == 1)  {
-    waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][10])));
-    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][11])));
-  } else if (unison == 2) {
-    waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA + CHORD_DETUNE[5][chordDetune]]);
-    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB + CHORD_DETUNE[5][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod6a.frequency(NOTEFREQS[voices[5].note + oscPitchA]);
-    waveformMod6b.frequency(NOTEFREQS[voices[5].note + oscPitchB] * detune);
-  }
-
-}
-
-void updateVoice7() {
-  if (unison == 1) {
-    waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][12])));
-    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][13])));
-  } else if (unison == 2) {
-    waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA + CHORD_DETUNE[6][chordDetune]]);
-    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB + CHORD_DETUNE[6][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod7a.frequency(NOTEFREQS[voices[6].note + oscPitchA]);
-    waveformMod7b.frequency(NOTEFREQS[voices[6].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice8() {
-  if (unison == 1) {
-    waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][14])));
-    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][15])));
-  } else if (unison == 2) {
-    waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA + CHORD_DETUNE[7][chordDetune]]);
-    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB + CHORD_DETUNE[7][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod8a.frequency(NOTEFREQS[voices[7].note + oscPitchA]);
-    waveformMod8b.frequency(NOTEFREQS[voices[7].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice9() {
-  if (unison == 1) {
-    waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][16])));
-    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][17])));
-  } else if (unison == 2) {
-    waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA + CHORD_DETUNE[8][chordDetune]]);
-    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB + CHORD_DETUNE[8][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod9a.frequency(NOTEFREQS[voices[8].note + oscPitchA]);
-    waveformMod9b.frequency(NOTEFREQS[voices[8].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice10() {
-  if (unison == 1) {
-    waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][18])));
-    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][19])));
-  } else if (unison == 2) {
-    waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA + CHORD_DETUNE[9][chordDetune]]);
-    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB + CHORD_DETUNE[9][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod10a.frequency(NOTEFREQS[voices[9].note + oscPitchA]);
-    waveformMod10b.frequency(NOTEFREQS[voices[9].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice11() {
-  if (unison == 1) {
-    waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][20])));
-    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][21])));
-  } else if (unison == 2) {
-    waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA + CHORD_DETUNE[10][chordDetune]]);
-    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB + CHORD_DETUNE[10][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod11a.frequency(NOTEFREQS[voices[10].note + oscPitchA]);
-    waveformMod11b.frequency(NOTEFREQS[voices[10].note + oscPitchB] * detune);
-  }
-}
-
-void updateVoice12() {
-  if (unison == 1) {
-    waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][22])));
-    waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
-  } else if (unison == 2) {
-    waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA + CHORD_DETUNE[11][chordDetune]]);
-    waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB + CHORD_DETUNE[11][chordDetune]] * CDT_DETUNE);
-  } else {
-    waveformMod12a.frequency(NOTEFREQS[voices[11].note + oscPitchA]);
-    waveformMod12b.frequency(NOTEFREQS[voices[11].note + oscPitchB] * detune);
-  }
-}
-
 
 int getLFOWaveform(int value) {
   if (value >= 0 && value < 8) {
@@ -934,33 +479,11 @@ FLASHMEM String getWaveformStr(int value) {
 }
 
 void loadArbWaveformA(const int16_t * wavedata) {
-  waveformMod1a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod2a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod3a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod4a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod5a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod6a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod7a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod8a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod9a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod10a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod11a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod12a.arbitraryWaveform(wavedata, AWFREQ);
+  FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(wavedata, AWFREQ))
 }
 
 void loadArbWaveformB(const int16_t * wavedata) {
-  waveformMod1b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod2b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod3b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod4b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod5b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod6b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod7b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod8b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod9b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod10b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod11b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod12b.arbitraryWaveform(wavedata, AWFREQ);
+  FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(wavedata, AWFREQ))
 }
 
 FLASHMEM float getLFOTempoRate(int value) {
@@ -1015,96 +538,30 @@ FLASHMEM int getPitch(int value) {
 }
 
 FLASHMEM void setPwmMixerALFO(float value) {
-  pwMixer1a.gain(0, value);
-  pwMixer2a.gain(0, value);
-  pwMixer3a.gain(0, value);
-  pwMixer4a.gain(0, value);
-  pwMixer5a.gain(0, value);
-  pwMixer6a.gain(0, value);
-  pwMixer7a.gain(0, value);
-  pwMixer8a.gain(0, value);
-  pwMixer9a.gain(0, value);
-  pwMixer10a.gain(0, value);
-  pwMixer11a.gain(0, value);
-  pwMixer12a.gain(0, value);
+  FOR_EACH_OSC(pwMixer_a.gain(0, value));
   showCurrentParameterPage("1. PWM LFO", String(value));
 }
 
 FLASHMEM void setPwmMixerBLFO(float value) {
-  pwMixer1b.gain(0, value);
-  pwMixer2b.gain(0, value);
-  pwMixer3b.gain(0, value);
-  pwMixer4b.gain(0, value);
-  pwMixer5b.gain(0, value);
-  pwMixer6b.gain(0, value);
-  pwMixer7b.gain(0, value);
-  pwMixer8b.gain(0, value);
-  pwMixer9b.gain(0, value);
-  pwMixer10b.gain(0, value);
-  pwMixer11b.gain(0, value);
-  pwMixer12b.gain(0, value);
+  FOR_EACH_OSC(pwMixer_b.gain(0, value));
   showCurrentParameterPage("2. PWM LFO", String(value));
 }
 
 FLASHMEM void setPwmMixerAPW(float value) {
-  pwMixer1a.gain(1, value);
-  pwMixer2a.gain(1, value);
-  pwMixer3a.gain(1, value);
-  pwMixer4a.gain(1, value);
-  pwMixer5a.gain(1, value);
-  pwMixer6a.gain(1, value);
-  pwMixer7a.gain(1, value);
-  pwMixer8a.gain(1, value);
-  pwMixer9a.gain(1, value);
-  pwMixer10a.gain(1, value);
-  pwMixer11a.gain(1, value);
-  pwMixer12a.gain(1, value);
+  FOR_EACH_OSC(pwMixer_a.gain(1, value));
 }
 
 FLASHMEM void setPwmMixerBPW(float value) {
-  pwMixer1b.gain(1, value);
-  pwMixer2b.gain(1, value);
-  pwMixer3b.gain(1, value);
-  pwMixer4b.gain(1, value);
-  pwMixer5b.gain(1, value);
-  pwMixer6b.gain(1, value);
-  pwMixer7b.gain(1, value);
-  pwMixer8b.gain(1, value);
-  pwMixer9b.gain(1, value);
-  pwMixer10b.gain(1, value);
-  pwMixer11b.gain(1, value);
-  pwMixer12b.gain(1, value);
+  FOR_EACH_OSC(pwMixer_b.gain(1, value));
 }
 
 FLASHMEM void setPwmMixerAFEnv(float value) {
-  pwMixer1a.gain(2, value);
-  pwMixer2a.gain(2, value);
-  pwMixer3a.gain(2, value);
-  pwMixer4a.gain(2, value);
-  pwMixer5a.gain(2, value);
-  pwMixer6a.gain(2, value);
-  pwMixer7a.gain(2, value);
-  pwMixer8a.gain(2, value);
-  pwMixer9a.gain(2, value);
-  pwMixer10a.gain(2, value);
-  pwMixer11a.gain(2, value);
-  pwMixer12a.gain(2, value);
+  FOR_EACH_OSC(pwMixer_a.gain(2, value));
   showCurrentParameterPage("1. PWM F Env", String(value));
 }
 
 FLASHMEM void setPwmMixerBFEnv(float value) {
-  pwMixer1b.gain(2, value);
-  pwMixer2b.gain(2, value);
-  pwMixer3b.gain(2, value);
-  pwMixer4b.gain(2, value);
-  pwMixer5b.gain(2, value);
-  pwMixer6b.gain(2, value);
-  pwMixer7b.gain(2, value);
-  pwMixer8b.gain(2, value);
-  pwMixer9b.gain(2, value);
-  pwMixer10b.gain(2, value);
-  pwMixer11b.gain(2, value);
-  pwMixer12b.gain(2, value);
+  FOR_EACH_OSC(pwMixer_b.gain(2, value));
   showCurrentParameterPage("2. PWM F Env", String(value));
 }
 
@@ -1154,18 +611,7 @@ FLASHMEM void updateWaveformA() {
     newWaveform = WAVEFORM_ARBITRARY;
   }
 
-  waveformMod1a.begin(newWaveform);
-  waveformMod2a.begin(newWaveform);
-  waveformMod3a.begin(newWaveform);
-  waveformMod4a.begin(newWaveform);
-  waveformMod5a.begin(newWaveform);
-  waveformMod6a.begin(newWaveform);
-  waveformMod7a.begin(newWaveform);
-  waveformMod8a.begin(newWaveform);
-  waveformMod9a.begin(newWaveform);
-  waveformMod10a.begin(newWaveform);
-  waveformMod11a.begin(newWaveform);
-  waveformMod12a.begin(newWaveform);
+  FOR_EACH_OSC(waveformMod_a.begin(newWaveform))
   showCurrentParameterPage("1. Waveform", getWaveformStr(oscWaveformA));
 }
 
@@ -1180,18 +626,7 @@ FLASHMEM void updateWaveformB() {
     newWaveform = WAVEFORM_ARBITRARY;
   }
 
-  waveformMod1b.begin(newWaveform);
-  waveformMod2b.begin(newWaveform);
-  waveformMod3b.begin(newWaveform);
-  waveformMod4b.begin(newWaveform);
-  waveformMod5b.begin(newWaveform);
-  waveformMod6b.begin(newWaveform);
-  waveformMod7b.begin(newWaveform);
-  waveformMod8b.begin(newWaveform);
-  waveformMod9b.begin(newWaveform);
-  waveformMod10b.begin(newWaveform);
-  waveformMod11b.begin(newWaveform);
-  waveformMod12b.begin(newWaveform);
+  FOR_EACH_OSC(waveformMod_b.begin(newWaveform))
   showCurrentParameterPage("2. Waveform", getWaveformStr(oscWaveformB));
 }
 
@@ -1215,18 +650,7 @@ FLASHMEM void updateDetune() {
 }
 
 void updatesAllVoices() {
-  updateVoice1();
-  updateVoice2();
-  updateVoice3();
-  updateVoice4();
-  updateVoice5();
-  updateVoice6();
-  updateVoice7();
-  updateVoice8();
-  updateVoice9();
-  updateVoice10();
-  updateVoice11();
-  updateVoice12();
+  FOR_EACH_VOICE(updateVoice(i))
 }
 
 FLASHMEM void updatePWMSource() {
@@ -1280,17 +704,17 @@ FLASHMEM void updatePWMRate() {
 }
 
 FLASHMEM void updatePWMAmount() {
-  //MIDI only - sets both osc
+  //MIDI only - sets both osc PWM
   pwA = 0;
   pwB = 0;
   setPwmMixerALFO(pwmAmtA);
   setPwmMixerBLFO(pwmAmtB);
-  showCurrentParameterPage("PWM Amt", String(pwmAmtA) + " " + String(pwmAmtB));
+  showCurrentParameterPage("PWM Amt", String(pwmAmtA) + " : " + String(pwmAmtB));
 }
 
 FLASHMEM void updatePWA() {
   if (pwmRate == -10) {
-    //if PWM amount is around zero, fixed PW is enabled
+    //fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
     setPwmMixerAFEnv(0);
@@ -1323,7 +747,7 @@ FLASHMEM void updatePWA() {
 
 FLASHMEM void updatePWB() {
   if (pwmRate == -10)  {
-    //if PWM amount is around zero, fixed PW is enabled
+    //fixed PW is enabled
     setPwmMixerALFO(0);
     setPwmMixerBLFO(0);
     setPwmMixerAFEnv(0);
@@ -1405,48 +829,15 @@ FLASHMEM void updateOscLevelB() {
 }
 
 FLASHMEM void setWaveformMixerLevel(int channel, float level) {
-  waveformMixer1.gain(channel, level);
-  waveformMixer2.gain(channel, level);
-  waveformMixer3.gain(channel, level);
-  waveformMixer4.gain(channel, level);
-  waveformMixer5.gain(channel, level);
-  waveformMixer6.gain(channel, level);
-  waveformMixer7.gain(channel, level);
-  waveformMixer8.gain(channel, level);
-  waveformMixer9.gain(channel, level);
-  waveformMixer10.gain(channel, level);
-  waveformMixer11.gain(channel, level);
-  waveformMixer12.gain(channel, level);
+  FOR_EACH_OSC(waveformMixer_.gain(channel, level))
 }
 
 FLASHMEM void setOscModMixerA(int channel, float level) {
-  oscModMixer1a.gain(channel, level);
-  oscModMixer2a.gain(channel, level);
-  oscModMixer3a.gain(channel, level);
-  oscModMixer4a.gain(channel, level);
-  oscModMixer5a.gain(channel, level);
-  oscModMixer6a.gain(channel, level);
-  oscModMixer7a.gain(channel, level);
-  oscModMixer8a.gain(channel, level);
-  oscModMixer9a.gain(channel, level);
-  oscModMixer10a.gain(channel, level);
-  oscModMixer11a.gain(channel, level);
-  oscModMixer12a.gain(channel, level);
+  FOR_EACH_OSC(oscModMixer_a.gain(channel, level))
 }
 
 FLASHMEM void setOscModMixerB(int channel, float level) {
-  oscModMixer1b.gain(channel, level);
-  oscModMixer2b.gain(channel, level);
-  oscModMixer3b.gain(channel, level);
-  oscModMixer4b.gain(channel, level);
-  oscModMixer5b.gain(channel, level);
-  oscModMixer6b.gain(channel, level);
-  oscModMixer7b.gain(channel, level);
-  oscModMixer8b.gain(channel, level);
-  oscModMixer9b.gain(channel, level);
-  oscModMixer10b.gain(channel, level);
-  oscModMixer11b.gain(channel, level);
-  oscModMixer12b.gain(channel, level);
+  FOR_EACH_OSC(oscModMixer_b.gain(channel, level))
 }
 
 FLASHMEM void updateNoiseLevel() {
@@ -1466,18 +857,7 @@ FLASHMEM void updateNoiseLevel() {
 }
 
 FLASHMEM void updateFilterFreq() {
-  filter1.frequency(filterFreq);
-  filter2.frequency(filterFreq);
-  filter3.frequency(filterFreq);
-  filter4.frequency(filterFreq);
-  filter5.frequency(filterFreq);
-  filter6.frequency(filterFreq);
-  filter7.frequency(filterFreq);
-  filter8.frequency(filterFreq);
-  filter9.frequency(filterFreq);
-  filter10.frequency(filterFreq);
-  filter11.frequency(filterFreq);
-  filter12.frequency(filterFreq);
+  FOR_EACH_OSC(filter_.frequency(filterFreq))
 
   //Altering filterOctave to give more cutoff width for deeper bass, but sharper cuttoff at higher frequncies
   if (filterFreq <= 2000) {
@@ -1490,35 +870,14 @@ FLASHMEM void updateFilterFreq() {
     filterOctave = 1.0f + ((12000.0f - filterFreq) / 5100.0f);//Sharper cutoff
   }
 
-  filter1.octaveControl(filterOctave);
-  filter2.octaveControl(filterOctave);
-  filter3.octaveControl(filterOctave);
-  filter4.octaveControl(filterOctave);
-  filter5.octaveControl(filterOctave);
-  filter6.octaveControl(filterOctave);
-  filter7.octaveControl(filterOctave);
-  filter8.octaveControl(filterOctave);
-  filter9.octaveControl(filterOctave);
-  filter10.octaveControl(filterOctave);
-  filter11.octaveControl(filterOctave);
-  filter12.octaveControl(filterOctave);
+  FOR_EACH_OSC(filter_.octaveControl(filterOctave))
 
   showCurrentParameterPage("Cutoff", String(int(filterFreq)) + " Hz");
 }
 
 FLASHMEM void updateFilterRes() {
-  filter1.resonance(filterRes);
-  filter2.resonance(filterRes);
-  filter3.resonance(filterRes);
-  filter4.resonance(filterRes);
-  filter5.resonance(filterRes);
-  filter6.resonance(filterRes);
-  filter7.resonance(filterRes);
-  filter8.resonance(filterRes);
-  filter9.resonance(filterRes);
-  filter10.resonance(filterRes);
-  filter11.resonance(filterRes);
-  filter12.resonance(filterRes);
+  FOR_EACH_OSC(filter_.resonance(filterRes))
+
   showCurrentParameterPage("Resonance", filterRes);
 }
 
@@ -1551,42 +910,12 @@ FLASHMEM void updateFilterMixer() {
       filterStr = "LP " + String(100 - filterMixStr) + " - " + String(filterMixStr) + " HP";
     }
   }
-  filterMixer1.gain(0, LP);
-  filterMixer1.gain(1, BP);
-  filterMixer1.gain(2, HP);
-  filterMixer2.gain(0, LP);
-  filterMixer2.gain(1, BP);
-  filterMixer2.gain(2, HP);
-  filterMixer3.gain(0, LP);
-  filterMixer3.gain(1, BP);
-  filterMixer3.gain(2, HP);
-  filterMixer4.gain(0, LP);
-  filterMixer4.gain(1, BP);
-  filterMixer4.gain(2, HP);
-  filterMixer5.gain(0, LP);
-  filterMixer5.gain(1, BP);
-  filterMixer5.gain(2, HP);
-  filterMixer6.gain(0, LP);
-  filterMixer6.gain(1, BP);
-  filterMixer6.gain(2, HP);
-  filterMixer7.gain(0, LP);
-  filterMixer7.gain(1, BP);
-  filterMixer7.gain(2, HP);
-  filterMixer8.gain(0, LP);
-  filterMixer8.gain(1, BP);
-  filterMixer8.gain(2, HP);
-  filterMixer9.gain(0, LP);
-  filterMixer9.gain(1, BP);
-  filterMixer9.gain(2, HP);
-  filterMixer10.gain(0, LP);
-  filterMixer10.gain(1, BP);
-  filterMixer10.gain(2, HP);
-  filterMixer11.gain(0, LP);
-  filterMixer11.gain(1, BP);
-  filterMixer11.gain(2, HP);
-  filterMixer12.gain(0, LP);
-  filterMixer12.gain(1, BP);
-  filterMixer12.gain(2, HP);
+
+  FOR_EACH_VOICE(
+    Oscillators[i].filterMixer_.gain(0, LP);
+    Oscillators[i].filterMixer_.gain(1, BP);
+    Oscillators[i].filterMixer_.gain(2, HP);
+  )
 
   showCurrentParameterPage("Filter Type", filterStr);
 }
@@ -1608,18 +937,7 @@ FLASHMEM void updateKeyTracking() {
 }
 
 FLASHMEM void setFilterModMixer(int channel, float level) {
-  filterModMixer1.gain(channel, level);
-  filterModMixer2.gain(channel, level);
-  filterModMixer3.gain(channel, level);
-  filterModMixer4.gain(channel, level);
-  filterModMixer5.gain(channel, level);
-  filterModMixer6.gain(channel, level);
-  filterModMixer7.gain(channel, level);
-  filterModMixer8.gain(channel, level);
-  filterModMixer9.gain(channel, level);
-  filterModMixer10.gain(channel, level);
-  filterModMixer11.gain(channel, level);
-  filterModMixer12.gain(channel, level);
+  FOR_EACH_OSC(filterModMixer_.gain(channel, level))
 }
 
 FLASHMEM void updateOscLFOAmt() {
@@ -1681,18 +999,7 @@ FLASHMEM void updateFilterLFOMidiClkSync() {
 }
 
 FLASHMEM void updateFilterAttack() {
-  filterEnvelope1.attack(filterAttack);
-  filterEnvelope2.attack(filterAttack);
-  filterEnvelope3.attack(filterAttack);
-  filterEnvelope4.attack(filterAttack);
-  filterEnvelope5.attack(filterAttack);
-  filterEnvelope6.attack(filterAttack);
-  filterEnvelope7.attack(filterAttack);
-  filterEnvelope8.attack(filterAttack);
-  filterEnvelope9.attack(filterAttack);
-  filterEnvelope10.attack(filterAttack);
-  filterEnvelope11.attack(filterAttack);
-  filterEnvelope12.attack(filterAttack);
+  FOR_EACH_OSC(filterEnvelope_.attack(filterAttack))
 
   if (filterAttack < 1000) {
     showCurrentParameterPage("Filter Attack", String(int(filterAttack)) + " ms", FILTER_ENV);
@@ -1702,18 +1009,8 @@ FLASHMEM void updateFilterAttack() {
 }
 
 FLASHMEM void updateFilterDecay() {
-  filterEnvelope1.decay(filterDecay);
-  filterEnvelope2.decay(filterDecay);
-  filterEnvelope3.decay(filterDecay);
-  filterEnvelope4.decay(filterDecay);
-  filterEnvelope5.decay(filterDecay);
-  filterEnvelope6.decay(filterDecay);
-  filterEnvelope7.decay(filterDecay);
-  filterEnvelope8.decay(filterDecay);
-  filterEnvelope9.decay(filterDecay);
-  filterEnvelope10.decay(filterDecay);
-  filterEnvelope11.decay(filterDecay);
-  filterEnvelope12.decay(filterDecay);
+  FOR_EACH_OSC(filterEnvelope_.decay(filterDecay))
+
   if (filterDecay < 1000) {
     showCurrentParameterPage("Filter Decay", String(int(filterDecay)) + " ms", FILTER_ENV);
   } else {
@@ -1722,35 +1019,13 @@ FLASHMEM void updateFilterDecay() {
 }
 
 FLASHMEM void updateFilterSustain() {
-  filterEnvelope1.sustain(filterSustain);
-  filterEnvelope2.sustain(filterSustain);
-  filterEnvelope3.sustain(filterSustain);
-  filterEnvelope4.sustain(filterSustain);
-  filterEnvelope5.sustain(filterSustain);
-  filterEnvelope6.sustain(filterSustain);
-  filterEnvelope7.sustain(filterSustain);
-  filterEnvelope8.sustain(filterSustain);
-  filterEnvelope9.sustain(filterSustain);
-  filterEnvelope10.sustain(filterSustain);
-  filterEnvelope11.sustain(filterSustain);
-  filterEnvelope12.sustain(filterSustain);
+  FOR_EACH_OSC(filterEnvelope_.sustain(filterSustain))
 
   showCurrentParameterPage("Filter Sustain", String(filterSustain), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterRelease() {
-  filterEnvelope1.release(filterRelease);
-  filterEnvelope2.release(filterRelease);
-  filterEnvelope3.release(filterRelease);
-  filterEnvelope4.release(filterRelease);
-  filterEnvelope5.release(filterRelease);
-  filterEnvelope6.release(filterRelease);
-  filterEnvelope7.release(filterRelease);
-  filterEnvelope8.release(filterRelease);
-  filterEnvelope9.release(filterRelease);
-  filterEnvelope10.release(filterRelease);
-  filterEnvelope11.release(filterRelease);
-  filterEnvelope12.release(filterRelease);
+  FOR_EACH_OSC(filterEnvelope_.release(filterRelease))
 
   if (filterRelease < 1000) {
     showCurrentParameterPage("Filter Release", String(int(filterRelease)) + " ms", FILTER_ENV);
@@ -1760,18 +1035,7 @@ FLASHMEM void updateFilterRelease() {
 }
 
 FLASHMEM void updateAttack() {
-  ampEnvelope1.attack(ampAttack);
-  ampEnvelope2.attack(ampAttack);
-  ampEnvelope3.attack(ampAttack);
-  ampEnvelope4.attack(ampAttack);
-  ampEnvelope5.attack(ampAttack);
-  ampEnvelope6.attack(ampAttack);
-  ampEnvelope7.attack(ampAttack);
-  ampEnvelope8.attack(ampAttack);
-  ampEnvelope9.attack(ampAttack);
-  ampEnvelope10.attack(ampAttack);
-  ampEnvelope11.attack(ampAttack);
-  ampEnvelope12.attack(ampAttack);
+  FOR_EACH_OSC(ampEnvelope_.release(ampAttack))
 
   if (ampAttack < 1000) {
     showCurrentParameterPage("Attack", String(int(ampAttack)) + " ms", AMP_ENV);
@@ -1781,18 +1045,7 @@ FLASHMEM void updateAttack() {
 }
 
 FLASHMEM void updateDecay() {
-  ampEnvelope1.decay(ampDecay);
-  ampEnvelope2.decay(ampDecay);
-  ampEnvelope3.decay(ampDecay);
-  ampEnvelope4.decay(ampDecay);
-  ampEnvelope5.decay(ampDecay);
-  ampEnvelope6.decay(ampDecay);
-  ampEnvelope7.decay(ampDecay);
-  ampEnvelope8.decay(ampDecay);
-  ampEnvelope9.decay(ampDecay);
-  ampEnvelope10.decay(ampDecay);
-  ampEnvelope11.decay(ampDecay);
-  ampEnvelope12.decay(ampDecay);
+  FOR_EACH_OSC(ampEnvelope_.decay(ampDecay))
 
   if (ampDecay < 1000) {
     showCurrentParameterPage("Decay", String(int(ampDecay)) + " ms", AMP_ENV);
@@ -1802,35 +1055,13 @@ FLASHMEM void updateDecay() {
 }
 
 FLASHMEM void updateSustain() {
-  ampEnvelope1.sustain(ampSustain);
-  ampEnvelope2.sustain(ampSustain);
-  ampEnvelope3.sustain(ampSustain);
-  ampEnvelope4.sustain(ampSustain);
-  ampEnvelope5.sustain(ampSustain);
-  ampEnvelope6.sustain(ampSustain);
-  ampEnvelope7.sustain(ampSustain);
-  ampEnvelope8.sustain(ampSustain);
-  ampEnvelope9.sustain(ampSustain);
-  ampEnvelope10.sustain(ampSustain);
-  ampEnvelope11.sustain(ampSustain);
-  ampEnvelope12.sustain(ampSustain);
+  FOR_EACH_OSC(ampEnvelope_.sustain(ampSustain))
 
   showCurrentParameterPage("Sustain", String(ampSustain), AMP_ENV);
 }
 
 FLASHMEM void updateRelease() {
-  ampEnvelope1.release(ampRelease);
-  ampEnvelope2.release(ampRelease);
-  ampEnvelope3.release(ampRelease);
-  ampEnvelope4.release(ampRelease);
-  ampEnvelope5.release(ampRelease);
-  ampEnvelope6.release(ampRelease);
-  ampEnvelope7.release(ampRelease);
-  ampEnvelope8.release(ampRelease);
-  ampEnvelope9.release(ampRelease);
-  ampEnvelope10.release(ampRelease);
-  ampEnvelope11.release(ampRelease);
-  ampEnvelope12.release(ampRelease);
+  FOR_EACH_OSC(ampEnvelope_.release(ampRelease))
 
   if (ampRelease < 1000) {
     showCurrentParameterPage("Release", String(int(ampRelease)) + " ms", AMP_ENV);
@@ -1840,18 +1071,7 @@ FLASHMEM void updateRelease() {
 }
 
 FLASHMEM void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
-  oscFX1.setCombineMode(mode);
-  oscFX2.setCombineMode(mode);
-  oscFX3.setCombineMode(mode);
-  oscFX4.setCombineMode(mode);
-  oscFX5.setCombineMode(mode);
-  oscFX6.setCombineMode(mode);
-  oscFX7.setCombineMode(mode);
-  oscFX8.setCombineMode(mode);
-  oscFX9.setCombineMode(mode);
-  oscFX10.setCombineMode(mode);
-  oscFX11.setCombineMode(mode);
-  oscFX12.setCombineMode(mode);
+  FOR_EACH_OSC(oscFX_.setCombineMode(mode))
 }
 
 FLASHMEM void updateOscFX() {
@@ -2257,30 +1477,10 @@ FLASHMEM void myMIDIClock() {
 }
 
 FLASHMEM void closeEnvelopes() {
-  filterEnvelope1.close();
-  filterEnvelope2.close();
-  filterEnvelope3.close();
-  filterEnvelope4.close();
-  filterEnvelope5.close();
-  filterEnvelope6.close();
-  filterEnvelope7.close();
-  filterEnvelope8.close();
-  filterEnvelope9.close();
-  filterEnvelope10.close();
-  filterEnvelope11.close();
-  filterEnvelope12.close();
-  ampEnvelope1.close();
-  ampEnvelope2.close();
-  ampEnvelope3.close();
-  ampEnvelope4.close();
-  ampEnvelope5.close();
-  ampEnvelope6.close();
-  ampEnvelope7.close();
-  ampEnvelope8.close();
-  ampEnvelope9.close();
-  ampEnvelope10.close();
-  ampEnvelope11.close();
-  ampEnvelope12.close();
+  FOR_EACH_VOICE(
+    Oscillators[i].filterEnvelope_.close();
+    Oscillators[i].ampEnvelope_.close();
+  )
 }
 
 FLASHMEM void recallPatch(int patchNo) {
@@ -2368,7 +1568,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePitchB();
   updateDetune();
   updatePWMSource();
-  updatePWMAmount();
+  //updatePWMAmount();//Not needed
   updatePWA();
   updatePWB();
   updatePWMRate();
@@ -2406,8 +1606,8 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 }
 
 FLASHMEM String getCurrentPatchData() {
-  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
-         String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt) + "," + String(oscLfoRate) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate) + "," +
+  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed, 5) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
+         String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
@@ -2950,8 +2150,8 @@ void CPUMonitor() {
 }
 
 void loop() {
-  myusb.Task();
   //USB HOST MIDI Class Compliant
+  myusb.Task();
   midi1.read(midiChannel);
   //USB Client MIDI
   usbMIDI.read(midiChannel);
@@ -2960,6 +2160,5 @@ void loop() {
   checkMux();
   checkSwitches();
   checkEncoder();
-
   //CPUMonitor();
 }
