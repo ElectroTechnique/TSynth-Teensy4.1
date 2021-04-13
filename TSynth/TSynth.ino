@@ -202,54 +202,12 @@ FLASHMEM void setup() {
   pwmLfoB.begin(PWMWAVEFORM);
   pwmLfoB.phase(10.0f);//Off set phase of second osc
 
-  waveformMod1a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod1a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod1b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod1b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod2a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod2a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod2b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod2b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod3a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod3a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod3b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod3b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod4a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod4a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod4b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod4b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod5a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod5a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod5b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod5b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod6a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod6a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod6b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod6b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod7a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod7a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod7b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod7b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod8a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod8a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod8b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod8b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod9a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod9a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod9b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod9b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod10a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod10a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod10b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod10b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod11a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod11a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod11b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod11b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  waveformMod12a.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod12a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-  waveformMod12b.frequencyModulation(PITCHLFOOCTAVERANGE);
-  waveformMod12b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
+  FOR_EACH_VOICE(
+    Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
+    Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
+    Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
+    Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
+  )
 
   //Arbitary waveform needs initialising to something
   loadArbWaveformA(PARABOLIC_WAVE);
@@ -521,33 +479,11 @@ FLASHMEM String getWaveformStr(int value) {
 }
 
 void loadArbWaveformA(const int16_t * wavedata) {
-  waveformMod1a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod2a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod3a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod4a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod5a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod6a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod7a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod8a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod9a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod10a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod11a.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod12a.arbitraryWaveform(wavedata, AWFREQ);
+  FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(wavedata, AWFREQ))
 }
 
 void loadArbWaveformB(const int16_t * wavedata) {
-  waveformMod1b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod2b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod3b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod4b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod5b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod6b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod7b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod8b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod9b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod10b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod11b.arbitraryWaveform(wavedata, AWFREQ);
-  waveformMod12b.arbitraryWaveform(wavedata, AWFREQ);
+  FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(wavedata, AWFREQ))
 }
 
 FLASHMEM float getLFOTempoRate(int value) {
