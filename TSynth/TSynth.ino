@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.12
+  ElectroTechnique TSynth - Firmware Rev 2.14
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -1035,7 +1035,7 @@ FLASHMEM void updateFilterRelease() {
 }
 
 FLASHMEM void updateAttack() {
-  FOR_EACH_OSC(ampEnvelope_.release(ampAttack))
+  FOR_EACH_OSC(ampEnvelope_.attack(ampAttack))
 
   if (ampAttack < 1000) {
     showCurrentParameterPage("Attack", String(int(ampAttack)) + " ms", AMP_ENV);
