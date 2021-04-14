@@ -59,6 +59,9 @@
 #include "Detune.h"
 #include "Velocity.h"
 #include "Voice.h"
+#include "VoiceGroup.h"
+// This should be included here, but it introduces a circular dependency.
+// #include "ST7735Display.h"
 
 #define PARAMETER 0 //The main page for displaying the current patch and control (parameter) changes
 #define RECALL 1 //Patches list
@@ -76,8 +79,7 @@ uint32_t state = PARAMETER;
 const static uint32_t  WAVEFORM_PARABOLIC = 103;
 const static uint32_t WAVEFORM_HARMONIC = 104;
 
-Voice voices[NO_OF_VOICES] = {{Oscillators[0]}, {Oscillators[1]}, {Oscillators[2]}, {Oscillators[3]}, {Oscillators[4]}, {Oscillators[5]}, {Oscillators[6]}, {Oscillators[7]}, {Oscillators[8]}, {Oscillators[9]}, {Oscillators[10]}, {Oscillators[11]}};
-uint32_t notesOn = 0;
+VoiceGroup voices;
 
 #include "ST7735Display.h"
 
@@ -86,7 +88,7 @@ USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
 MIDIDevice midi1(myusb);
-//MIDIDevice_BigBuffer midi1(myusb);//Try this if your MIDI Compliant controller has problems
+//MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
 
 //MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
@@ -109,10 +111,14 @@ int voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
 // Macros to help do things for each NO_OF_VOICES
-#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(voices[i].patch().CMD)
+#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(voices[i]->patch().CMD)
 #define FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < NO_OF_VOICES; i++){ CMD; }
 
 FLASHMEM void setup() {
+  for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
+    voices.add(new Voice(Oscillators[i], i));
+  }
+
   setupDisplay();
   setUpSettings();
   setupHardware();
@@ -198,10 +204,10 @@ FLASHMEM void setup() {
   pwmLfoB.phase(10.0f);//Off set phase of second osc
 
   FOR_EACH_VOICE(
-    voices[i].patch().waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
-    voices[i].patch().waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-    voices[i].patch().waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
-    voices[i].patch().waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
+    Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
+    Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
+    Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
+    Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
   )
 
   //Arbitary waveform needs initializing to something
@@ -247,21 +253,10 @@ FLASHMEM void setup() {
   vuMeter = getVUEnable();
 }
 
-void incNotesOn() {
-  if (notesOn < MAXUNISON)notesOn++;
-}
-
-void decNotesOn() {
-  if (notesOn > 0)notesOn--;
-}
-
 void myNoteOn(byte channel, byte note, byte velocity) {
   //Check for out of range notes
   if (note + oscPitchA < 0 || note + oscPitchA > 127 || note + oscPitchB < 0 || note + oscPitchB > 127)
     return;
-
-  if (unison == 1) incNotesOn();//For Unison mode
-
 
   if (oscLfoRetrig == 1) {
     pitchLfo.sync();
@@ -270,159 +265,25 @@ void myNoteOn(byte channel, byte note, byte velocity) {
     filterLfo.sync();
   }
 
-  if (unison == 0) {
-    int voice = getVoiceNo(-1);
-    voiceOn(voice, note, velocity, VOICEMIXERLEVEL);
-    updateVoice(voice);
-  } else  {
-    //UNISON MODE
-    //1 Note : 0-11
-    //2 Notes: 0-5, 6-11
-    //3 Notes: 0-3, 4-7, 8-11
-    //4 Notes: 0-2, 3/7/8, 4-6, 9-11
-    //5 or more: extra notes are ignored and new voices used for 4 notes
+  VoiceParams& params = voices.params();
+  
+  params.keytrackingAmount = keytrackingAmount;
+  params.glideSpeed = glideSpeed;
+  params.unisonMode = unison;
+  params.chordDetune = chordDetune;
+  params.detune = detune;
+  params.oscPitchA = oscPitchA;
+  params.oscPitchB = oscPitchB;
 
-    //Retrigger voices
-    //      1 2 3 4 5 6 7 8 9 10 11 12
-    //    1 x x x x x x x x x x  x  x
-    //    2             x x x x  x  x
-    //    3         x x x x
-    //    4       x       x x
-
-    if (unison == 2 || notesOn == 1) {
-      for (uint8_t i = 0; i < NO_OF_VOICES; i++) {  
-        voiceOn(i, note, velocity, UNISONVOICEMIXERLEVEL);
-      }
-    } else {
-      // Note: This doesn't take into account notes that have been released.
-      // What happens in the scenario:
-      // 1. note 1 played, voice 0-11 activated
-      // 2. note 2 played, voice 6-11 activated
-      // 3. note 1 released, voice 0-5 disabled
-      // 4. note 3 played, voice 6-11 re-activated
-
-      // TODO: solve by calling getVoiceNo 6 / 4 / 3 times to fetch the best
-      // voices to use based on how many notes are on on. The display code
-      // would need to be updated (or not).
-      switch(notesOn) {
-        case 2:
-          voiceOn(6, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(7, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(8, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(9, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(10, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(11, note, velocity, UNISONVOICEMIXERLEVEL);
-          break;
-        case 3:
-          voiceOn(4, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(5, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(6, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(7, note, velocity, UNISONVOICEMIXERLEVEL);
-          break;
-        case 4:
-          voiceOn(3, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(7, note, velocity, UNISONVOICEMIXERLEVEL);
-          voiceOn(8, note, velocity, UNISONVOICEMIXERLEVEL);
-          break;
-      }
-    }
-
-    prevNote = note;
-    updatesAllVoices();//Set detune values
-  }
-}
-
-void voiceOn(uint8_t index, byte note, byte velocity, float level) {
-  Patch& osc = voices[index].patch();
-  osc.keytracking_.amplitude(note * DIV127 * keytrackingAmount);
-  osc.voiceMixer_.gain(index % 4, VELOCITY[velocitySens][velocity] * level);
-  osc.filterEnvelope_.noteOn();
-  osc.ampEnvelope_.noteOn();
-  voices[index].noteOn(note);
-  if (glideSpeed > 0 && note != prevNote) {
-    osc.glide_.amplitude((prevNote - note) * DIV24);   //Set glide to previous note frequency (limited to 1 octave max)
-    osc.glide_.amplitude(0, glideSpeed * GLIDEFACTOR); //Glide to current note
-  }
-  if (unison == 0)prevNote = note;  
-}
-
-// renamed from endVoice to match voiceOn
-void voiceOff(uint8_t index) {
-  if (index < 0 || index >= NO_OF_VOICES) return;
-  voices[index].patch().filterEnvelope_.noteOff();
-  voices[index].patch().ampEnvelope_.noteOff();
-  voices[index].noteOff();
+  voices.noteOn(note, velocity);
 }
 
 void myNoteOff(byte channel, byte note, byte velocity) {
-  decNotesOn();
-  if (unison == 0) {
-    voiceOff(getVoiceNo(note));
-  } else {
-    //UNISON MODE: disable all voices for note.
-    FOR_EACH_VOICE(voiceOff(getVoiceNo(note)))
-  }
+  voices.noteOff(note);
 }
 
 void allNotesOff() {
-  notesOn = 0;
-
-  FOR_EACH_VOICE(voiceOff(i))
-}
-
-// Get the index into the 'voices' and 'Oscillators' array for a given note.
-// or -1 to get the next free, or oldest active note.
-// TODO: Include a channel for multi-timbral mode.
-int getVoiceNo(int note) {
-  voiceToReturn = -1;      //Initialise
-  earliestTime = millis(); //Initialise to now
-  if (note == -1) {
-    //NoteOn() - Get the oldest free voice (recent voices may be still on release stage)
-    FOR_EACH_VOICE(
-      if (!voices[i].on()) {
-        if (voices[i].timeOn() < earliestTime) {
-          earliestTime = voices[i].timeOn();
-          voiceToReturn = i;
-        }
-      }
-    )
-    if (voiceToReturn == -1) {
-      //No free voices, need to steal oldest sounding voice
-      FOR_EACH_VOICE(
-        if (voices[i].timeOn() < earliestTime) {
-          earliestTime = voices[i].timeOn();
-          voiceToReturn = i;
-        }
-      )
-    }
-    return voiceToReturn;
-  } else {
-    //NoteOff() - Get voice number from note
-    FOR_EACH_VOICE(
-      if (voices[i].note() == note && voices[i].on()) {
-        return i;
-      }
-    )
-    //Unison - Note on without previous note off?
-    return -1;
-  }
-  //Shouldn't get here, return voice 1
-  return 1;
-}
-
-void updateVoice(int voiceIdx) {
-  Patch &osc = voices[voiceIdx].patch();
-  if (unison == 1) {
-    int offset = 2 * voiceIdx;
-    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchA] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset])));
-    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchB] * (detune + ((1 - detune) * DETUNE[notesOn - 1][offset + 1])));
-  } else if (unison == 2) {
-    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchA + CHORD_DETUNE[voiceIdx][chordDetune]]) ;
-    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchB + CHORD_DETUNE[voiceIdx][chordDetune]] * CDT_DETUNE);
-  } else {
-    osc.waveformMod_a.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchA]);
-    osc.waveformMod_b.frequency(NOTEFREQS[voices[voiceIdx].note() + oscPitchB] * detune);
-  }
+  voices.allNotesOff();
 }
 
 int getLFOWaveform(int value) {
@@ -644,7 +505,7 @@ FLASHMEM void updateDetune() {
 }
 
 void updatesAllVoices() {
-  FOR_EACH_VOICE(updateVoice(i))
+  voices.updateVoices();
 }
 
 FLASHMEM void updatePWMSource() {
@@ -906,9 +767,9 @@ FLASHMEM void updateFilterMixer() {
   }
 
   FOR_EACH_VOICE(
-    voices[i].patch().filterMixer_.gain(0, LP);
-    voices[i].patch().filterMixer_.gain(1, BP);
-    voices[i].patch().filterMixer_.gain(2, HP);
+    voices[i]->patch().filterMixer_.gain(0, LP);
+    voices[i]->patch().filterMixer_.gain(1, BP);
+    voices[i]->patch().filterMixer_.gain(2, HP);
   )
 
   showCurrentParameterPage("Filter Type", filterStr);
@@ -1472,8 +1333,8 @@ FLASHMEM void myMIDIClock() {
 
 FLASHMEM void closeEnvelopes() {
   FOR_EACH_VOICE(
-    voices[i].patch().filterEnvelope_.close();
-    voices[i].patch().ampEnvelope_.close();
+    voices[i]->patch().filterEnvelope_.close();
+    voices[i]->patch().ampEnvelope_.close();
   )
 }
 
