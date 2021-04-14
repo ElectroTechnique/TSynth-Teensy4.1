@@ -2,7 +2,7 @@ Firmware for TSynth Teensy 4.1
 
 FLASH THE LATEST FIRMWARE ONLY - PREVIOUS FIRMWARES ARE HERE FOR TROUBLESHOOTING
 
-- V2.12 - Stereo chorus improvements.
+- V2.13 - Stereo Chorus - improvements and bugfixes
 - V2.11 - Fixed minor bugs with parameter save and recall. Richer stereo chorus.
 - V2.10 - Support for V1.3 PCB - Soft MIDI thru/out, normalise unison volume levels
 - V2.03 - Fixed reintialise problem cause by RE_READ and QUANTISE_FACTOR.
