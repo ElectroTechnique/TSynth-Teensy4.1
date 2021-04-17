@@ -118,6 +118,16 @@ FLASHMEM void settingsBassEnhanceEnable(const char * value) {
   }
 }
 
+FLASHMEM void settingsMonophonicEnable(const char * value) {
+  if (strcmp(value, "Off") == 0) {
+    monophonic = false;
+    storeMonophonicEnable(0);
+  } else {
+    monophonic = true;
+    storeMonophonicEnable(1);
+  }
+}
+
 FLASHMEM void settingsScopeEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
     enableScope(false);
@@ -190,6 +200,10 @@ FLASHMEM int currentIndexBassEnhanceEnable() {
   return getBassEnhanceEnable() ? 1 : 0;
 }
 
+FLASHMEM int currentIndexMonophonicEnable() {
+  return getMonophonicEnable() ? 1 : 0;
+}
+
 FLASHMEM int currentIndexScopeEnable() {
   return getScopeEnable() ? 1 : 0;
 }
@@ -217,6 +231,7 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
+  settingsOptions.push(SettingsOption{"Monophonic", {"Off", "On", "\0"}, settingsMonophonicEnable, currentIndexMonophonicEnable});
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
   settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
 }

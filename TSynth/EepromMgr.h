@@ -10,6 +10,7 @@
 #define EEPROM_MIDI_OUT_CH 7
 #define EEPROM_VU_ENABLE 8
 #define EEPROM_MIDI_THRU 9
+#define EEPROM_MONOPHONIC_ENABLE 10
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
@@ -90,6 +91,16 @@ FLASHMEM boolean getBassEnhanceEnable() {
 
 FLASHMEM void storeBassEnhanceEnable(byte bassEnhanceEnable){
   EEPROM.update(EEPROM_BASSENHANCE_ENABLE, bassEnhanceEnable);
+}
+
+FLASHMEM boolean getMonophonicEnable() {
+  byte me = EEPROM.read(EEPROM_MONOPHONIC_ENABLE); 
+  if (me < 0 || me > 1)return false; //If EEPROM has no monophonic enable stored
+  return me == 1 ? true : false;
+}
+
+FLASHMEM void storeMonophonicEnable(byte monophonicEnable){
+  EEPROM.update(EEPROM_MONOPHONIC_ENABLE, monophonicEnable);
 }
 
 FLASHMEM boolean getScopeEnable() {

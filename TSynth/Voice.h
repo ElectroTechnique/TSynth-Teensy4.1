@@ -46,6 +46,10 @@ class Voice {
             return this->_note;
         }
 
+        inline uint8_t velocity() {
+            return this->_velocity;
+        }
+
         inline long timeOn() {
             return this->_timeOn;
         }

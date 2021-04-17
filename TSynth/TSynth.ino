@@ -80,6 +80,7 @@ const static uint32_t  WAVEFORM_PARABOLIC = 103;
 const static uint32_t WAVEFORM_HARMONIC = 104;
 
 VoiceGroup voices;
+bool monophonic;
 
 #include "ST7735Display.h"
 
@@ -118,6 +119,7 @@ FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
     voices.add(new Voice(Oscillators[i], i));
   }
+  monophonic = getMonophonicEnable();
 
   setupDisplay();
   setUpSettings();
@@ -274,6 +276,8 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   params.detune = detune;
   params.oscPitchA = oscPitchA;
   params.oscPitchB = oscPitchB;
+
+  voices.setMonophonic(monophonic);
 
   voices.noteOn(note, velocity);
 }
