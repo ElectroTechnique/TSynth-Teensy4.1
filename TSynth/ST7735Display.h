@@ -118,7 +118,7 @@ FLASHMEM void renderCurrentPatchPage() {
   //    4 B B B R O O O R R Y Y Y
 
   uint8_t notesOn = voices.unisonNotes();
-
+  uint8_t unison = voices.params().unisonMode;
   //V4
   if (voices[3]->on() && unison && notesOn == 4) {
     colour[3] = ST77XX_DARKRED;

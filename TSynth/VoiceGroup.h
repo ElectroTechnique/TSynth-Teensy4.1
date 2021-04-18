@@ -18,7 +18,7 @@
 class VoiceGroup {
     private:
     std::vector<Voice*> voices;
-    VoiceParams _params;
+    VoiceParams _params{0.0, 0.0, 48, 0.0, 0, 0, 0.98f, 0, 0};
     uint8_t notesOn;
     uint8_t monoNote;
     uint8_t prevNote;
@@ -38,6 +38,19 @@ class VoiceGroup {
 
     inline uint8_t size() {
         return this->voices.size();
+    }
+
+    inline void setMonophonic(uint8_t mode) {
+        this->monophonic = mode;
+    }
+
+    void setUnisonMode(uint8_t mode) {
+        this->_params.unisonMode = mode;
+        this->notesOn = 0;
+    }
+
+    inline uint8_t unisonNotes() {
+        return this->notesOn;
     }
 
     //
@@ -73,14 +86,6 @@ class VoiceGroup {
     //
     // Use the group
     //
-
-    inline void setMonophonic(uint8_t mode) {
-        this->monophonic = mode;
-    }
-
-    inline uint8_t unisonNotes() {
-        return this->notesOn;
-    }
 
     void noteOn(uint8_t note, uint8_t velocity) {
         if (this->monophonic) {

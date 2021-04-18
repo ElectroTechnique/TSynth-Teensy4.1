@@ -61,11 +61,11 @@ class Voice {
         void updateVoice(VoiceParams &params) {
             Patch& osc = this->patch();
 
-            if (unison == 1) {
+            if (params.unisonMode == 1) {
                 int offset = 2 * this->index();
                 osc.waveformMod_a.frequency(NOTEFREQS[this->_note + params.oscPitchA] * (params.detune + ((1 - params.detune) * DETUNE[params.notesOn - 1][offset])));
                 osc.waveformMod_b.frequency(NOTEFREQS[this->_note + oscPitchB] * (params.detune + ((1 - params.detune) * DETUNE[params.notesOn - 1][offset + 1])));
-            } else if (unison == 2) {
+            } else if (params.unisonMode == 2) {
                 osc.waveformMod_a.frequency(NOTEFREQS[this->_note + params.oscPitchA + CHORD_DETUNE[this->index()][params.chordDetune]]) ;
                 osc.waveformMod_b.frequency(NOTEFREQS[this->_note + params.oscPitchB + CHORD_DETUNE[this->index()][params.chordDetune]] * CDT_DETUNE);
             } else {
