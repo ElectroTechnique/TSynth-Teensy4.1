@@ -21,7 +21,6 @@ class VoiceGroup {
     VoiceParams _params{0.0, 0.0, 48, 0.0, 0, 0, 0.98f, 0, 0};
     uint8_t notesOn;
     uint8_t monoNote;
-    uint8_t prevNote;
     uint8_t monophonic;
 
     struct noteStackData {
@@ -33,7 +32,7 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(): notesOn(0), prevNote(48), monophonic(false) {
+    VoiceGroup(): notesOn(0), monophonic(0) {
     }
 
     inline uint8_t size() {
@@ -337,7 +336,7 @@ class VoiceGroup {
                 allNotesOn(note, velocity);
                 break;
         }
-        this->prevNote = note;
+        this->_params.prevNote = note;
     }
 };
 

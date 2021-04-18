@@ -103,7 +103,6 @@ void changeMIDIThruMode() {
 boolean cardStatus = false;
 boolean firstPatchLoaded = false;
 
-int prevNote = 48;//This is for glide to use previous note to glide from
 float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;//For MIDI Clk Sync
