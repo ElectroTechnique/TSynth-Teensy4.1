@@ -1,3 +1,6 @@
+#ifndef TSYNTH_ST7735_DISPLAY_H
+#define TSYNTH_ST7735_DISPLAY_H
+
 #define sclk 27
 #define mosi 26
 #define cs 2
@@ -7,6 +10,7 @@
 
 #include <Adafruit_GFX.h>
 #include "ST7735_t3.h" // Local copy from TD1.48 that works for 0.96" IPS 160x80 display
+#include "Voice.h"
 
 #include "Fonts/Org_01.h"
 #include "Yeysk16pt7b.h"
@@ -113,79 +117,81 @@ FLASHMEM void renderCurrentPatchPage() {
   //    3 B B B B O O O O Y Y Y Y
   //    4 B B B R O O O R R Y Y Y
 
+  uint8_t notesOn = voices.unisonNotes();
+
   //V4
-  if (voices[3].voiceOn && unison && notesOn == 4) {
+  if (voices[3]->on() && unison && notesOn == 4) {
     colour[3] = ST77XX_DARKRED;
-  } else if (voices[3].voiceOn && unison && notesOn > 1 && colour[3] != ST77XX_DARKRED) {
+  } else if (voices[3]->on() && unison && notesOn > 1 && colour[3] != ST77XX_DARKRED) {
     colour[3] = ST7735_BLUE;
-  } else if (!voices[3].voiceOn) {
+  } else if (!voices[3]->on()) {
     colour[3] = ST7735_BLUE;
   }
 
   //V5-6
-  if (voices[4].voiceOn && unison && notesOn > 2) {
+  if (voices[4]->on() && unison && notesOn > 2) {
     colour[4] = ST77XX_ORANGE;
     colour[5] = ST77XX_ORANGE;
-  } else if (!voices[4].voiceOn) {
+  } else if (!voices[4]->on()) {
     colour[4] = ST7735_BLUE;
     colour[5] = ST7735_BLUE;
   }
 
   //V7
-  if (voices[6].voiceOn && unison && notesOn > 2) {
+  if (voices[6]->on() && unison && notesOn > 2) {
     colour[6] = ST77XX_ORANGE;
-  } else if (voices[6].voiceOn && unison && notesOn == 2 && colour[6] != ST77XX_ORANGE) {
+  } else if (voices[6]->on() && unison && notesOn == 2 && colour[6] != ST77XX_ORANGE) {
     colour[6] = ST7735_YELLOW;
-  } else if (!voices[6].voiceOn) {
+  } else if (!voices[6]->on()) {
     colour[6] = ST7735_BLUE;
   }
 
   //V8
-  if (voices[7].voiceOn && unison && notesOn == 4) {
+  if (voices[7]->on() && unison && notesOn == 4) {
     colour[7] = ST77XX_DARKRED;
-  } else if (voices[7].voiceOn && unison && notesOn == 3 && colour[7] != ST77XX_DARKRED) {
+  } else if (voices[7]->on() && unison && notesOn == 3 && colour[7] != ST77XX_DARKRED) {
     colour[7] = ST77XX_ORANGE;
-  } else if (voices[7].voiceOn && unison && notesOn == 2 && colour[7] != ST77XX_DARKRED && colour[7] != ST77XX_ORANGE) {
+  } else if (voices[7]->on() && unison && notesOn == 2 && colour[7] != ST77XX_DARKRED && colour[7] != ST77XX_ORANGE) {
     colour[7] = ST7735_YELLOW;
-  } else if (!voices[7].voiceOn) {
+  } else if (!voices[7]->on()) {
     colour[7] = ST7735_BLUE;
   }
 
   //V9
-  if (voices[8].voiceOn && unison && notesOn == 4) {
+  if (voices[8]->on() && unison && notesOn == 4) {
     colour[8] = ST77XX_DARKRED;
-  } else if (voices[8].voiceOn && unison && (notesOn == 2 || notesOn == 3) && colour[8] != ST77XX_DARKRED) {
+  } else if (voices[8]->on() && unison && (notesOn == 2 || notesOn == 3) && colour[8] != ST77XX_DARKRED) {
     colour[8] = ST7735_YELLOW;
-  } else if (!voices[8].voiceOn) {
+  } else if (!voices[8]->on()) {
     colour[8] = ST7735_BLUE;
   }
 
   //V10-12
-  if (voices[9].voiceOn && unison && notesOn > 1) {
+  if (voices[9]->on() && unison && notesOn > 1) {
     colour[9] = ST7735_YELLOW;
     colour[10] = ST7735_YELLOW;
     colour[11] = ST7735_YELLOW;
-  } else if (!voices[9].voiceOn) {
+  } else if (!voices[9]->on()) {
     colour[9] = ST7735_BLUE;
     colour[10] = ST7735_BLUE;
     colour[11] = ST7735_BLUE;
   }
 
-  if (voices[ 0].voiceOn)   tft.fillRect(117, 27, 8, 8, ST7735_BLUE); else tft.drawRect(117, 27, 8, 8, ST7735_BLUE);
-  if (voices[ 1].voiceOn)   tft.fillRect(127, 27, 8, 8, ST7735_BLUE); else tft.drawRect(127, 27, 8, 8, ST7735_BLUE);
-  if (voices[ 2].voiceOn)   tft.fillRect(137, 27, 8, 8, ST7735_BLUE); else tft.drawRect(137, 27, 8, 8, ST7735_BLUE);
+  if (voices[ 0]->on())   tft.fillRect(117, 27, 8, 8, ST7735_BLUE); else tft.drawRect(117, 27, 8, 8, ST7735_BLUE);
+  if (voices[ 1]->on())   tft.fillRect(127, 27, 8, 8, ST7735_BLUE); else tft.drawRect(127, 27, 8, 8, ST7735_BLUE);
+  if (voices[ 2]->on())   tft.fillRect(137, 27, 8, 8, ST7735_BLUE); else tft.drawRect(137, 27, 8, 8, ST7735_BLUE);
 
-  if (voices[ 3].voiceOn)   tft.fillRect(147, 27, 8, 8, colour[3]); else tft.drawRect(147, 27, 8, 8, ST7735_BLUE);
-  if (voices[ 4].voiceOn)   tft.fillRect(117, 37, 8, 8, colour[4]); else tft.drawRect(117, 37, 8, 8, ST7735_BLUE);
-  if (voices[ 5].voiceOn)   tft.fillRect(127, 37, 8, 8, colour[5]); else tft.drawRect(127, 37, 8, 8, ST7735_BLUE);
+  if (voices[ 3]->on())   tft.fillRect(147, 27, 8, 8, colour[3]); else tft.drawRect(147, 27, 8, 8, ST7735_BLUE);
+  if (voices[ 4]->on())   tft.fillRect(117, 37, 8, 8, colour[4]); else tft.drawRect(117, 37, 8, 8, ST7735_BLUE);
+  if (voices[ 5]->on())   tft.fillRect(127, 37, 8, 8, colour[5]); else tft.drawRect(127, 37, 8, 8, ST7735_BLUE);
 
-  if (voices[ 6].voiceOn)   tft.fillRect(137, 37, 8, 8, colour[6]); else tft.drawRect(137, 37, 8, 8, ST7735_BLUE);
-  if (voices[ 7].voiceOn)   tft.fillRect(147, 37, 8, 8, colour[7]); else tft.drawRect(147, 37, 8, 8, ST7735_BLUE);
-  if (voices[ 8].voiceOn)   tft.fillRect(117, 47, 8, 8, colour[8]); else tft.drawRect(117, 47, 8, 8, ST7735_BLUE);
+  if (voices[ 6]->on())   tft.fillRect(137, 37, 8, 8, colour[6]); else tft.drawRect(137, 37, 8, 8, ST7735_BLUE);
+  if (voices[ 7]->on())   tft.fillRect(147, 37, 8, 8, colour[7]); else tft.drawRect(147, 37, 8, 8, ST7735_BLUE);
+  if (voices[ 8]->on())   tft.fillRect(117, 47, 8, 8, colour[8]); else tft.drawRect(117, 47, 8, 8, ST7735_BLUE);
 
-  if (voices[ 9].voiceOn)   tft.fillRect(127, 47, 8, 8, colour[9]); else tft.drawRect(127, 47, 8, 8, ST7735_BLUE);
-  if (voices[10].voiceOn)   tft.fillRect(137, 47, 8, 8, colour[10]); else tft.drawRect(137, 47, 8, 8, ST7735_BLUE);
-  if (voices[11].voiceOn)   tft.fillRect(147, 47, 8, 8, colour[11]); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
+  if (voices[ 9]->on())   tft.fillRect(127, 47, 8, 8, colour[9]); else tft.drawRect(127, 47, 8, 8, ST7735_BLUE);
+  if (voices[10]->on())   tft.fillRect(137, 47, 8, 8, colour[10]); else tft.drawRect(137, 47, 8, 8, ST7735_BLUE);
+  if (voices[11]->on())   tft.fillRect(147, 47, 8, 8, colour[11]); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
 
   tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans12pt7b);
@@ -493,3 +499,5 @@ void setupDisplay() {
   tft.updateScreen();
   threads.addThread(displayThread);
 }
+
+#endif
