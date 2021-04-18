@@ -80,7 +80,7 @@ const static uint32_t  WAVEFORM_PARABOLIC = 103;
 const static uint32_t WAVEFORM_HARMONIC = 104;
 
 VoiceGroup voices;
-bool monophonic;
+uint8_t monophonic;
 
 #include "ST7735Display.h"
 
@@ -103,7 +103,6 @@ void changeMIDIThruMode() {
 boolean cardStatus = false;
 boolean firstPatchLoaded = false;
 
-int prevNote = 48;//This is for glide to use previous note to glide from
 float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;//For MIDI Clk Sync
@@ -119,7 +118,7 @@ FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
     voices.add(new Voice(Oscillators[i], i));
   }
-  monophonic = getMonophonicEnable();
+  monophonic = getMonophonic();
 
   setupDisplay();
   setUpSettings();
@@ -271,9 +270,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   
   params.keytrackingAmount = keytrackingAmount;
   params.glideSpeed = glideSpeed;
-  params.unisonMode = unison;
-  params.chordDetune = chordDetune;
-  params.detune = detune;
   params.oscPitchA = oscPitchA;
   params.oscPitchB = oscPitchB;
 
@@ -424,7 +420,10 @@ FLASHMEM void setPwmMixerBFEnv(float value) {
   showCurrentParameterPage("2. PWM F Env", String(value));
 }
 
-FLASHMEM void updateUnison() {
+FLASHMEM void updateUnison(uint8_t unison) {
+  voices.setUnisonMode(unison);
+
+  // TODO: These need to be split per oscillator?
   if (unison == 0) {
     allNotesOff();//Avoid hanging notes
     noiseMixer.gain(0, ONE);
@@ -499,9 +498,12 @@ FLASHMEM void updatePitchB() {
   showCurrentParameterPage("2. Semitones", (oscPitchB > 0 ? "+" : "") + String(oscPitchB));
 }
 
-FLASHMEM void updateDetune() {
+FLASHMEM void updateDetune(float detune, uint32_t chordDetune) {
+  voices.params().detune = detune;
+  voices.params().chordDetune = chordDetune;
+  voices.updateVoices();
   updatesAllVoices();
-  if (unison == 2) {
+  if (voices.params().unisonMode == 2) {
     showCurrentParameterPage("Chord", CDT_STR[chordDetune]);
   } else {
     showCurrentParameterPage("Detune", String((1 - detune) * 100) + " %");
@@ -999,19 +1001,8 @@ void myControlChange(byte channel, byte control, byte value) {
       updateVolume(LINEAR[value]);
       break;
     case CCunison:
-      switch (value) {
-        case 0:
-          unison = 0;
-          break;
-        case 1:
-          unison = 1;
-          break;
-        case 2:
-        default:
-          unison = 2;
-          break;
-      }
-      updateUnison();
+      if (value == 0 || value == 1) updateUnison(value);
+      else updateUnison(2);
       break;
 
     case CCglide:
@@ -1047,9 +1038,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCdetune:
-      detune = 1.0f - (MAXDETUNE * POWER[value]);
-      chordDetune = value;
-      updateDetune();
+      updateDetune(1.0f - (MAXDETUNE * POWER[value]), value);
       break;
 
     case CCpwmSource:
@@ -1361,9 +1350,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   oscALevel = data[1].toFloat();
   oscBLevel = data[2].toFloat();
   noiseLevel = data[3].toFloat();
-  unison = data[4].toInt();
   oscFX = data[5].toInt();
-  detune = data[6].toFloat();
   lfoSyncFreq = data[7].toInt();
   midiClkTimeInterval = data[8].toInt();
   lfoTempoValue = data[9].toFloat();
@@ -1414,18 +1401,17 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxMixPrevValue = fxMix;//PICK-UP
   pitchEnv = data[46].toFloat();
   velocitySens = data[47].toFloat();
-  chordDetune = data[48].toInt();
   //  SPARE1 = data[49].toFloat();
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
   updatePatchname();
-  updateUnison();
+  updateUnison(data[4].toInt());
   updateWaveformA();
   updateWaveformB();
   updatePitchA();
   updatePitchB();
-  updateDetune();
+  updateDetune(data[6].toFloat(), data[48].toInt());
   updatePWMSource();
   //updatePWMAmount();//Not needed
   updatePWA();
@@ -1465,10 +1451,10 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 }
 
 FLASHMEM String getCurrentPatchData() {
-  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(unison) + "," + String(oscFX) + "," + String(detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed, 5) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
+  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(voices.params().unisonMode) + "," + String(oscFX) + "," + String(voices.params().detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(glideSpeed, 5) + "," + String(oscPitchA) + "," + String(oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
          String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
+         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(voices.params().chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
@@ -1651,16 +1637,15 @@ void checkSwitches() {
   unisonSwitch.update();
   if (unisonSwitch.read() == LOW && unisonSwitch.duration() > HOLD_DURATION) {
     //If unison held, switch to unison 2
-    unison = 2;
-    midiCCOut(CCunison, unison);
-    myControlChange(midiChannel, CCunison, unison);
+    midiCCOut(CCunison, 2);
+    myControlChange(midiChannel, CCunison, 2);
     unisonSwitch.write(HIGH); //Come out of this state
     unison2 = true;           //Hack
   } else  if (unisonSwitch.fallingEdge()) {
     if (!unison2) {
-      unison > 0 ? unison = 0 : unison = 1;
-      midiCCOut(CCunison, unison);
-      myControlChange(midiChannel, CCunison, unison);
+      uint8_t next = voices.params().unisonMode > 0 ? 0 : 1;
+      midiCCOut(CCunison, next);
+      myControlChange(midiChannel, CCunison, next);
     } else {
       unison2 = false;
     }
