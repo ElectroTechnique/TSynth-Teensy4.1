@@ -12,9 +12,18 @@ class VoiceGroup {
     VoiceParams _params;
     uint8_t notesOn;
     uint8_t prevNote;
+    bool monophonic;
+
+    struct noteStackData {
+        uint8_t note;
+        uint8_t velocity;
+    };
+
+    noteStackData noteStack[NO_OF_VOICES];
+    uint8_t top = 0;
 
     public:
-    VoiceGroup(): notesOn(0), prevNote(48) {
+    VoiceGroup(): notesOn(0), prevNote(48), monophonic(false) {
     }
 
     inline uint8_t size() {
@@ -55,11 +64,26 @@ class VoiceGroup {
     // Use the group
     //
 
+    inline void setMonophonic(bool enabled) {
+        this->monophonic = enabled;
+    }
+
     inline uint8_t unisonNotes() {
         return this->notesOn;
     }
 
     void noteOn(uint8_t note, int velocity) {
+        this->noteStack[this->top].note = note;
+        this->noteStack[this->top].velocity = velocity;
+        this->top++;
+
+        if (monophonic) {
+            uint8_t t = this->top;
+            allNotesOff();
+            this->top = t;
+        }
+
+
         switch (this->_params.unisonMode) {
             case 0:
                 this->_params.mixerLevel = VOICEMIXERLEVEL;
@@ -121,6 +145,7 @@ class VoiceGroup {
     }
 
     void allNotesOff() {
+        this->top = 0;
         this->notesOn = 0;
         for (uint8_t i = 0; i < voices.size(); i++) {
             voices[i]->noteOff();
@@ -134,6 +159,32 @@ class VoiceGroup {
     }
 
     void noteOff(uint8_t note) {
+        this->top--;
+        if (this->monophonic) {
+            noteOff(note, true);
+
+            if (this->top > 0) {
+                // Disabling notes out of order, shift the stack instead of starting a note.
+                if (this->noteStack[top].note != note) {
+                    bool shifting = false;
+                    for (uint8_t i = 0; i < top && i < NO_OF_VOICES; i++) {
+                        // Enable shifting when we reach the index of the note being turned off.
+                        if (!shifting && this->noteStack[i].note == note) {
+                            shifting = true;
+                        }
+                        if (shifting) {
+                            this->noteStack[i] = this->noteStack[i+1];
+                        }
+                    }
+                } else {
+                    this->top--; // decrement again because turning the note on will re-enable it.
+                    noteOn(this->noteStack[top].note, this->noteStack[top].velocity);
+                }
+            }
+
+            return;
+        }
+
         if (this->notesOn > 0) this->notesOn --;
         
         switch (this->_params.unisonMode) {
@@ -157,10 +208,10 @@ class VoiceGroup {
         Voice* result = nullptr;
 
         //NoteOn() - Get the oldest free voice, or oldest on voice if all are on. (recent voices may be still on release stage)
-        for (Voice* v : voices) {
-            if (result == nullptr || !v->on() || result->on()) {
-                if (result == nullptr || v->timeOn() < result->timeOn()) {
-                    result = v;
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            if (result == nullptr || !voices[i]->on() || result->on()) {
+                if (result == nullptr || voices[i]->timeOn() < result->timeOn()) {
+                    result = voices[i];
                 }
             }
         }
@@ -171,9 +222,9 @@ class VoiceGroup {
     // Turn off one or more notes.
     void noteOff(uint8_t note, bool all) {     
         //NoteOff() - Get voice number from note
-        for (Voice* v : voices) {
-            if (v->note() == note && v->on() == true) {
-                v->noteOff();
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            if (voices[i]->note() == note && voices[i]->on() == true) {
+                voices[i]->noteOff();
                 if (! all) {
                     return;
                 }
