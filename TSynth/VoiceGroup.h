@@ -18,7 +18,7 @@
 class VoiceGroup {
     private:
     std::vector<Voice*> voices;
-    VoiceParams _params{0.0, 0.0, 48, 0.0, 0, 0, 0.98f, 0, 0};
+    VoiceParams _params;
     uint8_t notesOn;
     uint8_t monoNote;
     uint8_t monophonic;
@@ -33,6 +33,15 @@ class VoiceGroup {
 
     public:
     VoiceGroup(): notesOn(0), monophonic(0) {
+        _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
+        _params.mixerLevel = 0.0;
+        _params.prevNote = 48;
+        _params.glideSpeed = 0.0;
+        _params.unisonMode = 0;
+        _params.chordDetune = 0;
+        _params.detune = 0;
+        _params.oscPitchA = 0;
+        _params.oscPitchB = 12;
     }
 
     inline uint8_t size() {
@@ -96,7 +105,7 @@ class VoiceGroup {
 
     void allNotesOn(uint8_t note, int velocity) {
         for (uint8_t i = 0; i < voices.size(); i++) {
-            voices[i]->noteOn(note, velocity, this->_params);
+            voices[i]->noteOn(note, velocity, this->_params, notesOn);
         }
     }
 
@@ -110,7 +119,7 @@ class VoiceGroup {
 
     void updateVoices() {
         for (uint8_t i = 0; i < voices.size(); i++) {
-            voices[i]->updateVoice(this->_params);
+            voices[i]->updateVoice(this->_params, notesOn);
         }
     }
 
@@ -288,7 +297,7 @@ class VoiceGroup {
         switch (this->_params.unisonMode) {
             case 0:
                 this->_params.mixerLevel = VOICEMIXERLEVEL;
-                this->getVoice()->noteOn(note, velocity, this->_params);
+                this->getVoice()->noteOn(note, velocity, this->_params, notesOn);
                 break;
             case 1:
                 //UNISON MODE
@@ -311,23 +320,23 @@ class VoiceGroup {
                         allNotesOn(note, velocity);
                         break;
                     case 2:
-                        voices[6]->noteOn(note, velocity, this->_params);
-                        voices[7]->noteOn(note, velocity, this->_params);
-                        voices[8]->noteOn(note, velocity, this->_params);
-                        voices[9]->noteOn(note, velocity, this->_params);
-                        voices[10]->noteOn(note, velocity, this->_params);
-                        voices[11]->noteOn(note, velocity, this->_params);
+                        voices[6]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[8]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[9]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[10]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[11]->noteOn(note, velocity, this->_params, notesOn);
                         break;
                     case 3:
-                        voices[4]->noteOn(note, velocity, this->_params);
-                        voices[5]->noteOn(note, velocity, this->_params);
-                        voices[6]->noteOn(note, velocity, this->_params);
-                        voices[7]->noteOn(note, velocity, this->_params);
+                        voices[4]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[5]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[6]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
                         break;
                     case 4:
-                        voices[3]->noteOn(note, velocity, this->_params);
-                        voices[7]->noteOn(note, velocity, this->_params);
-                        voices[8]->noteOn(note, velocity, this->_params);
+                        voices[3]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[8]->noteOn(note, velocity, this->_params, notesOn);
                         break;
                 }
                 break;

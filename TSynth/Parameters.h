@@ -1,4 +1,10 @@
 //Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
+
+// Globals used for OLED Settings
+float keytrackingAmount = 0.5f; //Half - MIDI CC & settings option
+uint8_t monophonic;
+
+
 byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
 byte midiOutCh = 0;//(EEPROM)
 midi::Thru::Mode MIDIThru = midi::Thru::Off;//(EEPROM)
@@ -14,10 +20,9 @@ float lfoTempoValue = 1.0f;
 int pitchBendRange = 12;
 float modWheelDepth = 0.2f;
 float modWhAmt = 0.0f;
-float keytrackingAmount = 0.5f;//Half - MIDI CC & settings option
-float glideSpeed = 0.0f;
-int oscPitchA = 0;
-int oscPitchB = 12;
+//float glideSpeed = 0.0f;
+//int oscPitchA = 0;
+//int oscPitchB = 12;
 float pitchEnv = 0.0f;
 int oscWaveformA = WAVEFORM_SQUARE;
 int oscWaveformB = WAVEFORM_SQUARE;
