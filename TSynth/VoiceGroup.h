@@ -33,6 +33,7 @@ class VoiceGroup {
     uint8_t monophonic;
     uint8_t waveformA;
     uint8_t waveformB;
+    float pitchEnvelope;
 
     struct noteStackData {
         uint8_t note;
@@ -43,7 +44,15 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(): patchName(""), patchIndex(0), notesOn(0), monophonic(0), waveformA(WAVEFORM_SQUARE), waveformB(WAVEFORM_SQUARE) {
+    VoiceGroup(): 
+            patchName(""),
+            patchIndex(0),
+            notesOn(0),
+            monophonic(0),
+            waveformA(WAVEFORM_SQUARE),
+            waveformB(WAVEFORM_SQUARE),
+            pitchEnvelope(0.0) 
+        {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
         _params.prevNote = 48;
@@ -70,6 +79,7 @@ class VoiceGroup {
     inline uint32_t getPatchIndex() { return this->patchIndex; }
     uint32_t getWaveformA()         { return waveformA; }
     uint32_t getWaveformB()         { return waveformB; }
+    float getPitchEnvelope()        { return pitchEnvelope; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -113,6 +123,11 @@ class VoiceGroup {
         VG_FOR_EACH_OSC(waveformMod_b.begin(temp))
     }
 
+    void setPitchEnvelope(float value) {
+        pitchEnvelope = value;
+        VG_FOR_EACH_OSC(oscModMixer_a.gain(1, value))
+        VG_FOR_EACH_OSC(oscModMixer_b.gain(1, value))
+    }
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
     }

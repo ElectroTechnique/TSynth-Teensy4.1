@@ -425,6 +425,7 @@ FLASHMEM void updateUnison(uint8_t unison) {
 }
 
 FLASHMEM void updateVolume(float vol) {
+  sgtl5000_1.volume(vol * SGTL_MAXVOLUME);
   showCurrentParameterPage("Volume", vol);
 }
 
@@ -746,10 +747,9 @@ FLASHMEM void updateFilterEnv() {
   showCurrentParameterPage("Filter Env.", String(filterEnv));
 }
 
-FLASHMEM void updatePitchEnv() {
-  setOscModMixerA(1, pitchEnv);
-  setOscModMixerB(1, pitchEnv);
-  showCurrentParameterPage("Pitch Env Amt", String(pitchEnv));
+FLASHMEM void updatePitchEnv(float value) {
+  voices.setPitchEnvelope(value);
+  showCurrentParameterPage("Pitch Env Amt", String(value));
 }
 
 FLASHMEM void updateKeyTracking(float keytrackingAmount) {
@@ -959,8 +959,6 @@ void myPitchBend(byte channel, int bend) {
 void myControlChange(byte channel, byte control, byte value) {
   switch (control) {
     case CCvolume:
-      //volumeMixer.gain(0, LINEAR[value]);
-      sgtl5000_1.volume(LINEAR[value] * SGTL_MAXVOLUME);
       updateVolume(LINEAR[value]);
       break;
     case CCunison:
@@ -973,8 +971,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCpitchenv:
-      pitchEnv = LINEARCENTREZERO[value] * OSCMODMIXERMAX;
-      updatePitchEnv();
+      updatePitchEnv(LINEARCENTREZERO[value] * OSCMODMIXERMAX);
       break;
 
     case CCoscwaveformA:
@@ -1356,7 +1353,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxAmtPrevValue = fxAmt;//PICK-UP
   fxMix = data[45].toFloat();
   fxMixPrevValue = fxMix;//PICK-UP
-  pitchEnv = data[46].toFloat();
+  updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   //  SPARE1 = data[49].toFloat();
   //  SPARE2 = data[50].toFloat();
@@ -1394,7 +1391,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateOscFX();
   updateFXAmt();
   updateFXMix();
-  updatePitchEnv();
   Serial.print(F("Set Patch: "));
   Serial.println(patchName);
 }
@@ -1404,7 +1400,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(oscFX) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
+         String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
