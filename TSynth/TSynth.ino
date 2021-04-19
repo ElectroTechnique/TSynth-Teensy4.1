@@ -1931,7 +1931,7 @@ void checkEncoder() {
         showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex] , SETTINGS);
         break;
       case SETTINGSVALUE:
-        if (settingsOptions.first().value[settingsValueIndex + 1] != "\0")
+        if (strcmp(settingsOptions.first().value[settingsValueIndex + 1],"\0") !=0)
           showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[++settingsValueIndex], SETTINGSVALUE);
         break;
     }
