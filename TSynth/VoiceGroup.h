@@ -1,6 +1,12 @@
 #ifndef TSYNTH_VOICE_GROUP_H
 #define TSYNTH_VOICE_GROUP_H
 
+#include <Arduino.h>
+#include <vector>
+#include <stdint.h>
+#include <stddef.h>
+#include "Voice.h"
+
 #define VG_FOR_EACH_OSC(CMD) VG_FOR_EACH_VOICE(voices[i]->patch().CMD)
 #define VG_FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < voices.size(); i++){ CMD; }
 
@@ -16,11 +22,6 @@
 const static uint32_t WAVEFORM_PARABOLIC = 103;
 const static uint32_t WAVEFORM_HARMONIC = 104;
 
-#include <vector>
-#include <stdint.h>
-#include <stddef.h>
-#include "Voice.h"
-
 class VoiceGroup {
     private:
     String patchName;
@@ -34,6 +35,12 @@ class VoiceGroup {
     uint8_t waveformA;
     uint8_t waveformB;
     float pitchEnvelope;
+    uint8_t pwmSource;
+    float pwmAmtA;
+    float pwmAmtB;
+    float pwA;
+    float pwB;
+    float pwmRate;
 
     struct noteStackData {
         uint8_t note;
@@ -51,7 +58,13 @@ class VoiceGroup {
             monophonic(0),
             waveformA(WAVEFORM_SQUARE),
             waveformB(WAVEFORM_SQUARE),
-            pitchEnvelope(0.0) 
+            pitchEnvelope(0.0),
+            pwmSource(PWMSOURCELFO),
+            pwmAmtA(1.0),
+            pwmAmtB(1.0),
+            pwA(0.0),
+            pwB(0.0),
+            pwmRate(0.5)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -80,6 +93,12 @@ class VoiceGroup {
     uint32_t getWaveformA()         { return waveformA; }
     uint32_t getWaveformB()         { return waveformB; }
     float getPitchEnvelope()        { return pitchEnvelope; }
+    uint8_t getPwmSource()          { return pwmSource; }
+    float getPwA()                  { return pwA; }
+    float getPwB()                  { return pwB; }
+    float getPwmAmtA()              { return pwmAmtA; }
+    float getPwmAmtB()              { return pwmAmtB; }
+    float getPwmRate()              { return pwmRate; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -123,11 +142,157 @@ class VoiceGroup {
         VG_FOR_EACH_OSC(waveformMod_b.begin(temp))
     }
 
+    void setPwmRate(float value) {
+        pwmRate = value;
+
+        // TODO: 12 copies of this.
+        pwmLfoA.frequency(pwmRate);
+        pwmLfoB.frequency(pwmRate);
+
+        if (pwmRate == -10) {
+            //Set to fixed PW mode
+            this->setPwmMixerALFO(0); //LFO Source off
+            this->setPwmMixerBLFO(0);
+            this->setPwmMixerAFEnv(0); //Filter Env Source off
+            this->setPwmMixerBFEnv(0);
+            this->setPwmMixerAPW(1); //Manually adjustable pulse width on
+            this->setPwmMixerBPW(1);
+        } else if (pwmRate == -5) {
+            //Set to Filter Env Mod source
+            this->setPWMSource(PWMSOURCEFENV);
+            this->setPwmMixerAFEnv(this->getPwmAmtA());
+            this->setPwmMixerBFEnv(this->getPwmAmtB());
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+        } else {
+            this->setPWMSource(PWMSOURCELFO);
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+        }
+    }
+
     void setPitchEnvelope(float value) {
         pitchEnvelope = value;
         VG_FOR_EACH_OSC(oscModMixer_a.gain(1, value))
         VG_FOR_EACH_OSC(oscModMixer_b.gain(1, value))
     }
+
+    void setPwmMixerALFO(float value) {
+        VG_FOR_EACH_OSC(pwMixer_a.gain(0, value));
+    }
+
+    void setPwmMixerBLFO(float value) {
+        VG_FOR_EACH_OSC(pwMixer_b.gain(0, value));
+    }
+
+    void setPwmMixerAPW(float value) {
+        VG_FOR_EACH_OSC(pwMixer_a.gain(1, value));
+    }
+
+    void setPwmMixerBPW(float value) {
+        VG_FOR_EACH_OSC(pwMixer_b.gain(1, value));
+    }
+
+    void setPwmMixerAFEnv(float value) {
+        VG_FOR_EACH_OSC(pwMixer_a.gain(2, value));
+    }
+
+    void setPwmMixerBFEnv(float value) {
+        VG_FOR_EACH_OSC(pwMixer_b.gain(2, value));
+    }
+
+    // MIDI-CC Only
+    void overridePwmAmount(float value) {
+        pwmAmtA = value;
+        pwmAmtB = value;
+        pwA = 0;
+        pwB = 0;
+        this->setPwmMixerALFO(value);
+        this->setPwmMixerBLFO(value);
+    }
+
+    void setPWA(float valuePwA, float valuePwmAmtA) {
+        pwA = valuePwA;
+        pwmAmtA = valuePwmAmtA;
+        if (pwmRate == -10) {
+            //fixed PW is enabled
+            this->setPwmMixerALFO(0);
+            this->setPwmMixerBLFO(0);
+            this->setPwmMixerAFEnv(0);
+            this->setPwmMixerBFEnv(0);
+            this->setPwmMixerAPW(1);
+            this->setPwmMixerBPW(1);
+        } else {
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+            if (pwmSource == PWMSOURCELFO) {
+                //PW alters PWM LFO amount for waveform A
+                this->setPwmMixerALFO(pwmAmtA);
+            } else {
+                //PW alters PWM Filter Env amount for waveform A
+                this->setPwmMixerAFEnv(pwmAmtA);
+            }
+        }
+
+        //Prevent silence when pw = +/-1.0 on pulse
+        float pwA_Adj = pwA;
+        if (pwA > 0.98) pwA_Adj = 0.98f;
+        if (pwA < -0.98) pwA_Adj = -0.98f;
+        pwa.amplitude(pwA_Adj);
+    }
+
+    void setPWB(float valuePwA, float valuePwmAmtA) {
+        pwB = valuePwA;
+        pwmAmtB = valuePwmAmtA;
+        if (pwmRate == -10) {
+            //fixed PW is enabled
+            this->setPwmMixerALFO(0);
+            this->setPwmMixerBLFO(0);
+            this->setPwmMixerAFEnv(0);
+            this->setPwmMixerBFEnv(0);
+            this->setPwmMixerAPW(1);
+            this->setPwmMixerBPW(1);
+        } else {
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+            if (pwmSource == PWMSOURCELFO) {
+                //PW alters PWM LFO amount for waveform B
+                this->setPwmMixerBLFO(pwmAmtB);
+            } else {
+                //PW alters PWM Filter Env amount for waveform B
+                this->setPwmMixerBFEnv(pwmAmtB);
+            }
+        }
+
+        //Prevent silence when pw = +/-1.0 on pulse
+        float pwB_Adj = pwB;
+        if (pwB > 0.98) pwB_Adj = 0.98f;
+        if (pwB < -0.98) pwB_Adj = -0.98f;
+        pwb.amplitude(pwB_Adj);
+    }
+
+    void setPWMSource(uint8_t value) {
+        pwmSource = value;
+        if (value == PWMSOURCELFO) {
+            //Set filter mod to zero
+            this->setPwmMixerAFEnv(0);
+            this->setPwmMixerBFEnv(0);
+
+            //Set LFO mod
+            if (pwmRate > -5) {
+                this->setPwmMixerALFO(pwmAmtA);//Set LFO mod
+                this->setPwmMixerBLFO(pwmAmtB);//Set LFO mod
+            }
+        } else {
+            this->setPwmMixerALFO(0);//Set LFO mod to zero
+            this->setPwmMixerBLFO(0);//Set LFO mod to zero
+            if (pwmRate > -5) {
+                this->setPwmMixerAFEnv(pwmAmtA);//Set filter mod
+                this->setPwmMixerBFEnv(pwmAmtB);//Set filter mod
+            }
+        }
+    }
+
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
     }

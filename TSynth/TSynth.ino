@@ -311,14 +311,6 @@ FLASHMEM String getWaveformStr(int value) {
   }
 }
 
-void loadArbWaveformA(const int16_t * wavedata) {
-  FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(wavedata, AWFREQ))
-}
-
-void loadArbWaveformB(const int16_t * wavedata) {
-  FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(wavedata, AWFREQ))
-}
-
 FLASHMEM float getLFOTempoRate(int value) {
   lfoTempoValue = LFOTEMPO[value];
   return lfoSyncFreq * LFOTEMPO[value];
@@ -368,34 +360,6 @@ FLASHMEM int getWaveformB(int value) {
 
 FLASHMEM int getPitch(int value) {
   return PITCH[value];
-}
-
-FLASHMEM void setPwmMixerALFO(float value) {
-  FOR_EACH_OSC(pwMixer_a.gain(0, value));
-  showCurrentParameterPage("1. PWM LFO", String(value));
-}
-
-FLASHMEM void setPwmMixerBLFO(float value) {
-  FOR_EACH_OSC(pwMixer_b.gain(0, value));
-  showCurrentParameterPage("2. PWM LFO", String(value));
-}
-
-FLASHMEM void setPwmMixerAPW(float value) {
-  FOR_EACH_OSC(pwMixer_a.gain(1, value));
-}
-
-FLASHMEM void setPwmMixerBPW(float value) {
-  FOR_EACH_OSC(pwMixer_b.gain(1, value));
-}
-
-FLASHMEM void setPwmMixerAFEnv(float value) {
-  FOR_EACH_OSC(pwMixer_a.gain(2, value));
-  showCurrentParameterPage("1. PWM F Env", String(value));
-}
-
-FLASHMEM void setPwmMixerBFEnv(float value) {
-  FOR_EACH_OSC(pwMixer_b.gain(2, value));
-  showCurrentParameterPage("2. PWM F Env", String(value));
 }
 
 FLASHMEM void updateUnison(uint8_t unison) {
@@ -475,129 +439,70 @@ void updatesAllVoices() {
   voices.updateVoices();
 }
 
-FLASHMEM void updatePWMSource() {
-  if (pwmSource == PWMSOURCELFO) {
-    setPwmMixerAFEnv(0);//Set filter mod to zero
-    setPwmMixerBFEnv(0);//Set filter mod to zero
-    if (pwmRate > -5) {
-      setPwmMixerALFO(pwmAmtA);//Set LFO mod
-      setPwmMixerBLFO(pwmAmtB);//Set LFO mod
-    }
+FLASHMEM void updatePWMSource(uint8_t source) {
+  voices.setPWMSource(source);
+  if (source == PWMSOURCELFO) {
     showCurrentParameterPage("PWM Source", "LFO"); //Only shown when updated via MIDI
   } else {
-    setPwmMixerALFO(0);//Set LFO mod to zero
-    setPwmMixerBLFO(0);//Set LFO mod to zero
-    if (pwmRate > -5) {
-      setPwmMixerAFEnv(pwmAmtA);//Set filter mod
-      setPwmMixerBFEnv(pwmAmtB);//Set filter mod
-    }
     showCurrentParameterPage("PWM Source", "Filter Env");
   }
 }
 
-FLASHMEM void updatePWMRate() {
-  pwmLfoA.frequency(pwmRate);
-  pwmLfoB.frequency(pwmRate);
-  if (pwmRate == -10) {
+FLASHMEM void updatePWMRate(float value) {
+  voices.setPwmRate(value);
+  if (value == -10) {
     //Set to fixed PW mode
-    setPwmMixerALFO(0);//LFO Source off
-    setPwmMixerBLFO(0);
-    setPwmMixerAFEnv(0);//Filter Env Source off
-    setPwmMixerBFEnv(0);
-    setPwmMixerAPW(1);//Manually adjustable pulse width on
-    setPwmMixerBPW(1);
     showCurrentParameterPage("PW Mode", "On");
-  } else if (pwmRate == -5) {
+  } else if (value == -5) {
     //Set to Filter Env Mod source
-    pwmSource = PWMSOURCEFENV;
-    updatePWMSource();
-    setPwmMixerAFEnv(pwmAmtA);
-    setPwmMixerBFEnv(pwmAmtB);
-    setPwmMixerAPW(0);
-    setPwmMixerBPW(0);
     showCurrentParameterPage("PWM Source", "Filter Env");
   } else {
-    pwmSource = PWMSOURCELFO;
-    updatePWMSource();
-    setPwmMixerAPW(0);
-    setPwmMixerBPW(0);
-    showCurrentParameterPage("PWM Rate", String(2 * pwmRate) + " Hz"); //PWM goes through mid to maximum, sounding effectively twice as fast
+    showCurrentParameterPage("PWM Rate", String(2 * value) + " Hz"); //PWM goes through mid to maximum, sounding effectively twice as fast
   }
 }
 
-FLASHMEM void updatePWMAmount() {
+FLASHMEM void updatePWMAmount(float value) {
   //MIDI only - sets both osc PWM
-  pwA = 0;
-  pwB = 0;
-  setPwmMixerALFO(pwmAmtA);
-  setPwmMixerBLFO(pwmAmtB);
-  showCurrentParameterPage("PWM Amt", String(pwmAmtA) + " : " + String(pwmAmtB));
+  voices.overridePwmAmount(value);
+  showCurrentParameterPage("PWM Amt", String(value) + " : " + String(value));
 }
 
-FLASHMEM void updatePWA() {
-  if (pwmRate == -10) {
-    //fixed PW is enabled
-    setPwmMixerALFO(0);
-    setPwmMixerBLFO(0);
-    setPwmMixerAFEnv(0);
-    setPwmMixerBFEnv(0);
-    setPwmMixerAPW(1);
-    setPwmMixerBPW(1);
+FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA) {
+  voices.setPWA(valuePwA, valuePwmAmtA);
+  if (voices.getPwmRate() == -10) {
     if (voices.getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE) {
-      showCurrentParameterPage("1. PW Amt", pwA, VAR_TRI);
+      showCurrentParameterPage("1. PW Amt", voices.getPwA(), VAR_TRI);
     } else {
-      showCurrentParameterPage("1. PW Amt", pwA, PULSE);
+      showCurrentParameterPage("1. PW Amt", voices.getPwA(), PULSE);
     }
   } else {
-    setPwmMixerAPW(0);
-    setPwmMixerBPW(0);
-    if (pwmSource == PWMSOURCELFO) {
+    if (voices.getPwmSource() == PWMSOURCELFO) {
       //PW alters PWM LFO amount for waveform A
-      setPwmMixerALFO(pwmAmtA);
-      showCurrentParameterPage("1. PWM Amt", "LFO " + String(pwmAmtA));
+      showCurrentParameterPage("1. PWM Amt", "LFO " + String(voices.getPwmAmtA()));
     } else {
       //PW alters PWM Filter Env amount for waveform A
-      setPwmMixerAFEnv(pwmAmtA);
-      showCurrentParameterPage("1. PWM Amt", "F. Env " + String(pwmAmtA));
+      showCurrentParameterPage("1. PWM Amt", "F. Env " + String(voices.getPwmAmtA()));
     }
   }
-  float pwA_Adj = pwA;//Prevent silence when pw = +/-1.0 on pulse
-  if (pwA > 0.98) pwA_Adj = 0.98f;
-  if (pwA < -0.98) pwA_Adj = -0.98f;
-  pwa.amplitude(pwA_Adj);
 }
 
-FLASHMEM void updatePWB() {
-  if (pwmRate == -10)  {
-    //fixed PW is enabled
-    setPwmMixerALFO(0);
-    setPwmMixerBLFO(0);
-    setPwmMixerAFEnv(0);
-    setPwmMixerBFEnv(0);
-    setPwmMixerAPW(1);
-    setPwmMixerBPW(1);
+FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB) {
+  voices.setPWB(valuePwB, valuePwmAmtB);
+  if (voices.getPwmRate() == -10)  {
     if (voices.getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE) {
-      showCurrentParameterPage("2. PW Amt", pwB, VAR_TRI);
+      showCurrentParameterPage("2. PW Amt", voices.getPwB(), VAR_TRI);
     } else {
-      showCurrentParameterPage("2. PW Amt", pwB, PULSE);
+      showCurrentParameterPage("2. PW Amt", voices.getPwB(), PULSE);
     }
   } else {
-    setPwmMixerAPW(0);
-    setPwmMixerBPW(0);
-    if (pwmSource == PWMSOURCELFO) {
+    if (voices.getPwmSource() == PWMSOURCELFO) {
       //PW alters PWM LFO amount for waveform B
-      setPwmMixerBLFO(pwmAmtB);
-      showCurrentParameterPage("2. PWM Amt", "LFO " + String(pwmAmtB));
+      showCurrentParameterPage("2. PWM Amt", "LFO " + String(voices.getPwmAmtB()));
     } else {
       //PW alters PWM Filter Env amount for waveform B
-      setPwmMixerBFEnv(pwmAmtB);
-      showCurrentParameterPage("2. PWM Amt", "F. Env " + String(pwmAmtB));
+      showCurrentParameterPage("2. PWM Amt", "F. Env " + String(voices.getPwmAmtB()));
     }
   }
-  float pwB_Adj = pwB;//Prevent silence when pw = +/-1 on pulse
-  if (pwB > 0.98) pwB_Adj = 0.98f;
-  if (pwB < -0.98) pwB_Adj = -0.98f;
-  pwb.amplitude(pwB_Adj);
 }
 
 FLASHMEM void updateOscLevelA() {
@@ -995,34 +900,26 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCpwmSource:
-      value > 0 ? pwmSource = PWMSOURCEFENV : pwmSource = PWMSOURCELFO;
-      updatePWMSource();
+      updatePWMSource(value > 0 ? PWMSOURCEFENV : PWMSOURCELFO);
       break;
 
     case CCpwmRate:
       //Uses combination of PWMRate, PWa and PWb
-      pwmRate = PWMRATE[value];
-      updatePWMRate();
+      updatePWMRate(PWMRATE[value]);
       break;
 
     case CCpwmAmt:
       //NO FRONT PANEL CONTROL - MIDI CC ONLY
       //Total PWM amount for both oscillators
-      pwmAmtA = LINEAR[value];
-      pwmAmtB = LINEAR[value];
-      updatePWMAmount();
+      updatePWMAmount(LINEAR[value]);
       break;
 
     case CCpwA:
-      pwA = LINEARCENTREZERO[value]; //Bipolar
-      pwmAmtA = LINEAR[value];
-      updatePWA();
+      updatePWA(LINEARCENTREZERO[value], LINEAR[value]);
       break;
 
     case CCpwB:
-      pwB = LINEARCENTREZERO[value]; //Bipolar
-      pwmAmtB = LINEAR[value];
-      updatePWB();
+      updatePWB(LINEARCENTREZERO[value], LINEAR[value]);
       break;
 
     case CCoscLevelA:
@@ -1314,12 +1211,10 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePitchB(data[13].toFloat());
   updateWaveformA(data[14].toInt());
   updateWaveformB(data[15].toInt());
-  pwmSource = data[16].toInt();
-  pwmAmtA = data[17].toFloat();
-  pwmAmtB = data[18].toFloat();
-  pwmRate = data[19].toFloat();
-  pwA = data[20].toFloat();
-  pwB = data[21].toFloat();
+  updatePWMSource(data[16].toInt());
+  updatePWA(data[20].toFloat(), data[17].toFloat());
+  updatePWA(data[21].toFloat(), data[18].toFloat());
+  updatePWMRate(data[19].toFloat());
   filterRes = data[22].toFloat();
   resonancePrevValue = filterRes;//Pick-up
   filterFreq = data[23].toInt();
@@ -1359,11 +1254,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updatePWMSource();
-  //updatePWMAmount();//Not needed
-  updatePWA();
-  updatePWB();
-  updatePWMRate();
   updateOscLevelA();
   updateOscLevelB();
   updateNoiseLevel();
@@ -1398,7 +1288,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
   return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(oscFX) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
-         String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
+         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }

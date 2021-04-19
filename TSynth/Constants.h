@@ -32,8 +32,8 @@ const static uint32_t MAXUNISON = 4;
 #define RE_READ -99
 #define PWMWAVEFORM WAVEFORM_SINE
 const static  float  LFOMAXRATE = 40.0f;//40Hz
-const static uint32_t PWMSOURCELFO = 0;
-const static uint32_t PWMSOURCEFENV = 1;
+const static uint8_t PWMSOURCELFO = 0;
+const static uint8_t PWMSOURCEFENV = 1;
 const static float  ONE = 1.0f;
 const static  float  SGTL_MAXVOLUME = 0.9f;
 const static  float  WAVEFORMLEVEL = ONE;
