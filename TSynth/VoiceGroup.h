@@ -1,6 +1,9 @@
 #ifndef TSYNTH_VOICE_GROUP_H
 #define TSYNTH_VOICE_GROUP_H
 
+#define VG_FOR_EACH_OSC(CMD) VG_FOR_EACH_VOICE(voices[i]->patch().CMD)
+#define VG_FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < voices.size(); i++){ CMD; }
+
 // These are here because of a Settings.h circular dependency.
 #define MONOPHONIC_OFF 0
 #define MONOPHONIC_LAST 1
@@ -10,6 +13,9 @@
 // Legato isn't supported, the envelope state from the previous note needs to transfer to the new note
 #define MONOPHONIC_LEGATO 5
 
+const static uint32_t WAVEFORM_PARABOLIC = 103;
+const static uint32_t WAVEFORM_HARMONIC = 104;
+
 #include <vector>
 #include <stdint.h>
 #include <stddef.h>
@@ -17,11 +23,16 @@
 
 class VoiceGroup {
     private:
+    String patchName;
+    uint32_t patchIndex;
+
     std::vector<Voice*> voices;
     VoiceParams _params;
     uint8_t notesOn;
     uint8_t monoNote;
     uint8_t monophonic;
+    uint8_t waveformA;
+    uint8_t waveformB;
 
     struct noteStackData {
         uint8_t note;
@@ -32,7 +43,7 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(): notesOn(0), monophonic(0) {
+    VoiceGroup(): patchName(""), patchIndex(0), notesOn(0), monophonic(0), waveformA(WAVEFORM_SQUARE), waveformB(WAVEFORM_SQUARE) {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
         _params.prevNote = 48;
@@ -42,10 +53,64 @@ class VoiceGroup {
         _params.detune = 0;
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
+
+        VG_FOR_EACH_VOICE(
+            Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
+            Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, waveformA);
+            Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
+            Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, waveformB);
+        )
+
+        setWaveformA(WAVEFORM_PARABOLIC);
+        setWaveformB(WAVEFORM_PARABOLIC);
     }
 
-    inline uint8_t size() {
-        return this->voices.size();
+    inline uint8_t size()           { return this->voices.size(); }
+    inline String getPatchName()    { return this->patchName; }
+    inline uint32_t getPatchIndex() { return this->patchIndex; }
+    uint32_t getWaveformA()         { return waveformA; }
+    uint32_t getWaveformB()         { return waveformB; }
+
+    inline void setPatchName(String name) {
+        this->patchName = name;
+    }
+
+    inline void setPatchIndex(uint32_t index) {
+        this->patchIndex = index;
+    }
+
+    void setWaveformA(uint32_t waveform) {
+        if (waveformA == waveform) return;
+        waveformA = waveform;
+
+        int temp = waveform;
+        if (waveform == WAVEFORM_PARABOLIC) {
+            VG_FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+        if (waveform == WAVEFORM_HARMONIC) {
+            VG_FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(HARMONIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+
+        VG_FOR_EACH_OSC(waveformMod_a.begin(temp))
+    }
+
+    void setWaveformB(uint32_t waveform) {
+        if (waveformB == waveform) return;
+        waveformB = waveform;
+
+        int temp = waveform;
+        if (waveform == WAVEFORM_PARABOLIC) {
+            VG_FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+        if (waveform == WAVEFORM_HARMONIC) {
+            VG_FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(HARMONIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+
+        VG_FOR_EACH_OSC(waveformMod_b.begin(temp))
     }
 
     inline void setMonophonic(uint8_t mode) {

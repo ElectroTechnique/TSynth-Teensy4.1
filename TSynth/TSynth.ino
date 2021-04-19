@@ -76,9 +76,6 @@
 
 uint32_t state = PARAMETER;
 
-const static uint32_t  WAVEFORM_PARABOLIC = 103;
-const static uint32_t WAVEFORM_HARMONIC = 104;
-
 VoiceGroup voices;
 
 #include "ST7735Display.h"
@@ -202,17 +199,6 @@ FLASHMEM void setup() {
   pwmLfoB.amplitude(ONE);
   pwmLfoB.begin(PWMWAVEFORM);
   pwmLfoB.phase(10.0f);//Off set phase of second osc
-
-  FOR_EACH_VOICE(
-    Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
-    Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, oscWaveformA);
-    Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
-    Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, oscWaveformB);
-  )
-
-  //Arbitary waveform needs initializing to something
-  loadArbWaveformA(PARABOLIC_WAVE);
-  loadArbWaveformB(PARABOLIC_WAVE);
 
   voiceMixerM.gain(0, VOICEMIXERLEVEL);
   voiceMixerM.gain(1, VOICEMIXERLEVEL);
@@ -451,43 +437,23 @@ FLASHMEM void updateGlide(float glideSpeed) {
   }
 }
 
-FLASHMEM void updateWaveformA() {
-  int newWaveform = oscWaveformA;//To allow Arbitrary waveforms
-  if (oscWaveformA == WAVEFORM_PARABOLIC) {
-    loadArbWaveformA(PARABOLIC_WAVE);
-    newWaveform = WAVEFORM_ARBITRARY;
-  }
-  if (oscWaveformA == WAVEFORM_HARMONIC) {
-    loadArbWaveformA(HARMONIC_WAVE);
-    newWaveform = WAVEFORM_ARBITRARY;
-  }
-
-  FOR_EACH_OSC(waveformMod_a.begin(newWaveform))
-  showCurrentParameterPage("1. Waveform", getWaveformStr(oscWaveformA));
+FLASHMEM void updateWaveformA(uint32_t waveform) {
+  voices.setWaveformA(waveform);
+  showCurrentParameterPage("1. Waveform", getWaveformStr(waveform));
 }
 
-FLASHMEM void updateWaveformB() {
-  int newWaveform = oscWaveformB;//To allow Arbitrary waveforms
-  if (oscWaveformB == WAVEFORM_PARABOLIC) {
-    loadArbWaveformB(PARABOLIC_WAVE);
-    newWaveform = WAVEFORM_ARBITRARY;
-  }
-  if (oscWaveformB == WAVEFORM_HARMONIC) {
-    loadArbWaveformB(PPG_WAVE);
-    newWaveform = WAVEFORM_ARBITRARY;
-  }
-
-  FOR_EACH_OSC(waveformMod_b.begin(newWaveform))
-  showCurrentParameterPage("2. Waveform", getWaveformStr(oscWaveformB));
+FLASHMEM void updateWaveformB(uint32_t waveform) {
+  voices.setWaveformB(waveform);
+  showCurrentParameterPage("2. Waveform", getWaveformStr(waveform));
 }
 
-FLASHMEM void updatePitchA(uint32_t pitch) {
+FLASHMEM void updatePitchA(int pitch) {
   voices.params().oscPitchA = pitch;
   voices.updateVoices();
   showCurrentParameterPage("1. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
 }
 
-FLASHMEM void updatePitchB(uint32_t pitch) {
+FLASHMEM void updatePitchB(int pitch) {
   voices.params().oscPitchB = pitch;
   voices.updateVoices();
   showCurrentParameterPage("2. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
@@ -576,7 +542,7 @@ FLASHMEM void updatePWA() {
     setPwmMixerBFEnv(0);
     setPwmMixerAPW(1);
     setPwmMixerBPW(1);
-    if (oscWaveformA == WAVEFORM_TRIANGLE_VARIABLE) {
+    if (voices.getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("1. PW Amt", pwA, VAR_TRI);
     } else {
       showCurrentParameterPage("1. PW Amt", pwA, PULSE);
@@ -609,7 +575,7 @@ FLASHMEM void updatePWB() {
     setPwmMixerBFEnv(0);
     setPwmMixerAPW(1);
     setPwmMixerBPW(1);
-    if (oscWaveformB == WAVEFORM_TRIANGLE_VARIABLE) {
+    if (voices.getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("2. PW Amt", pwB, VAR_TRI);
     } else {
       showCurrentParameterPage("2. PW Amt", pwB, PULSE);
@@ -980,8 +946,10 @@ FLASHMEM void updateFXMix() {
   showCurrentParameterPage("Effect Mix", String(fxMix));
 }
 
-FLASHMEM void updatePatchname() {
-  showPatchPage(String(patchNo), patchName);
+FLASHMEM void updatePatch(String name, uint32_t index) {
+  voices.setPatchName(name);
+  voices.setPatchIndex(index);
+  showPatchPage(String(index), name);
 }
 
 void myPitchBend(byte channel, int bend) {
@@ -1010,15 +978,11 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCoscwaveformA:
-      if (oscWaveformA == getWaveformA(value))return;
-      oscWaveformA = getWaveformA(value);
-      updateWaveformA();
+      updateWaveformA(getWaveformA(value));
       break;
 
     case CCoscwaveformB:
-      if (oscWaveformB == getWaveformB(value))return;
-      oscWaveformB = getWaveformB(value);
-      updateWaveformB();
+      updateWaveformB(getWaveformB(value));
       break;
 
     case CCpitchA:
@@ -1337,18 +1301,22 @@ FLASHMEM void recallPatch(int patchNo) {
 }
 
 FLASHMEM void setCurrentPatchData(String data[]) {
-  patchName = data[0];
+  updatePatch(data[0], patchNo);
   oscALevel = data[1].toFloat();
   oscBLevel = data[2].toFloat();
   noiseLevel = data[3].toFloat();
+  updateUnison(data[4].toInt());
   oscFX = data[5].toInt();
+  updateDetune(data[6].toFloat(), data[48].toInt());
   lfoSyncFreq = data[7].toInt();
   midiClkTimeInterval = data[8].toInt();
   lfoTempoValue = data[9].toFloat();
   updateKeyTracking(data[10].toFloat());
   updateGlide(data[11].toFloat());
-  oscWaveformA = data[14].toInt();
-  oscWaveformB = data[15].toInt();
+  updatePitchA(data[12].toFloat());
+  updatePitchB(data[13].toFloat());
+  updateWaveformA(data[14].toInt());
+  updateWaveformB(data[15].toInt());
   pwmSource = data[16].toInt();
   pwmAmtA = data[17].toFloat();
   pwmAmtB = data[18].toFloat();
@@ -1394,13 +1362,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updatePatchname();
-  updateUnison(data[4].toInt());
-  updateWaveformA();
-  updateWaveformB();
-  updatePitchA(data[12].toFloat());
-  updatePitchB(data[13].toFloat());
-  updateDetune(data[6].toFloat(), data[48].toInt());
   updatePWMSource();
   //updatePWMAmount();//Not needed
   updatePWA();
@@ -1440,7 +1401,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
-  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(oscFX) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(oscWaveformA) + "," + String(oscWaveformB) + "," +
+  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(oscFX) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(pwmSource) + "," + String(pwmAmtA) + "," + String(pwmAmtB) + "," + String(pwmRate) + "," + String(pwA) + "," + String(pwB) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(pitchEnv) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
