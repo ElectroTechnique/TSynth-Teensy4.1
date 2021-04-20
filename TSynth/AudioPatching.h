@@ -26,7 +26,6 @@ AudioAnalyzePeak         peak;           //xy=2756,1817
 AudioSynthWaveform       pitchLfo;       //xy=122,111
 AudioMixer4              oscGlobalModMixer; //xy=628,1486
 AudioSynthWaveformDc     pitchBend;      //xy=460,1465
-AudioSynthWaveform       filterLfo;      //xy=166,632
 AudioMixer4              voiceMixer1;    //xy=2233,581
 AudioMixer4              voiceMixer2;    //xy=2240,1791
 AudioMixer4              voiceMixer3;    //xy=2237,2976
@@ -38,6 +37,19 @@ Oscilloscope             scope;
 AudioMixer4              effectMixerR;   //xy=2984,1823
 AudioMixer4              effectMixerL;   //xy=2985,1728
 AudioOutputI2S           i2s;            //xy=3190,1737
+
+AudioSynthWaveform       filterLfo1;  //xy=1335,693
+AudioSynthWaveform       filterLfo2;  //xy=1342,997
+AudioSynthWaveform       filterLfo3;  //xy=1343,1288
+AudioSynthWaveform       filterLfo4;  //xy=1331,1587
+AudioSynthWaveform       filterLfo5;  //xy=1330,1892
+AudioSynthWaveform       filterLfo6;  //xy=1336,2188
+AudioSynthWaveform       filterLfo7;  //xy=1336,2482
+AudioSynthWaveform       filterLfo8;  //xy=1333,2785
+AudioSynthWaveform       filterLfo9;  //xy=1333,3084
+AudioSynthWaveform       filterLfo10; //xy=1327,3388
+AudioSynthWaveform       filterLfo11; //xy=1335,3686
+AudioSynthWaveform       filterLfo12; //xy=1341,3988
 
 AudioEffectEnvelope      filterEnvelope1; //xy=611,145
 AudioEffectEnvelope      filterEnvelope2; //xy=611,445
@@ -298,18 +310,18 @@ AudioConnection          patchCord257(pwb, 0, pwMixer12b, 1);
 AudioConnection          patchCord21(pitchLfo, 0, oscGlobalModMixer, 1);
 AudioConnection          patchCord23(pitchBend, 0, oscGlobalModMixer, 0);
 
-AudioConnection          patchCord24(filterLfo, 0, filterModMixer1, 1);
-AudioConnection          patchCord25(filterLfo, 0, filterModMixer2, 1);
-AudioConnection          patchCord26(filterLfo, 0, filterModMixer3, 1);
-AudioConnection          patchCord27(filterLfo, 0, filterModMixer4, 1);
-AudioConnection          patchCord147(filterLfo, 0, filterModMixer5, 1);
-AudioConnection          patchCord148(filterLfo, 0, filterModMixer6, 1);
-AudioConnection          patchCord258(filterLfo, 0, filterModMixer7, 1);
-AudioConnection          patchCord259(filterLfo, 0, filterModMixer8, 1);
-AudioConnection          patchCord260(filterLfo, 0, filterModMixer9, 1);
-AudioConnection          patchCord261(filterLfo, 0, filterModMixer10, 1);
-AudioConnection          patchCord262(filterLfo, 0, filterModMixer11, 1);
-AudioConnection          patchCord263(filterLfo, 0, filterModMixer12, 1);
+AudioConnection          patchCord24(filterLfo1, 0, filterModMixer1, 1);
+AudioConnection          patchCord25(filterLfo2, 0, filterModMixer2, 1);
+AudioConnection          patchCord26(filterLfo3, 0, filterModMixer3, 1);
+AudioConnection          patchCord27(filterLfo4, 0, filterModMixer4, 1);
+AudioConnection          patchCord147(filterLfo5, 0, filterModMixer5, 1);
+AudioConnection          patchCord148(filterLfo6, 0, filterModMixer6, 1);
+AudioConnection          patchCord258(filterLfo7, 0, filterModMixer7, 1);
+AudioConnection          patchCord259(filterLfo8, 0, filterModMixer8, 1);
+AudioConnection          patchCord260(filterLfo9, 0, filterModMixer9, 1);
+AudioConnection          patchCord261(filterLfo10, 0, filterModMixer10, 1);
+AudioConnection          patchCord262(filterLfo11, 0, filterModMixer11, 1);
+AudioConnection          patchCord263(filterLfo12, 0, filterModMixer12, 1);
 
 
 AudioConnection          patchCord28(keytracking1, 0, filterModMixer1, 2);
@@ -715,6 +727,7 @@ AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
 // GUItool: end automatically generated code
 
+
 // Oscillator configurations.
 struct Patch {
     // What is this?
@@ -732,6 +745,7 @@ struct Patch {
     AudioMixer4 &oscModMixer_a;
     AudioMixer4 &oscModMixer_b;
 
+    AudioSynthWaveform &filterLfo_;
     AudioSynthWaveformModulated &waveformMod_a;
     AudioSynthWaveformModulated &waveformMod_b;
 
@@ -759,6 +773,7 @@ Patch Oscillators[12] = {
         keytracking1,
         oscModMixer1a,
         oscModMixer1b,
+        filterLfo1,
         waveformMod1a,
         waveformMod1b,
         oscFX1,
@@ -777,6 +792,7 @@ Patch Oscillators[12] = {
         keytracking2,
         oscModMixer2a,
         oscModMixer2b,
+        filterLfo2,
         waveformMod2a,
         waveformMod2b,
         oscFX2,
@@ -795,6 +811,7 @@ Patch Oscillators[12] = {
         keytracking3,
         oscModMixer3a,
         oscModMixer3b,
+        filterLfo3,
         waveformMod3a,
         waveformMod3b,
         oscFX3,
@@ -813,6 +830,7 @@ Patch Oscillators[12] = {
         keytracking4,
         oscModMixer4a,
         oscModMixer4b,
+        filterLfo4,
         waveformMod4a,
         waveformMod4b,
         oscFX4,
@@ -831,6 +849,7 @@ Patch Oscillators[12] = {
         keytracking5,
         oscModMixer5a,
         oscModMixer5b,
+        filterLfo5,
         waveformMod5a,
         waveformMod5b,
         oscFX5,
@@ -849,6 +868,7 @@ Patch Oscillators[12] = {
         keytracking6,
         oscModMixer6a,
         oscModMixer6b,
+        filterLfo6,
         waveformMod6a,
         waveformMod6b,
         oscFX6,
@@ -867,6 +887,7 @@ Patch Oscillators[12] = {
         keytracking7,
         oscModMixer7a,
         oscModMixer7b,
+        filterLfo7,
         waveformMod7a,
         waveformMod7b,
         oscFX7,
@@ -885,6 +906,7 @@ Patch Oscillators[12] = {
         keytracking8,
         oscModMixer8a,
         oscModMixer8b,
+        filterLfo8,
         waveformMod8a,
         waveformMod8b,
         oscFX8,
@@ -903,6 +925,7 @@ Patch Oscillators[12] = {
         keytracking9,
         oscModMixer9a,
         oscModMixer9b,
+        filterLfo9,
         waveformMod9a,
         waveformMod9b,
         oscFX9,
@@ -921,6 +944,7 @@ Patch Oscillators[12] = {
         keytracking10,
         oscModMixer10a,
         oscModMixer10b,
+        filterLfo10,
         waveformMod10a,
         waveformMod10b,
         oscFX10,
@@ -939,6 +963,7 @@ Patch Oscillators[12] = {
         keytracking11,
         oscModMixer11a,
         oscModMixer11b,
+        filterLfo11,
         waveformMod11a,
         waveformMod11b,
         oscFX11,
@@ -957,6 +982,7 @@ Patch Oscillators[12] = {
         keytracking12,
         oscModMixer12a,
         oscModMixer12b,
+        filterLfo12,
         waveformMod12a,
         waveformMod12b,
         oscFX12,

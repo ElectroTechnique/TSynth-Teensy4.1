@@ -27,6 +27,9 @@ class VoiceGroup {
     String patchName;
     uint32_t patchIndex;
 
+    bool midiClockSignal; // midiCC clock
+    bool filterLfoMidiClockSync;
+
     std::vector<Voice*> voices;
     VoiceParams _params;
     uint8_t notesOn;
@@ -56,6 +59,9 @@ class VoiceGroup {
     float ampDecay;
     float ampSustain;
     float ampRelease;
+    float filterLfoRate;
+    float filterLfoAmt;
+    uint8_t filterLfoWaveform;
 
     struct noteStackData {
         uint8_t note;
@@ -69,6 +75,8 @@ class VoiceGroup {
     VoiceGroup(): 
             patchName(""),
             patchIndex(0),
+            midiClockSignal(false),
+            filterLfoMidiClockSync(false),
             notesOn(0),
             monophonic(0),
             waveformA(WAVEFORM_SQUARE),
@@ -94,8 +102,10 @@ class VoiceGroup {
             ampAttack(10.0),
             ampDecay(35.0),
             ampSustain(1.0),
-            ampRelease(300.0)
-
+            ampRelease(300.0),
+            filterLfoRate(2.0),
+            filterLfoAmt(0.0),
+            filterLfoWaveform(WAVEFORM_SINE)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -106,10 +116,12 @@ class VoiceGroup {
         _params.detune = 0;
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
+        _params.filterLfoRetrig = false;
     }
 
     inline uint8_t size()           { return this->voices.size(); }
     inline String getPatchName()    { return this->patchName; }
+    bool getFilterLfoMidiClockSync(){ return filterLfoMidiClockSync; }
     inline uint32_t getPatchIndex() { return this->patchIndex; }
     uint32_t getWaveformA()         { return waveformA; }
     uint32_t getWaveformB()         { return waveformB; }
@@ -135,6 +147,10 @@ class VoiceGroup {
     float getAmpDecay()             { return ampDecay; }
     float getAmpSustain()           { return ampSustain; }
     float getAmpRelease()           { return ampRelease; }
+    bool getFilterLfoRetrig()       { return this->_params.filterLfoRetrig; }
+    float getFilterLfoRate()        { return filterLfoRate; }
+    float getFilterLfoAmt()         { return filterLfoAmt; }
+    uint32_t getFilterLfoWaveform() { return filterLfoWaveform; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -529,6 +545,27 @@ class VoiceGroup {
         setFilterModMixer(2, value);
     }
 
+    void setFilterLfoRetrig(bool value) {
+        _params.filterLfoRetrig = value;
+        VG_FOR_EACH_OSC(filterLfo_.sync())
+    }
+
+    void setFilterLfoRate(float value) {
+        filterLfoRate = value;
+        VG_FOR_EACH_OSC(filterLfo_.frequency(value))
+    }
+
+    void setFilterLfoAmt(float value) {
+        filterLfoAmt = value;
+        VG_FOR_EACH_OSC(filterLfo_.amplitude(value))
+    }
+
+    void setFilterLfoWaveform(int waveform) {
+        if (filterLfoWaveform == waveform) return;
+        filterLfoWaveform = waveform;
+        VG_FOR_EACH_OSC(filterLfo_.begin(filterLfoWaveform))
+    }
+
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
     }
@@ -536,6 +573,10 @@ class VoiceGroup {
     void setUnisonMode(uint8_t mode) {
         this->_params.unisonMode = mode;
         this->notesOn = 0;
+    }
+
+    void setFilterLfoMidiClockSync(bool value) {
+        filterLfoMidiClockSync = value;
     }
 
     inline uint8_t unisonNotes() {
@@ -619,6 +660,23 @@ class VoiceGroup {
             default:
                 noteOff(note, true);
                 break;
+        }
+    }
+
+    void midiClockStart() {
+        midiClockSignal = true;
+        VG_FOR_EACH_OSC(filterLfo_.sync())
+    }
+
+    void midiClockStop() {
+        midiClockSignal = false;
+    }
+
+    void midiClock(float frequency) {
+        midiClockSignal = true;
+
+        if (filterLfoMidiClockSync) {
+            VG_FOR_EACH_OSC(filterLfo_.frequency(frequency))
         }
     }
 
