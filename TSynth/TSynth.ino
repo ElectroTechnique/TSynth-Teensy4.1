@@ -548,7 +548,10 @@ FLASHMEM void updateOscLevelB(float value) {
   }
 }
 
-FLASHMEM void updateNoiseLevel() {
+FLASHMEM void updateNoiseLevel(float value) {
+  // TODO: 12 of these.
+  noiseLevel = value;
+
   if (noiseLevel > 0) {
     pink.amplitude(noiseLevel);
     white.amplitude(0.0f);
@@ -564,23 +567,9 @@ FLASHMEM void updateNoiseLevel() {
   }
 }
 
-FLASHMEM void updateFilterFreq() {
-  FOR_EACH_OSC(filter_.frequency(filterFreq))
-
-  //Altering filterOctave to give more cutoff width for deeper bass, but sharper cuttoff at higher frequncies
-  if (filterFreq <= 2000) {
-    filterOctave = 4.0f + ((2000.0f - filterFreq) / 710.0f);//More bass
-  } else if (filterFreq > 2000 && filterFreq <= 3500) {
-    filterOctave = 3.0f + ((3500.0f - filterFreq) / 1500.0f);//Sharper cutoff
-  } else if (filterFreq > 3500 && filterFreq <= 7000) {
-    filterOctave = 2.0f + ((7000.0f - filterFreq) / 4000.0f);//Sharper cutoff
-  } else {
-    filterOctave = 1.0f + ((12000.0f - filterFreq) / 5100.0f);//Sharper cutoff
-  }
-
-  FOR_EACH_OSC(filter_.octaveControl(filterOctave))
-
-  showCurrentParameterPage("Cutoff", String(int(filterFreq)) + " Hz");
+FLASHMEM void updateFilterFreq(float value) {
+  voices.setCutoff(value);
+  showCurrentParameterPage("Cutoff", String(int(value)) + " Hz");
 }
 
 FLASHMEM void updateFilterRes() {
@@ -892,17 +881,16 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCnoiseLevel:
-      noiseLevel = LINEARCENTREZERO[value];
-      updateNoiseLevel();
+      updateNoiseLevel(LINEARCENTREZERO[value]);
       break;
 
     case CCfilterfreq:
       //Pick up
-      //MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
       if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[(value - TOLERANCE) * 2] || filterfreqPrevValue >  FILTERFREQS256[(value - TOLERANCE) * 2])) return; //PICK-UP
-      filterFreq = FILTERFREQS256[value * 2];
-      updateFilterFreq();
-      filterfreqPrevValue = filterFreq;//PICK-UP
+
+      //MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
+      updateFilterFreq(FILTERFREQS256[value * 2]);
+      filterfreqPrevValue = FILTERFREQS256[value * 2];//PICK-UP
       break;
 
     case CCfilterres:
@@ -1145,7 +1133,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePatch(data[0], patchNo);
   updateOscLevelA(data[1].toFloat());
   updateOscLevelB(data[2].toFloat());
-  noiseLevel = data[3].toFloat();
+  updateNoiseLevel(data[3].toFloat());
   updateUnison(data[4].toInt());
   updateOscFX(data[5].toInt());
   updateDetune(data[6].toFloat(), data[48].toInt());
@@ -1164,8 +1152,8 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePWMRate(data[19].toFloat());
   filterRes = data[22].toFloat();
   resonancePrevValue = filterRes;//Pick-up
-  filterFreq = data[23].toInt();
-  filterfreqPrevValue = filterFreq; //Pick-up
+  updateFilterFreq(data[23].toFloat());
+  filterfreqPrevValue = data[23].toInt(); //Pick-up
   filterMix = data[24].toFloat();
   filterMixPrevValue = filterMix; //Pick-up
   filterEnv = data[25].toFloat();
@@ -1201,8 +1189,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateNoiseLevel();
-  updateFilterFreq();
   updateFilterRes();
   updateFilterMixer();
   updateFilterEnv();
@@ -1232,7 +1218,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
-         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
+         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(filterRes) + "," + String(voices.getCutoff()) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
@@ -1372,9 +1358,9 @@ void checkMux() {
         //Special case - Filter Cutoff is 8 bit, 256 values for smoother changes
         mux2Read = (mux2Read >> 4);
         if (!pickUpActive && pickUp && (filterfreqPrevValue <  FILTERFREQS256[mux2Read - TOLERANCE] || filterfreqPrevValue >  FILTERFREQS256[mux2Read + TOLERANCE])) return; //PICK-UP
-        filterFreq = FILTERFREQS256[mux2Read];
-        updateFilterFreq();
-        filterfreqPrevValue = filterFreq;//PICK-UP
+        
+        updateFilterFreq(FILTERFREQS256[mux2Read]);
+        filterfreqPrevValue = FILTERFREQS256[mux2Read];//PICK-UP
         midiCCOut(CCfilterfreq, mux2Read >> 1);
         break;
       case MUX2_filterLFORate:

@@ -44,6 +44,7 @@ class VoiceGroup {
     uint8_t oscFX;
     float oscLevelA;
     float oscLevelB;
+    float cutoff;
 
     struct noteStackData {
         uint8_t note;
@@ -70,7 +71,8 @@ class VoiceGroup {
             pwmRate(0.5),
             oscFX(0),
             oscLevelA(1.0),
-            oscLevelB(1.0)
+            oscLevelB(1.0),
+            cutoff(12000.0f)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -108,6 +110,8 @@ class VoiceGroup {
     uint8_t getOscFX()              { return oscFX; }
     float getOscLevelA()            { return oscLevelA; }
     float getOscLevelB()            { return oscLevelB; }
+    float getCutoff()               { return cutoff; }
+
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -394,6 +398,26 @@ class VoiceGroup {
             setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
             setWaveformMixerLevel(3, 0);//XOR
         }
+    }
+
+    void setCutoff(float value) {
+        this->cutoff = value;
+
+        VG_FOR_EACH_OSC(filter_.frequency(value))
+
+        float filterOctave = 0.0;
+        //Altering filterOctave to give more cutoff width for deeper bass, but sharper cuttoff at higher frequncies
+        if (value <= 2000) {
+            filterOctave = 4.0f + ((2000.0f - value) / 710.0f);//More bass
+        } else if (value > 2000 && value <= 3500) {
+            filterOctave = 3.0f + ((3500.0f - value) / 1500.0f);//Sharper cutoff
+        } else if (value > 3500 && value <= 7000) {
+            filterOctave = 2.0f + ((7000.0f - value) / 4000.0f);//Sharper cutoff
+        } else {
+            filterOctave = 1.0f + ((12000.0f - value) / 5100.0f);//Sharper cutoff
+        }
+
+        VG_FOR_EACH_OSC(filter_.octaveControl(filterOctave))
     }
 
     inline void setMonophonic(uint8_t mode) {

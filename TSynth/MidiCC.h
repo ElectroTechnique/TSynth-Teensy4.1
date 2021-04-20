@@ -20,7 +20,7 @@
 #define   CCfilterres 71
 #define   CCamprelease  72
 #define   CCampattack 73
-#define   CCfilterfreq  74
+#define   CCfilterfreq  74 // cutoff
 #define   CCampdecay  75
 #define   CCfilterlforate  76
 #define   CCfilterlfoamt 77

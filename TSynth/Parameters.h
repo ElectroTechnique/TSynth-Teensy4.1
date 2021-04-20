@@ -34,7 +34,7 @@ float modWhAmt = 0.0f;
 //int pwmSource = PWMSOURCELFO;
 
 float filterRes = 1.1f;
-float filterFreq = 12000.0f;
+//float filterFreq = 12000.0f;
 float filterOctave = 1.0f;
 float filterMix = 0.0f;
 int filterMixStr = 0;//For display
@@ -75,7 +75,7 @@ boolean vuMeter = false;
 boolean pickUp = false;//settings option (EEPROM)
 boolean pickUpActive = false;
 #define TOLERANCE 2 //Gives a window of when pick-up occurs, this is due to the speed of control changing and Mux reading
-uint32_t filterfreqPrevValue = 0;//Need to set these when patch loaded
+float filterfreqPrevValue = 0;//Need to set these when patch loaded
 float filterMixPrevValue = 0.0f;//Need to set these when patch loaded
 float resonancePrevValue = 0.0f;//Need to set these when patch loaded
 float oscLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
