@@ -45,6 +45,8 @@ class VoiceGroup {
     float oscLevelA;
     float oscLevelB;
     float cutoff;
+    float resonance;
+    float filterMixer;
 
     struct noteStackData {
         uint8_t note;
@@ -72,7 +74,9 @@ class VoiceGroup {
             oscFX(0),
             oscLevelA(1.0),
             oscLevelB(1.0),
-            cutoff(12000.0f)
+            cutoff(12000.0),
+            resonance(1.1),
+            filterMixer(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -111,7 +115,8 @@ class VoiceGroup {
     float getOscLevelA()            { return oscLevelA; }
     float getOscLevelB()            { return oscLevelB; }
     float getCutoff()               { return cutoff; }
-
+    float getResonance()            { return resonance; }
+    float getFilterMixer()          { return filterMixer; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -418,6 +423,37 @@ class VoiceGroup {
         }
 
         VG_FOR_EACH_OSC(filter_.octaveControl(filterOctave))
+    }
+
+    void setResonance(float value) {
+        resonance = value;
+        VG_FOR_EACH_OSC(filter_.resonance(value))
+    }
+
+    void setFilterMixer(float value) {
+        filterMixer = value;
+
+        float LP = 1.0f;
+        float BP = 0;
+        float HP = 0;
+
+        if (value == BANDPASS) {
+            //BP mode
+            LP = 0;
+            BP = 1.0f;
+            HP = 0;
+        } else {
+            //LP-HP mix mode - a notch filter
+            LP = 1.0f - value;
+            BP = 0;
+            HP = value;
+        }
+
+        VG_FOR_EACH_VOICE(
+            voices[i]->patch().filterMixer_.gain(0, LP);
+            voices[i]->patch().filterMixer_.gain(1, BP);
+            voices[i]->patch().filterMixer_.gain(2, HP);
+        )
     }
 
     inline void setMonophonic(uint8_t mode) {

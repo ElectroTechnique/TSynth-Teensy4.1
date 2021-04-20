@@ -33,11 +33,11 @@ float modWhAmt = 0.0f;
 //float pwB = 0.0f;
 //int pwmSource = PWMSOURCELFO;
 
-float filterRes = 1.1f;
+//float filterRes = 1.1f;
 //float filterFreq = 12000.0f;
 float filterOctave = 1.0f;
-float filterMix = 0.0f;
-int filterMixStr = 0;//For display
+//float filterMix = 0.0f;
+//int filterMixStr = 0;//For display
 float filterEnv = 0.0f;
 float oscLfoAmt = 0.0f;
 float oscLfoRate = 4.0f;

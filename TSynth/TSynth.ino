@@ -572,47 +572,29 @@ FLASHMEM void updateFilterFreq(float value) {
   showCurrentParameterPage("Cutoff", String(int(value)) + " Hz");
 }
 
-FLASHMEM void updateFilterRes() {
-  FOR_EACH_OSC(filter_.resonance(filterRes))
-
-  showCurrentParameterPage("Resonance", filterRes);
+FLASHMEM void updateFilterRes(float value) {
+  voices.setResonance(value);
+  showCurrentParameterPage("Resonance", value);
 }
 
-FLASHMEM void updateFilterMixer() {
-  float LP = 1.0f;
-  float BP = 0;
-  float HP = 0;
+FLASHMEM void updateFilterMixer(float value) {
+  voices.setFilterMixer(value);
+
   String filterStr;
-  if (filterMix == LINEAR_FILTERMIXER[127]) {
-    //BP mode
-    LP = 0;
-    BP = 1.0f;
-    HP = 0;
+  if (value == BANDPASS) {
     filterStr = "Band Pass";
   } else {
     //LP-HP mix mode - a notch filter
-    LP = 1.0f - filterMix;
-    BP = 0;
-    HP = filterMix;
-    if (filterMix == LINEAR_FILTERMIXER[0])
-    {
+    if (value == LOWPASS) {
       filterStr = "Low Pass";
     }
-    else if (filterMix == LINEAR_FILTERMIXER[125])
-    {
+    else if (value == HIGHPASS) {
       filterStr = "High Pass";
     }
-    else
-    {
-      filterStr = "LP " + String(100 - filterMixStr) + " - " + String(filterMixStr) + " HP";
+    else {
+      filterStr = "LP " + String(100 - int(100*value)) + " - " + String(int(100*value)) + " HP";
     }
   }
-
-  FOR_EACH_VOICE(
-    voices[i]->patch().filterMixer_.gain(0, LP);
-    voices[i]->patch().filterMixer_.gain(1, BP);
-    voices[i]->patch().filterMixer_.gain(2, HP);
-  )
 
   showCurrentParameterPage("Filter Type", filterStr);
 }
@@ -896,18 +878,18 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCfilterres:
       //Pick up
       if (!pickUpActive && pickUp && (resonancePrevValue <  ((13.9f * POWER[value - TOLERANCE]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value + TOLERANCE]) + 1.1f))) return; //PICK-UP
-      filterRes = (13.9f * POWER[value]) + 1.1f; //If <1.1 there is noise at high cutoff freq
-      updateFilterRes();
-      resonancePrevValue = filterRes;//PICK-UP
+      
+      //If <1.1 there is noise at high cutoff freq
+      updateFilterRes((13.9f * POWER[value]) + 1.1f);
+      resonancePrevValue = (13.9f * POWER[value]) + 1.1f;//PICK-UP
       break;
 
     case CCfiltermixer:
       //Pick up
       if (!pickUpActive && pickUp && (filterMixPrevValue <  LINEAR_FILTERMIXER[value - TOLERANCE] || filterMixPrevValue >  LINEAR_FILTERMIXER[value + TOLERANCE])) return; //PICK-UP
-      filterMix = LINEAR_FILTERMIXER[value];
-      filterMixStr = LINEAR_FILTERMIXERSTR[value];
-      updateFilterMixer();
-      filterMixPrevValue = filterMix;//PICK-UP
+
+      updateFilterMixer(LINEAR_FILTERMIXER[value]);
+      filterMixPrevValue = LINEAR_FILTERMIXER[value];//PICK-UP
       break;
 
     case CCfilterenv:
@@ -1150,12 +1132,12 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePWA(data[20].toFloat(), data[17].toFloat());
   updatePWA(data[21].toFloat(), data[18].toFloat());
   updatePWMRate(data[19].toFloat());
-  filterRes = data[22].toFloat();
-  resonancePrevValue = filterRes;//Pick-up
+  updateFilterRes(data[22].toFloat());
+  resonancePrevValue = data[22].toFloat();//Pick-up
   updateFilterFreq(data[23].toFloat());
   filterfreqPrevValue = data[23].toInt(); //Pick-up
-  filterMix = data[24].toFloat();
-  filterMixPrevValue = filterMix; //Pick-up
+  updateFilterMixer(data[24].toFloat());
+  filterMixPrevValue = data[24].toFloat(); //Pick-up
   filterEnv = data[25].toFloat();
   oscLfoAmt = data[26].toFloat();
   oscLfoAmtPrevValue = oscLfoAmt;//PICK-UP
@@ -1189,8 +1171,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateFilterRes();
-  updateFilterMixer();
   updateFilterEnv();
   updateOscLFOAmt();
   updatePitchLFORate();
@@ -1218,7 +1198,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
-         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(filterRes) + "," + String(voices.getCutoff()) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
+         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
