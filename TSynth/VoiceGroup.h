@@ -41,6 +41,9 @@ class VoiceGroup {
     float pwA;
     float pwB;
     float pwmRate;
+    uint8_t oscFX;
+    float oscLevelA;
+    float oscLevelB;
 
     struct noteStackData {
         uint8_t note;
@@ -64,7 +67,10 @@ class VoiceGroup {
             pwmAmtB(1.0),
             pwA(0.0),
             pwB(0.0),
-            pwmRate(0.5)
+            pwmRate(0.5),
+            oscFX(0),
+            oscLevelA(1.0),
+            oscLevelB(1.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -99,6 +105,9 @@ class VoiceGroup {
     float getPwmAmtA()              { return pwmAmtA; }
     float getPwmAmtB()              { return pwmAmtB; }
     float getPwmRate()              { return pwmRate; }
+    uint8_t getOscFX()              { return oscFX; }
+    float getOscLevelA()            { return oscLevelA; }
+    float getOscLevelB()            { return oscLevelB; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -290,6 +299,100 @@ class VoiceGroup {
                 this->setPwmMixerAFEnv(pwmAmtA);//Set filter mod
                 this->setPwmMixerBFEnv(pwmAmtB);//Set filter mod
             }
+        }
+    }
+
+    void setWaveformMixerLevel(int channel, float level) {
+        VG_FOR_EACH_OSC(waveformMixer_.gain(channel, level))
+    }
+
+    void setOscModMixerA(int channel, float level) {
+        VG_FOR_EACH_OSC(oscModMixer_a.gain(channel, level))
+    }
+
+    void setOscModMixerB(int channel, float level) {
+        VG_FOR_EACH_OSC(oscModMixer_b.gain(channel, level))
+    }
+
+    void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
+        VG_FOR_EACH_OSC(oscFX_.setCombineMode(mode))
+    }
+
+    void setOscLevelA(float value) {
+        oscLevelA = value;
+
+        switch (oscFX) {
+            case 1://XOR
+                setWaveformMixerLevel(0, oscLevelA);//Osc 1 (A)
+                setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//oscFX XOR level
+                break;
+            case 2://XMod
+                //osc A sounds with increasing osc B mod
+                if (oscLevelA == 1.0f && oscLevelB <= 1.0f) {
+                    setOscModMixerA(3, 1 - oscLevelB);//Feed from Osc 2 (B)
+                    setWaveformMixerLevel(0, ONE);//Osc 1 (A)
+                    setWaveformMixerLevel(1, 0);//Osc 2 (B)
+                }
+                break;
+            case 0://None
+                setOscModMixerA(3, 0);//Feed from Osc 2 (B)
+                setWaveformMixerLevel(0, oscLevelA);//Osc 1 (A)
+                setWaveformMixerLevel(3, 0);//XOR
+                break;
+        }
+    }
+
+    void setOscLevelB(float value) {
+        oscLevelB = value;
+
+        switch (oscFX) {
+            case 1://XOR
+                setWaveformMixerLevel(1, oscLevelB);//Osc 2 (B)
+                setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//oscFX XOR level
+                break;
+            case 2://XMod
+                //osc B sounds with increasing osc A mod
+                if (oscLevelB == 1.0f && oscLevelA < 1.0f) {
+                    setOscModMixerB(3, 1 - oscLevelA);//Feed from Osc 1 (A)
+                    setWaveformMixerLevel(0, 0);//Osc 1 (A)
+                    setWaveformMixerLevel(1, ONE);//Osc 2 (B)
+                }
+                break;
+            case 0://None
+                setOscModMixerB(3, 0);//Feed from Osc 1 (A)
+                setWaveformMixerLevel(1, oscLevelB);//Osc 2 (B)
+                setWaveformMixerLevel(3, 0);//XOR
+                break;
+        }
+    }
+
+    void setOscFX(uint8_t value) {
+        oscFX = value;
+
+        if (oscFX == 2) {
+            if (oscLevelA == 1.0f && oscLevelB <= 1.0f) {
+                setOscModMixerA(3, 1 - oscLevelB);//Feed from Osc 2 (B)
+                setWaveformMixerLevel(0, ONE);//Osc 1 (A)
+                setWaveformMixerLevel(1, 0);//Osc 2 (B)
+            } else {
+                setOscModMixerB(3, 1 - oscLevelA);//Feed from Osc 1 (A)
+                setWaveformMixerLevel(0, 0);//Osc 1 (A)
+                setWaveformMixerLevel(1, ONE);//Osc 2 (B)
+            }
+            //Set XOR type off
+            setOscFXCombineMode(AudioEffectDigitalCombine::OFF);
+            setWaveformMixerLevel(3, 0);//XOR
+        } else if (oscFX == 1) {
+            setOscModMixerA(3, 0);//XMod off
+            setOscModMixerB(3, 0);//XMod off
+            //XOR 'Ring Mod' type effect
+            setOscFXCombineMode(AudioEffectDigitalCombine::XOR);
+            setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//XOR
+        } else {
+            setOscModMixerA(3, 0);//XMod off
+            setOscModMixerB(3, 0);//XMod off
+            setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
+            setWaveformMixerLevel(3, 0);//XOR
         }
     }
 

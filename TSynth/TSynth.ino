@@ -428,6 +428,7 @@ FLASHMEM void updateDetune(float detune, uint32_t chordDetune) {
   voices.params().detune = detune;
   voices.params().chordDetune = chordDetune;
   voices.updateVoices();
+
   if (voices.params().unisonMode == 2) {
     showCurrentParameterPage("Chord", CDT_STR[chordDetune]);
   } else {
@@ -441,6 +442,7 @@ void updatesAllVoices() {
 
 FLASHMEM void updatePWMSource(uint8_t source) {
   voices.setPWMSource(source);
+
   if (source == PWMSOURCELFO) {
     showCurrentParameterPage("PWM Source", "LFO"); //Only shown when updated via MIDI
   } else {
@@ -450,6 +452,7 @@ FLASHMEM void updatePWMSource(uint8_t source) {
 
 FLASHMEM void updatePWMRate(float value) {
   voices.setPwmRate(value);
+
   if (value == -10) {
     //Set to fixed PW mode
     showCurrentParameterPage("PW Mode", "On");
@@ -469,6 +472,7 @@ FLASHMEM void updatePWMAmount(float value) {
 
 FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA) {
   voices.setPWA(valuePwA, valuePwmAmtA);
+
   if (voices.getPwmRate() == -10) {
     if (voices.getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("1. PW Amt", voices.getPwA(), VAR_TRI);
@@ -488,6 +492,7 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA) {
 
 FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB) {
   voices.setPWB(valuePwB, valuePwmAmtB);
+
   if (voices.getPwmRate() == -10)  {
     if (voices.getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("2. PW Amt", voices.getPwB(), VAR_TRI);
@@ -505,66 +510,42 @@ FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB) {
   }
 }
 
-FLASHMEM void updateOscLevelA() {
-  switch (oscFX) {
+FLASHMEM void updateOscLevelA(float value) {
+  voices.setOscLevelA(value);
+
+  switch (voices.getOscFX()) {
     case 1://XOR
-      setWaveformMixerLevel(0, oscALevel);//Osc 1 (A)
-      setWaveformMixerLevel(3, (oscALevel + oscBLevel) / 2.0f);//oscFX XOR level
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
       break;
     case 2://XMod
       //osc A sounds with increasing osc B mod
-      if (oscALevel == 1.0f && oscBLevel <= 1.0f) {
-        setOscModMixerA(3, 1 - oscBLevel);//Feed from Osc 2 (B)
-        setWaveformMixerLevel(0, ONE);//Osc 1 (A)
-        setWaveformMixerLevel(1, 0);//Osc 2 (B)
-        showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - oscBLevel));
+      if (voices.getOscLevelA() == 1.0f && voices.getOscLevelB() <= 1.0f) {
+        showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - voices.getOscLevelB()));
       }
       break;
     case 0://None
-      setOscModMixerA(3, 0);//Feed from Osc 2 (B)
-      setWaveformMixerLevel(0, oscALevel);//Osc 1 (A)
-      setWaveformMixerLevel(3, 0);//XOR
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
       break;
   }
 }
 
-FLASHMEM void updateOscLevelB() {
-  switch (oscFX) {
+FLASHMEM void updateOscLevelB(float value) {
+  voices.setOscLevelB(value);
+
+  switch (voices.getOscFX()) {
     case 1://XOR
-      setWaveformMixerLevel(1, oscBLevel);//Osc 2 (B)
-      setWaveformMixerLevel(3, (oscALevel + oscBLevel) / 2.0f);//oscFX XOR level
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
       break;
     case 2://XMod
       //osc B sounds with increasing osc A mod
-      if (oscBLevel == 1.0f && oscALevel < 1.0f) {
-        setOscModMixerB(3, 1 - oscALevel);//Feed from Osc 1 (A)
-        setWaveformMixerLevel(0, 0);//Osc 1 (A)
-        setWaveformMixerLevel(1, ONE);//Osc 2 (B)
-        showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - oscALevel));
+      if (voices.getOscLevelB() == 1.0f && voices.getOscLevelA() < 1.0f) {
+        showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - voices.getOscLevelA()));
       }
       break;
     case 0://None
-      setOscModMixerB(3, 0);//Feed from Osc 1 (A)
-      setWaveformMixerLevel(1, oscBLevel);//Osc 2 (B)
-      setWaveformMixerLevel(3, 0);//XOR
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(oscALevel) + " : " + String(oscBLevel));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
       break;
   }
-}
-
-FLASHMEM void setWaveformMixerLevel(int channel, float level) {
-  FOR_EACH_OSC(waveformMixer_.gain(channel, level))
-}
-
-FLASHMEM void setOscModMixerA(int channel, float level) {
-  FOR_EACH_OSC(oscModMixer_a.gain(channel, level))
-}
-
-FLASHMEM void setOscModMixerB(int channel, float level) {
-  FOR_EACH_OSC(oscModMixer_b.gain(channel, level))
 }
 
 FLASHMEM void updateNoiseLevel() {
@@ -801,37 +782,17 @@ FLASHMEM void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
   FOR_EACH_OSC(oscFX_.setCombineMode(mode))
 }
 
-FLASHMEM void updateOscFX() {
-  if (oscFX == 2) {
-    if (oscALevel == 1.0f && oscBLevel <= 1.0f) {
-      setOscModMixerA(3, 1 - oscBLevel);//Feed from Osc 2 (B)
-      setWaveformMixerLevel(0, ONE);//Osc 1 (A)
-      setWaveformMixerLevel(1, 0);//Osc 2 (B)
-    } else {
-      setOscModMixerB(3, 1 - oscALevel);//Feed from Osc 1 (A)
-      setWaveformMixerLevel(0, 0);//Osc 1 (A)
-      setWaveformMixerLevel(1, ONE);//Osc 2 (B)
-    }
-    //Set XOR type off
-    setOscFXCombineMode(AudioEffectDigitalCombine::OFF);
-    setWaveformMixerLevel(3, 0);//XOR
+FLASHMEM void updateOscFX(uint8_t value) {
+  voices.setOscFX(value);
+  if (value == 2) {
     showCurrentParameterPage("Osc FX", "On - X Mod");
     analogWriteFrequency(OSC_FX_LED, 1);
     analogWrite(OSC_FX_LED, 127);
-  } else if (oscFX == 1) {
-    setOscModMixerA(3, 0);//XMod off
-    setOscModMixerB(3, 0);//XMod off
-    //XOR 'Ring Mod' type effect
-    setOscFXCombineMode(AudioEffectDigitalCombine::XOR);
-    setWaveformMixerLevel(3, (oscALevel + oscBLevel) / 2.0f);//XOR
+  } else if (value == 1) {
     showCurrentParameterPage("Osc FX", "On - XOR");
     pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, HIGH);  // LED on
   } else {
-    setOscModMixerA(3, 0);//XMod off
-    setOscModMixerB(3, 0);//XMod off
-    setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
-    setWaveformMixerLevel(3, 0);//XOR
     showCurrentParameterPage("Osc FX", "Off");
     pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, LOW);  // LED off
@@ -923,13 +884,11 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCoscLevelA:
-      oscALevel = LINEAR[value];
-      updateOscLevelA();
+      updateOscLevelA(LINEAR[value]);
       break;
 
     case CCoscLevelB:
-      oscBLevel = LINEAR[value];
-      updateOscLevelB();
+      updateOscLevelB(LINEAR[value]);
       break;
 
     case CCnoiseLevel:
@@ -1094,19 +1053,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCoscfx:
-      switch (value) {
-        case 0:
-          oscFX = 0;
-          break;
-        case 1:
-          oscFX = 1;
-          break;
-        case 2:
-        default:
-          oscFX = 2;
-          break;
-      }
-      updateOscFX();
+      updateOscFX(value < 0 || value > 2 ? 2 : value);
       break;
 
     case CCfxamt:
@@ -1196,11 +1143,11 @@ FLASHMEM void recallPatch(int patchNo) {
 
 FLASHMEM void setCurrentPatchData(String data[]) {
   updatePatch(data[0], patchNo);
-  oscALevel = data[1].toFloat();
-  oscBLevel = data[2].toFloat();
+  updateOscLevelA(data[1].toFloat());
+  updateOscLevelB(data[2].toFloat());
   noiseLevel = data[3].toFloat();
   updateUnison(data[4].toInt());
-  oscFX = data[5].toInt();
+  updateOscFX(data[5].toInt());
   updateDetune(data[6].toFloat(), data[48].toInt());
   lfoSyncFreq = data[7].toInt();
   midiClkTimeInterval = data[8].toInt();
@@ -1254,8 +1201,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateOscLevelA();
-  updateOscLevelB();
   updateNoiseLevel();
   updateFilterFreq();
   updateFilterRes();
@@ -1278,7 +1223,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateDecay();
   updateSustain();
   updateRelease();
-  updateOscFX();
   updateFXAmt();
   updateFXMix();
   Serial.print(F("Set Patch: "));
@@ -1287,7 +1231,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
-  return patchName + "," + String(oscALevel) + "," + String(oscBLevel) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(oscFX) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
+  return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(filterRes) + "," + String(filterFreq) + "," + String(filterMix) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
@@ -1490,16 +1434,15 @@ void checkSwitches() {
   oscFXSwitch.update();
   if (oscFXSwitch.read() == LOW && oscFXSwitch.duration() > HOLD_DURATION) {
     //If oscFX held, switch to oscFX 2
-    oscFX = 2;
-    midiCCOut(CCoscfx, oscFX);
-    myControlChange(midiChannel, CCoscfx, oscFX);
+    midiCCOut(CCoscfx, 2);
+    myControlChange(midiChannel, CCoscfx, 2);
     oscFXSwitch.write(HIGH); //Come out of this state
     oscFXMode = true;//Hack
   } else if (oscFXSwitch.fallingEdge()) {
     if (!oscFXMode) {
-      oscFX > 0 ? oscFX = 0 : oscFX = 1;
-      midiCCOut(CCoscfx, oscFX);
-      myControlChange(midiChannel, CCoscfx, oscFX);
+      uint8_t value = voices.getOscFX() > 0 ? 0 : 1;
+      midiCCOut(CCoscfx, value);
+      myControlChange(midiChannel, CCoscfx, value);
     } else {
       oscFXMode = false;
     }
