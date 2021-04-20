@@ -599,9 +599,9 @@ FLASHMEM void updateFilterMixer(float value) {
   showCurrentParameterPage("Filter Type", filterStr);
 }
 
-FLASHMEM void updateFilterEnv() {
-  setFilterModMixer(0, filterEnv);
-  showCurrentParameterPage("Filter Env.", String(filterEnv));
+FLASHMEM void updateFilterEnv(float value) {
+  voices.setFilterEnvelope(value);
+  showCurrentParameterPage("Filter Env.", String(value));
 }
 
 FLASHMEM void updatePitchEnv(float value) {
@@ -609,14 +609,9 @@ FLASHMEM void updatePitchEnv(float value) {
   showCurrentParameterPage("Pitch Env Amt", String(value));
 }
 
-FLASHMEM void updateKeyTracking(float keytrackingAmount) {
-  voices.params().keytrackingAmount = keytrackingAmount;
-  setFilterModMixer(2, keytrackingAmount);
-  showCurrentParameterPage("Key Tracking", String(keytrackingAmount));
-}
-
-FLASHMEM void setFilterModMixer(int channel, float level) {
-  FOR_EACH_OSC(filterModMixer_.gain(channel, level))
+FLASHMEM void updateKeyTracking(float value) {
+  voices.setKeytracking(value);
+  showCurrentParameterPage("Key Tracking", String(value));
 }
 
 FLASHMEM void updateOscLFOAmt() {
@@ -625,7 +620,9 @@ FLASHMEM void updateOscLFOAmt() {
   showCurrentParameterPage("LFO Amount", dtostrf(oscLfoAmt, 4, 3, buf));
 }
 
-FLASHMEM void updateModWheel() {
+FLASHMEM void updateModWheel(float value) {
+  // TODO: 12 of these?
+  modWhAmt = value;
   pitchLfo.amplitude(oscLfoAmt + modWhAmt);
 }
 
@@ -893,8 +890,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCfilterenv:
-      filterEnv = LINEARCENTREZERO[value] * FILTERMODMIXERMAX; //Bipolar
-      updateFilterEnv();
+      updateFilterEnv(LINEARCENTREZERO[value] * FILTERMODMIXERMAX);
       break;
 
     case CCkeytracking:
@@ -902,8 +898,8 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCmodwheel:
-      modWhAmt = POWER[value] * modWheelDepth; //Variable LFO amount from mod wheel - Settings Option
-      updateModWheel();
+      //Variable LFO amount from mod wheel - Settings Option
+      updateModWheel(POWER[value] * modWheelDepth);
       break;
 
     case CCosclfoamt:
@@ -1138,7 +1134,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   filterfreqPrevValue = data[23].toInt(); //Pick-up
   updateFilterMixer(data[24].toFloat());
   filterMixPrevValue = data[24].toFloat(); //Pick-up
-  filterEnv = data[25].toFloat();
+  updateFilterEnv(data[25].toFloat());
   oscLfoAmt = data[26].toFloat();
   oscLfoAmtPrevValue = oscLfoAmt;//PICK-UP
   oscLfoRate = data[27].toFloat();
@@ -1171,7 +1167,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateFilterEnv();
   updateOscLFOAmt();
   updatePitchLFORate();
   updatePitchLFOWaveform();
@@ -1198,7 +1193,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
-         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(filterEnv) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
+         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
          filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }

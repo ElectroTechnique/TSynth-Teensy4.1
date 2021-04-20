@@ -47,6 +47,7 @@ class VoiceGroup {
     float cutoff;
     float resonance;
     float filterMixer;
+    float filterEnvelope;
 
     struct noteStackData {
         uint8_t note;
@@ -76,7 +77,8 @@ class VoiceGroup {
             oscLevelB(1.0),
             cutoff(12000.0),
             resonance(1.1),
-            filterMixer(0.0)
+            filterMixer(0.0),
+            filterEnvelope(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -117,6 +119,7 @@ class VoiceGroup {
     float getCutoff()               { return cutoff; }
     float getResonance()            { return resonance; }
     float getFilterMixer()          { return filterMixer; }
+    float getFilterEnvelope()       { return filterEnvelope; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -454,6 +457,21 @@ class VoiceGroup {
             voices[i]->patch().filterMixer_.gain(1, BP);
             voices[i]->patch().filterMixer_.gain(2, HP);
         )
+    }
+
+    void setFilterModMixer(int channel, float level) {
+        VG_FOR_EACH_OSC(filterModMixer_.gain(channel, level))
+    }
+
+    void setFilterEnvelope(float value) {
+        filterEnvelope = value;
+        this->setFilterModMixer(0, filterEnvelope);
+    }
+
+    void setKeytracking(float value) {
+        // TODO: Move this out of params to avoid setting it directly without updating the mixer.
+        _params.keytrackingAmount = value;
+        setFilterModMixer(2, value);
     }
 
     inline void setMonophonic(uint8_t mode) {
