@@ -622,6 +622,13 @@ class VoiceGroup {
         }
     }
 
+    void closeEnvelopes() {
+        VG_FOR_EACH_VOICE(
+            voices[i]->patch().filterEnvelope_.close();
+            voices[i]->patch().ampEnvelope_.close();
+        )
+    }
+
     // TODO: This helps during refactoring, maybe it will be removed later.
     Voice* operator [](int i) const { return voices[i]; }
 

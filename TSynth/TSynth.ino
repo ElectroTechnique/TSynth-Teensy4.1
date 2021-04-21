@@ -106,10 +106,6 @@ uint32_t patchNo = 1;//Current patch no
 int voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
-// Macros to help do things for each NO_OF_VOICES
-#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(voices[i]->patch().CMD)
-#define FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < NO_OF_VOICES; i++){ CMD; }
-
 FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
     voices.add(new Voice(Oscillators[i], i));
@@ -260,10 +256,6 @@ void myNoteOff(byte channel, byte note, byte velocity) {
   voices.noteOff(note);
 }
 
-void allNotesOff() {
-  voices.allNotesOff();
-}
-
 int getLFOWaveform(int value) {
   if (value >= 0 && value < 8) {
     return WAVEFORM_SINE;
@@ -358,16 +350,12 @@ FLASHMEM int getWaveformB(int value) {
   }
 }
 
-FLASHMEM int getPitch(int value) {
-  return PITCH[value];
-}
-
 FLASHMEM void updateUnison(uint8_t unison) {
   voices.setUnisonMode(unison);
 
   // TODO: These need to be split per oscillator?
   if (unison == 0) {
-    allNotesOff();//Avoid hanging notes
+    voices.allNotesOff();//Avoid hanging notes
     noiseMixer.gain(0, ONE);
     noiseMixer.gain(1, ONE);
     showCurrentParameterPage("Unison", "Off");
@@ -434,10 +422,6 @@ FLASHMEM void updateDetune(float detune, uint32_t chordDetune) {
   } else {
     showCurrentParameterPage("Detune", String((1 - detune) * 100) + " %");
   }
-}
-
-void updatesAllVoices() {
-  voices.updateVoices();
 }
 
 FLASHMEM void updatePWMSource(uint8_t source) {
@@ -745,10 +729,6 @@ FLASHMEM void updateRelease(float value) {
   }
 }
 
-FLASHMEM void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
-  FOR_EACH_OSC(oscFX_.setCombineMode(mode))
-}
-
 FLASHMEM void updateOscFX(uint8_t value) {
   voices.setOscFX(value);
   if (value == 2) {
@@ -816,11 +796,11 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCpitchA:
-      updatePitchA(getPitch(value));
+      updatePitchA(PITCH[value]);
       break;
 
     case CCpitchB:
-      updatePitchB(getPitch(value));
+      updatePitchB(PITCH[value]);
       break;
 
     case CCdetune:
@@ -1030,7 +1010,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCallnotesoff:
-      allNotesOff();
+      voices.allNotesOff();
       break;
   }
 }
@@ -1077,16 +1057,9 @@ FLASHMEM void myMIDIClock() {
   if (count < 24) count++; //prevent eventual overflow
 }
 
-FLASHMEM void closeEnvelopes() {
-  FOR_EACH_VOICE(
-    voices[i]->patch().filterEnvelope_.close();
-    voices[i]->patch().ampEnvelope_.close();
-  )
-}
-
 FLASHMEM void recallPatch(int patchNo) {
-  allNotesOff();
-  closeEnvelopes();
+  voices.allNotesOff();
+  voices.closeEnvelopes();
   File patchFile = SD.open(String(patchNo).c_str());
   if (!patchFile) {
     Serial.println(F("File not found"));
@@ -1161,7 +1134,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateOscLFOAmt();
   updatePitchLFORate();
   updatePitchLFOWaveform();
-  updatePitchLFOMidiClkSync();
+  //updatePitchLFOMidiClkSync(); // this doesn't do anything.
   updateFilterLfoRate();
   updateFilterLfoAmt();
   updateFilterLFOWaveform();
@@ -1492,8 +1465,8 @@ void checkSwitches() {
   backButton.update();
   if (backButton.read() == LOW && backButton.duration() > HOLD_DURATION) {
     //If Back button held, Panic - all notes off
-    allNotesOff();
-    closeEnvelopes();
+    voices.allNotesOff();
+    voices.closeEnvelopes();
     backButton.write(HIGH); //Come out of this state
     panic = true;           //Hack
   }
