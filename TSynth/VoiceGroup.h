@@ -89,16 +89,6 @@ class VoiceGroup {
         _params.detune = 0;
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
-
-        VG_FOR_EACH_VOICE(
-            Oscillators[i].waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
-            Oscillators[i].waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, waveformA);
-            Oscillators[i].waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
-            Oscillators[i].waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, waveformB);
-        )
-
-        setWaveformA(WAVEFORM_PARABOLIC);
-        setWaveformB(WAVEFORM_PARABOLIC);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -156,7 +146,7 @@ class VoiceGroup {
             temp = WAVEFORM_ARBITRARY;
         }
         if (waveform == WAVEFORM_HARMONIC) {
-            VG_FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(HARMONIC_WAVE, AWFREQ));
+            VG_FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(PPG_WAVE, AWFREQ));
             temp = WAVEFORM_ARBITRARY;
         }
 

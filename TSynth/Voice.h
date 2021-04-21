@@ -29,8 +29,15 @@ class Voice {
         uint8_t _idx;
 
     public:
-        Voice(Patch& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i)
-        {
+        Voice(Patch& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i) {
+            p.waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
+            p.waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, WAVEFORM_SQUARE);
+            p.waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
+            p.waveformMod_b.begin(WAVEFORMLEVEL, 440.0f, WAVEFORM_SQUARE);
+
+            //Arbitary waveform needs initializing to something
+            p.waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
+            p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
         }
 
         inline uint8_t index() {
