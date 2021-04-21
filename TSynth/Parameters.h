@@ -52,15 +52,15 @@ String filterLFOTimeDivStr = "";//For display
 float filterLfoAmt = 0.0f;
 int filterLfoWaveform = WAVEFORM_SINE;
 
-float filterAttack = 100.0f;
-float filterDecay = 350.0f;
-float filterSustain = 0.7f;
-float filterRelease = 300.0f;
+//float filterAttack = 100.0f;
+//float filterDecay = 350.0f;
+//float filterSustain = 0.7f;
+//float filterRelease = 300.0f;
 
-float ampAttack = 10.0f;
-float ampDecay = 35.0f;
-float ampSustain = 1.0f;
-float ampRelease = 300.0f;
+//float ampAttack = 10.0f;
+//float ampDecay = 35.0f;
+//float ampSustain = 1.0f;
+//float ampRelease = 300.0f;
 
 float fxAmt = 1.0f;
 float fxMix = 0.0f;

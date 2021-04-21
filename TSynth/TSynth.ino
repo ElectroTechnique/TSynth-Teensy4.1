@@ -674,75 +674,74 @@ FLASHMEM void updateFilterLFOMidiClkSync() {
   digitalWriteFast(TEMPO_LED, filterLFOMidiClkSync == 1 ? HIGH : LOW);  // LED
 }
 
-FLASHMEM void updateFilterAttack() {
-  FOR_EACH_OSC(filterEnvelope_.attack(filterAttack))
+FLASHMEM void updateFilterAttack(float value) {
+  voices.setFilterAttack(value);
 
-  if (filterAttack < 1000) {
-    showCurrentParameterPage("Filter Attack", String(int(filterAttack)) + " ms", FILTER_ENV);
+  if (value < 1000) {
+    showCurrentParameterPage("Filter Attack", String(int(value)) + " ms", FILTER_ENV);
   }  else {
-    showCurrentParameterPage("Filter Attack", String(filterAttack * 0.001f) + " s", FILTER_ENV);
+    showCurrentParameterPage("Filter Attack", String(value * 0.001f) + " s", FILTER_ENV);
   }
 }
 
-FLASHMEM void updateFilterDecay() {
-  FOR_EACH_OSC(filterEnvelope_.decay(filterDecay))
+FLASHMEM void updateFilterDecay(float value) {
+  voices.setFilterDecay(value);
 
-  if (filterDecay < 1000) {
-    showCurrentParameterPage("Filter Decay", String(int(filterDecay)) + " ms", FILTER_ENV);
+  if (value < 1000) {
+    showCurrentParameterPage("Filter Decay", String(int(value)) + " ms", FILTER_ENV);
   } else {
-    showCurrentParameterPage("Filter Decay", String(filterDecay * 0.001f) + " s", FILTER_ENV);
+    showCurrentParameterPage("Filter Decay", String(value * 0.001f) + " s", FILTER_ENV);
   }
 }
 
-FLASHMEM void updateFilterSustain() {
-  FOR_EACH_OSC(filterEnvelope_.sustain(filterSustain))
-
-  showCurrentParameterPage("Filter Sustain", String(filterSustain), FILTER_ENV);
+FLASHMEM void updateFilterSustain(float value) {
+  voices.setFilterSustain(value);
+  showCurrentParameterPage("Filter Sustain", String(value), FILTER_ENV);
 }
 
-FLASHMEM void updateFilterRelease() {
-  FOR_EACH_OSC(filterEnvelope_.release(filterRelease))
+FLASHMEM void updateFilterRelease(float value) {
+  voices.setFilterRelease(value);
 
-  if (filterRelease < 1000) {
-    showCurrentParameterPage("Filter Release", String(int(filterRelease)) + " ms", FILTER_ENV);
+  if (value < 1000) {
+    showCurrentParameterPage("Filter Release", String(int(value)) + " ms", FILTER_ENV);
   } else {
-    showCurrentParameterPage("Filter Release", String(filterRelease * 0.001) + " s", FILTER_ENV);
+    showCurrentParameterPage("Filter Release", String(value * 0.001) + " s", FILTER_ENV);
   }
 }
 
-FLASHMEM void updateAttack() {
-  FOR_EACH_OSC(ampEnvelope_.attack(ampAttack))
+FLASHMEM void updateAttack(float value) {
+  voices.setAmpAttack(value);
 
-  if (ampAttack < 1000) {
-    showCurrentParameterPage("Attack", String(int(ampAttack)) + " ms", AMP_ENV);
+  if (value < 1000) {
+    showCurrentParameterPage("Attack", String(int(value)) + " ms", AMP_ENV);
   } else {
-    showCurrentParameterPage("Attack", String(ampAttack * 0.001) + " s", AMP_ENV);
+    showCurrentParameterPage("Attack", String(value * 0.001) + " s", AMP_ENV);
   }
 }
 
-FLASHMEM void updateDecay() {
-  FOR_EACH_OSC(ampEnvelope_.decay(ampDecay))
+FLASHMEM void updateDecay(float value) {
+  voices.setAmpDecay(value);
 
-  if (ampDecay < 1000) {
-    showCurrentParameterPage("Decay", String(int(ampDecay)) + " ms", AMP_ENV);
+  if (value < 1000) {
+    showCurrentParameterPage("Decay", String(int(value)) + " ms", AMP_ENV);
   } else {
-    showCurrentParameterPage("Decay", String(ampDecay * 0.001) + " s", AMP_ENV);
+    showCurrentParameterPage("Decay", String(value * 0.001) + " s", AMP_ENV);
   }
 }
 
-FLASHMEM void updateSustain() {
-  FOR_EACH_OSC(ampEnvelope_.sustain(ampSustain))
+FLASHMEM void updateSustain(float value) {
+  voices.setAmpSustain(value);
 
-  showCurrentParameterPage("Sustain", String(ampSustain), AMP_ENV);
+  showCurrentParameterPage("Sustain", String(value), AMP_ENV);
 }
 
-FLASHMEM void updateRelease() {
-  FOR_EACH_OSC(ampEnvelope_.release(ampRelease))
+FLASHMEM void updateRelease(float value) {
+  voices.setAmpRelease(value);
 
-  if (ampRelease < 1000) {
-    showCurrentParameterPage("Release", String(int(ampRelease)) + " ms", AMP_ENV);
+  if (value < 1000) {
+    showCurrentParameterPage("Release", String(int(value)) + " ms", AMP_ENV);
   } else {
-    showCurrentParameterPage("Release", String(ampRelease * 0.001) + " s", AMP_ENV);
+    showCurrentParameterPage("Release", String(value * 0.001) + " s", AMP_ENV);
   }
 }
 
@@ -979,43 +978,35 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCfilterattack:
-      filterAttack = ENVTIMES[value];
-      updateFilterAttack();
+      updateFilterAttack(ENVTIMES[value]);
       break;
 
     case CCfilterdecay:
-      filterDecay = ENVTIMES[value];
-      updateFilterDecay();
+      updateFilterDecay(ENVTIMES[value]);
       break;
 
     case CCfiltersustain:
-      filterSustain = LINEAR[value];
-      updateFilterSustain();
+      updateFilterSustain(ENVTIMES[value]);
       break;
 
     case CCfilterrelease:
-      filterRelease = ENVTIMES[value];
-      updateFilterRelease();
+      updateFilterRelease(ENVTIMES[value]);
       break;
 
     case CCampattack:
-      ampAttack = ENVTIMES[value];
-      updateAttack();
+      updateAttack(ENVTIMES[value]);
       break;
 
     case CCampdecay:
-      ampDecay = ENVTIMES[value];
-      updateDecay();
+      updateDecay(ENVTIMES[value]);
       break;
 
     case CCampsustain:
-      ampSustain = LINEAR[value];
-      updateSustain();
+      updateSustain(ENVTIMES[value]);
       break;
 
     case CCamprelease:
-      ampRelease = ENVTIMES[value];
-      updateRelease();
+      updateRelease(ENVTIMES[value]);
       break;
 
     case CCoscfx:
@@ -1149,14 +1140,14 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   filterLfoAmt = data[34].toFloat();
   filterLfoAmtPrevValue = filterLfoAmt;//PICK-UP
   filterLfoWaveform = data[35].toFloat();
-  filterAttack = data[36].toFloat();
-  filterDecay = data[37].toFloat();
-  filterSustain = data[38].toFloat();
-  filterRelease = data[39].toFloat();
-  ampAttack = data[40].toFloat();
-  ampDecay = data[41].toFloat();
-  ampSustain = data[42].toFloat();
-  ampRelease = data[43].toFloat();
+  updateFilterAttack(data[36].toFloat());
+  updateFilterDecay(data[37].toFloat());
+  updateFilterSustain(data[38].toFloat());
+  updateFilterRelease(data[39].toFloat());
+  updateAttack(data[40].toFloat());
+  updateDecay(data[41].toFloat());
+  updateSustain(data[42].toFloat());
+  updateRelease(data[43].toFloat());
   fxAmt = data[44].toFloat();
   fxAmtPrevValue = fxAmt;//PICK-UP
   fxMix = data[45].toFloat();
@@ -1176,14 +1167,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateFilterLFOWaveform();
   updateFilterLFOMidiClkSync();
   updateFilterLFORetrig();
-  updateFilterAttack();
-  updateFilterDecay();
-  updateFilterSustain();
-  updateFilterRelease();
-  updateAttack();
-  updateDecay();
-  updateSustain();
-  updateRelease();
   updateFXAmt();
   updateFXMix();
   Serial.print(F("Set Patch: "));
@@ -1194,7 +1177,7 @@ FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(filterLfoRate, 5) + "," +
-         filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + filterAttack + "," + filterDecay + "," + filterSustain + "," + filterRelease + "," + ampAttack + "," + ampDecay + "," + ampSustain + "," + ampRelease + "," +
+         filterLfoRetrig + "," + filterLFOMidiClkSync + "," + filterLfoAmt + "," + filterLfoWaveform + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
 

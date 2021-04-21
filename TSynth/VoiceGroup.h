@@ -48,6 +48,14 @@ class VoiceGroup {
     float resonance;
     float filterMixer;
     float filterEnvelope;
+    float filterAttack;
+    float filterDecay;
+    float filterSustain;
+    float filterRelease;
+    float ampAttack;
+    float ampDecay;
+    float ampSustain;
+    float ampRelease;
 
     struct noteStackData {
         uint8_t note;
@@ -78,7 +86,16 @@ class VoiceGroup {
             cutoff(12000.0),
             resonance(1.1),
             filterMixer(0.0),
-            filterEnvelope(0.0)
+            filterEnvelope(0.0),
+            filterAttack(100.0),
+            filterDecay(350.0),
+            filterSustain(0.7),
+            filterRelease(300.0),
+            ampAttack(10.0),
+            ampDecay(35.0),
+            ampSustain(1.0),
+            ampRelease(300.0)
+
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -110,6 +127,14 @@ class VoiceGroup {
     float getResonance()            { return resonance; }
     float getFilterMixer()          { return filterMixer; }
     float getFilterEnvelope()       { return filterEnvelope; }
+    float getFilterAttack()         { return filterAttack; }
+    float getFilterDecay()          { return filterDecay; }
+    float getFilterSustain()        { return filterSustain; }
+    float getFilterRelease()        { return filterRelease; }
+    float getAmpAttack()            { return ampAttack; }
+    float getAmpDecay()             { return ampDecay; }
+    float getAmpSustain()           { return ampSustain; }
+    float getAmpRelease()           { return ampRelease; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -456,6 +481,46 @@ class VoiceGroup {
     void setFilterEnvelope(float value) {
         filterEnvelope = value;
         this->setFilterModMixer(0, filterEnvelope);
+    }
+
+    void setFilterAttack(float value) {
+        filterAttack = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.attack(value))
+    }
+
+    void setFilterDecay(float value) {
+        filterDecay = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.decay(value))
+    }
+
+    void setFilterSustain(float value) {
+        filterSustain = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.sustain(value))
+    }
+
+    void setFilterRelease(float value) {
+        filterRelease = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.release(value))
+    }
+
+    void setAmpAttack(float value) {
+        ampAttack = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.attack(value))
+    }
+
+    void setAmpDecay(float value) {
+        ampDecay = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.decay(value))
+    }
+
+    void setAmpSustain(float value) {
+        ampSustain = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.sustain(value))
+    }
+
+    void setAmpRelease(float value) {
+        ampRelease = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.release(value))
     }
 
     void setKeytracking(float value) {
