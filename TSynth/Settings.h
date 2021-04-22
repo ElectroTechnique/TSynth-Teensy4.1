@@ -58,8 +58,8 @@ FLASHMEM void settingsVelocitySens(const char * value) {
 
 FLASHMEM void settingsKeyTracking(const char * value) {
   if (strcmp(value, "None") == 0) keytrackingAmount = 0;
-  if (strcmp(value, "Half") == 0)  keytrackingAmount =  0.5;
-  if (strcmp(value, "Full") == 0) keytrackingAmount =  1.0;
+  if (strcmp(value, "Half") == 0) keytrackingAmount = 0.5;
+  if (strcmp(value, "Full") == 0) keytrackingAmount = 1.0;
 }
 
 FLASHMEM void settingsPitchBend(const char * value) {
@@ -163,7 +163,7 @@ FLASHMEM int currentIndexVelocitySens() {
 
 FLASHMEM int currentIndexKeyTracking() {
   if (keytrackingAmount == 0.0f) return 0;
-  if (keytrackingAmount == 0.5f)  return 1;
+  if (keytrackingAmount == 0.5f) return 1;
   if (keytrackingAmount == 1.0f) return 2;
   return 0;
 }
