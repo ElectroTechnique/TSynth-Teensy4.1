@@ -296,7 +296,7 @@ class VoiceGroup {
         float pwA_Adj = pwA;
         if (pwA > 0.98) pwA_Adj = 0.98f;
         if (pwA < -0.98) pwA_Adj = -0.98f;
-        pwa.amplitude(pwA_Adj);
+        VG_FOR_EACH_OSC(pwa_.amplitude(pwA_Adj))
     }
 
     void setPWB(float valuePwA, float valuePwmAmtA) {
@@ -326,7 +326,7 @@ class VoiceGroup {
         float pwB_Adj = pwB;
         if (pwB > 0.98) pwB_Adj = 0.98f;
         if (pwB < -0.98) pwB_Adj = -0.98f;
-        pwb.amplitude(pwB_Adj);
+        VG_FOR_EACH_OSC(pwb_.amplitude(pwB_Adj))
     }
 
     void setPWMSource(uint8_t value) {
