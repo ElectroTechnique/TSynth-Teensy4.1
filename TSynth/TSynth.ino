@@ -57,6 +57,7 @@
 #include "HWControls.h"
 #include "EepromMgr.h"
 #include "Detune.h"
+#include "utils.h"
 #include "Velocity.h"
 #include "Voice.h"
 #include "VoiceGroup.h"
@@ -383,11 +384,7 @@ FLASHMEM void updateVolume(float vol) {
 
 FLASHMEM void updateGlide(float glideSpeed) {
   voices.params().glideSpeed = glideSpeed;
-  if (glideSpeed * GLIDEFACTOR < 1000) {
-    showCurrentParameterPage("Glide", String(int(glideSpeed * GLIDEFACTOR)) + " ms");
-  } else {
-    showCurrentParameterPage("Glide", String((glideSpeed * GLIDEFACTOR) / 1000) + " s");
-  }
+  showCurrentParameterPage("Glide", milliToString(glideSpeed * GLIDEFACTOR));
 }
 
 FLASHMEM void updateWaveformA(uint32_t waveform) {
@@ -437,10 +434,10 @@ FLASHMEM void updatePWMSource(uint8_t source) {
 FLASHMEM void updatePWMRate(float value) {
   voices.setPwmRate(value);
 
-  if (value == -10) {
+  if (value == PWMRATE_PW_MODE) {
     //Set to fixed PW mode
     showCurrentParameterPage("PW Mode", "On");
-  } else if (value == -5) {
+  } else if (value == PWMRATE_SOURCE_FILTER_ENV) {
     //Set to Filter Env Mod source
     showCurrentParameterPage("PWM Source", "Filter Env");
   } else {
@@ -457,7 +454,7 @@ FLASHMEM void updatePWMAmount(float value) {
 FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA) {
   voices.setPWA(valuePwA, valuePwmAmtA);
 
-  if (voices.getPwmRate() == -10) {
+  if (voices.getPwmRate() == PWMRATE_PW_MODE) {
     if (voices.getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("1. PW Amt", voices.getPwA(), VAR_TRI);
     } else {
@@ -477,7 +474,7 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA) {
 FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB) {
   voices.setPWB(valuePwB, valuePwmAmtB);
 
-  if (voices.getPwmRate() == -10)  {
+  if (voices.getPwmRate() == PWMRATE_PW_MODE)  {
     if (voices.getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE) {
       showCurrentParameterPage("2. PW Amt", voices.getPwB(), VAR_TRI);
     } else {
@@ -660,22 +657,12 @@ FLASHMEM void updateFilterLFOMidiClkSync() {
 
 FLASHMEM void updateFilterAttack(float value) {
   voices.setFilterAttack(value);
-
-  if (value < 1000) {
-    showCurrentParameterPage("Filter Attack", String(int(value)) + " ms", FILTER_ENV);
-  }  else {
-    showCurrentParameterPage("Filter Attack", String(value * 0.001f) + " s", FILTER_ENV);
-  }
+  showCurrentParameterPage("Filter Attack", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterDecay(float value) {
   voices.setFilterDecay(value);
-
-  if (value < 1000) {
-    showCurrentParameterPage("Filter Decay", String(int(value)) + " ms", FILTER_ENV);
-  } else {
-    showCurrentParameterPage("Filter Decay", String(value * 0.001f) + " s", FILTER_ENV);
-  }
+  showCurrentParameterPage("Filter Decay", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterSustain(float value) {
@@ -685,48 +672,27 @@ FLASHMEM void updateFilterSustain(float value) {
 
 FLASHMEM void updateFilterRelease(float value) {
   voices.setFilterRelease(value);
-
-  if (value < 1000) {
-    showCurrentParameterPage("Filter Release", String(int(value)) + " ms", FILTER_ENV);
-  } else {
-    showCurrentParameterPage("Filter Release", String(value * 0.001) + " s", FILTER_ENV);
-  }
+  showCurrentParameterPage("Filter Release", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateAttack(float value) {
   voices.setAmpAttack(value);
-
-  if (value < 1000) {
-    showCurrentParameterPage("Attack", String(int(value)) + " ms", AMP_ENV);
-  } else {
-    showCurrentParameterPage("Attack", String(value * 0.001) + " s", AMP_ENV);
-  }
+  showCurrentParameterPage("Attack", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateDecay(float value) {
   voices.setAmpDecay(value);
-
-  if (value < 1000) {
-    showCurrentParameterPage("Decay", String(int(value)) + " ms", AMP_ENV);
-  } else {
-    showCurrentParameterPage("Decay", String(value * 0.001) + " s", AMP_ENV);
-  }
+  showCurrentParameterPage("Decay", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateSustain(float value) {
   voices.setAmpSustain(value);
-
-  showCurrentParameterPage("Sustain", String(value), AMP_ENV);
+  showCurrentParameterPage("Sustain", String(value), FILTER_ENV);
 }
 
 FLASHMEM void updateRelease(float value) {
   voices.setAmpRelease(value);
-
-  if (value < 1000) {
-    showCurrentParameterPage("Release", String(int(value)) + " ms", AMP_ENV);
-  } else {
-    showCurrentParameterPage("Release", String(value * 0.001) + " s", AMP_ENV);
-  }
+  showCurrentParameterPage("Release", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateOscFX(uint8_t value) {
@@ -775,8 +741,7 @@ void myControlChange(byte channel, byte control, byte value) {
       updateVolume(LINEAR[value]);
       break;
     case CCunison:
-      if (value == 0 || value == 1) updateUnison(value);
-      else updateUnison(2);
+      updateUnison(inRangeOrDefault<int>(value, 2, 0, 2));
       break;
 
     case CCglide:
@@ -990,7 +955,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCoscfx:
-      updateOscFX(value < 0 || value > 2 ? 2 : value);
+      updateOscFX(inRangeOrDefault<int>(value, 2, 0, 2));
       break;
 
     case CCfxamt:

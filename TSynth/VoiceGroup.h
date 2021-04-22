@@ -185,7 +185,7 @@ class VoiceGroup {
         pwmLfoA.frequency(pwmRate);
         pwmLfoB.frequency(pwmRate);
 
-        if (pwmRate == -10) {
+        if (pwmRate == PWMRATE_PW_MODE) {
             //Set to fixed PW mode
             this->setPwmMixerALFO(0); //LFO Source off
             this->setPwmMixerBLFO(0);
@@ -193,7 +193,7 @@ class VoiceGroup {
             this->setPwmMixerBFEnv(0);
             this->setPwmMixerAPW(1); //Manually adjustable pulse width on
             this->setPwmMixerBPW(1);
-        } else if (pwmRate == -5) {
+        } else if (pwmRate == PWMRATE_SOURCE_FILTER_ENV) {
             //Set to Filter Env Mod source
             this->setPWMSource(PWMSOURCEFENV);
             this->setPwmMixerAFEnv(this->getPwmAmtA());
@@ -250,7 +250,7 @@ class VoiceGroup {
     void setPWA(float valuePwA, float valuePwmAmtA) {
         pwA = valuePwA;
         pwmAmtA = valuePwmAmtA;
-        if (pwmRate == -10) {
+        if (pwmRate == PWMRATE_PW_MODE) {
             //fixed PW is enabled
             this->setPwmMixerALFO(0);
             this->setPwmMixerBLFO(0);
@@ -280,7 +280,7 @@ class VoiceGroup {
     void setPWB(float valuePwA, float valuePwmAmtA) {
         pwB = valuePwA;
         pwmAmtB = valuePwmAmtA;
-        if (pwmRate == -10) {
+        if (pwmRate == PWMRATE_PW_MODE) {
             //fixed PW is enabled
             this->setPwmMixerALFO(0);
             this->setPwmMixerBLFO(0);
@@ -315,14 +315,14 @@ class VoiceGroup {
             this->setPwmMixerBFEnv(0);
 
             //Set LFO mod
-            if (pwmRate > -5) {
+            if (pwmRate > PWMRATE_SOURCE_FILTER_ENV) {
                 this->setPwmMixerALFO(pwmAmtA);//Set LFO mod
                 this->setPwmMixerBLFO(pwmAmtB);//Set LFO mod
             }
         } else {
             this->setPwmMixerALFO(0);//Set LFO mod to zero
             this->setPwmMixerBLFO(0);//Set LFO mod to zero
-            if (pwmRate > -5) {
+            if (pwmRate > PWMRATE_SOURCE_FILTER_ENV) {
                 this->setPwmMixerAFEnv(pwmAmtA);//Set filter mod
                 this->setPwmMixerBFEnv(pwmAmtB);//Set filter mod
             }
