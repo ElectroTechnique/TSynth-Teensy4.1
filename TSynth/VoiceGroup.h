@@ -62,6 +62,8 @@ class VoiceGroup {
     float filterLfoRate;
     float filterLfoAmt;
     uint8_t filterLfoWaveform;
+    float pinkLevel;
+    float whiteLevel;
 
     struct noteStackData {
         uint8_t note;
@@ -105,7 +107,9 @@ class VoiceGroup {
             ampRelease(300.0),
             filterLfoRate(2.0),
             filterLfoAmt(0.0),
-            filterLfoWaveform(WAVEFORM_SINE)
+            filterLfoWaveform(WAVEFORM_SINE),
+            pinkLevel(0),
+            whiteLevel(0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -151,6 +155,8 @@ class VoiceGroup {
     float getFilterLfoRate()        { return filterLfoRate; }
     float getFilterLfoAmt()         { return filterLfoAmt; }
     uint32_t getFilterLfoWaveform() { return filterLfoWaveform; }
+    float getPinkNoiseLevel()       { return pinkLevel; }
+    float getWhiteNoiseLevel()      { return whiteLevel; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -566,13 +572,35 @@ class VoiceGroup {
         VG_FOR_EACH_OSC(filterLfo_.begin(filterLfoWaveform))
     }
 
+    void setPinkNoiseLevel(float value) {
+        pinkLevel = value;
+        float gain;
+        if (_params.unisonMode == 0) gain = 1.0;
+        else                         gain = UNISONNOISEMIXERLEVEL;
+        VG_FOR_EACH_OSC(noiseMixer_.gain(0, pinkLevel * gain))
+    }
+
+    void setWhiteNoiseLevel(float value) {
+        whiteLevel = value;
+        float gain;
+        if (_params.unisonMode == 0) gain = 1.0;
+        else                         gain = UNISONNOISEMIXERLEVEL;
+        VG_FOR_EACH_OSC(noiseMixer_.gain(1, whiteLevel * gain))
+    }
+
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
     }
 
     void setUnisonMode(uint8_t mode) {
+        if (mode == 0) allNotesOff();
+
         this->_params.unisonMode = mode;
         this->notesOn = 0;
+
+        // Update noise gain
+        setPinkNoiseLevel(pinkLevel);
+        setWhiteNoiseLevel(whiteLevel);
     }
 
     void setFilterLfoMidiClockSync(bool value) {

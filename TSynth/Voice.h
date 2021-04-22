@@ -31,6 +31,9 @@ class Voice {
 
     public:
         Voice(Patch& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i) {
+            p.noiseMixer_.gain(0, 0);
+            p.noiseMixer_.gain(1, 0);
+            
             p.waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
             p.waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, WAVEFORM_SQUARE);
             p.waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
@@ -87,7 +90,7 @@ class Voice {
             if (params.filterLfoRetrig) {
                 osc.filterLfo_.sync();
             }
-            
+
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
             osc.voiceMixer_.gain(this->_idx % 4, VELOCITY[velocitySens][velocity] * params.mixerLevel);
             osc.filterEnvelope_.noteOn();

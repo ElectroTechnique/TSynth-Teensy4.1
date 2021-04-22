@@ -197,6 +197,9 @@ FLASHMEM void setup() {
   pwmLfoB.begin(PWMWAVEFORM);
   pwmLfoB.phase(10.0f);//Off set phase of second osc
 
+  pink.amplitude(ONE);
+  white.amplitude(ONE);
+
   voiceMixerM.gain(0, VOICEMIXERLEVEL);
   voiceMixerM.gain(1, VOICEMIXERLEVEL);
   voiceMixerM.gain(2, VOICEMIXERLEVEL);
@@ -351,23 +354,15 @@ FLASHMEM int getWaveformB(int value) {
 FLASHMEM void updateUnison(uint8_t unison) {
   voices.setUnisonMode(unison);
 
-  // TODO: These need to be split per oscillator?
   if (unison == 0) {
-    voices.allNotesOff();//Avoid hanging notes
-    noiseMixer.gain(0, ONE);
-    noiseMixer.gain(1, ONE);
     showCurrentParameterPage("Unison", "Off");
     pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, LOW);  // LED off
   } else if (unison == 1) {
-    noiseMixer.gain(0, UNISONNOISEMIXERLEVEL);
-    noiseMixer.gain(1, UNISONNOISEMIXERLEVEL);
     showCurrentParameterPage("Dyn. Unison", "On");
     pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   } else {
-    noiseMixer.gain(0, UNISONNOISEMIXERLEVEL);
-    noiseMixer.gain(1, UNISONNOISEMIXERLEVEL);
     showCurrentParameterPage("Chd. Unison", "On");
     analogWriteFrequency(UNISON_LED, 1);
     analogWrite(UNISON_LED, 127);
@@ -527,20 +522,22 @@ FLASHMEM void updateOscLevelB(float value) {
 }
 
 FLASHMEM void updateNoiseLevel(float value) {
-  // TODO: 12 of these.
-  noiseLevel = value;
+  float pink = 0.0;
+  float white = 0.0;
+  if (value > 0) {
+    pink = value;
+  } else if (value < 0) {
+    white = abs(value);
+  }
 
-  if (noiseLevel > 0) {
-    pink.amplitude(noiseLevel);
-    white.amplitude(0.0f);
-    showCurrentParameterPage("Noise Level", "Pink " + String(noiseLevel));
-  } else if (noiseLevel < 0) {
-    pink.amplitude(0.0f);
-    white.amplitude(abs(noiseLevel));
-    showCurrentParameterPage("Noise Level", "White " + String(abs(noiseLevel)));
+  voices.setPinkNoiseLevel(pink);
+  voices.setWhiteNoiseLevel(white);
+
+  if (value > 0) {
+    showCurrentParameterPage("Noise Level", "Pink " + String(value));
+  } else if (value < 0) {
+    showCurrentParameterPage("Noise Level", "White " + String(abs(value)));
   } else {
-    pink.amplitude(noiseLevel);
-    white.amplitude(noiseLevel);
     showCurrentParameterPage("Noise Level", "Off");
   }
 }
@@ -1114,7 +1111,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
-  return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(noiseLevel) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
+  return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(voices.getFilterLfoRate(), 5) + "," +
          voices.getFilterLfoRetrig() + "," + voices.getFilterLfoMidiClockSync() + "," + voices.getFilterLfoAmt() + "," + voices.getFilterLfoWaveform() + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);

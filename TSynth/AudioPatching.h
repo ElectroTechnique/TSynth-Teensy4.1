@@ -17,7 +17,6 @@ AudioOutputUSB           usbAudio;       //xy=3197,1821
 AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
 AudioSynthNoisePink      pink;           //xy=1462
 AudioSynthNoiseWhite     white;          //xy=1460
-AudioMixer4              noiseMixer;     //xy=1610
 AudioSynthWaveform       pwmLfoA;        //xy=92,208
 AudioSynthWaveform       pwmLfoB;        //xy=92,208
 AudioSynthWaveformDc     pwa;            //xy=305,1758
@@ -37,6 +36,19 @@ Oscilloscope             scope;
 AudioMixer4              effectMixerR;   //xy=2984,1823
 AudioMixer4              effectMixerL;   //xy=2985,1728
 AudioOutputI2S           i2s;            //xy=3190,1737
+
+AudioMixer4              noiseMixer1;  //xy=1207,621
+AudioMixer4              noiseMixer2;  //xy=1205,930
+AudioMixer4              noiseMixer3;  //xy=1189,1239
+AudioMixer4              noiseMixer4;  //xy=1198,1521
+AudioMixer4              noiseMixer5;  //xy=1198,1824
+AudioMixer4              noiseMixer6;  //xy=1195,2116
+AudioMixer4              noiseMixer7;  //xy=1191,2425
+AudioMixer4              noiseMixer8;  //xy=1198,2724
+AudioMixer4              noiseMixer9;  //xy=1199,3021
+AudioMixer4              noiseMixer10; //xy=1184,3326
+AudioMixer4              noiseMixer11; //xy=1190,3619
+AudioMixer4              noiseMixer12; //xy=1178,3928
 
 AudioSynthWaveform       filterLfo1;  //xy=1335,693
 AudioSynthWaveform       filterLfo2;  //xy=1342,997
@@ -338,18 +350,18 @@ AudioConnection          patchCord268(keytracking11, 0, filterModMixer11, 2);
 AudioConnection          patchCord269(keytracking12, 0, filterModMixer12, 2);
 
 
-AudioConnection          patchCord32(noiseMixer, 0, waveformMixer1, 2);
-AudioConnection          patchCord33(noiseMixer, 0, waveformMixer2, 2);
-AudioConnection          patchCord34(noiseMixer, 0, waveformMixer3, 2);
-AudioConnection          patchCord35(noiseMixer, 0, waveformMixer4, 2);
-AudioConnection          patchCord151(noiseMixer, 0, waveformMixer5, 2);
-AudioConnection          patchCord152(noiseMixer, 0, waveformMixer6, 2);
-AudioConnection          patchCord270(noiseMixer, 0, waveformMixer7, 2);
-AudioConnection          patchCord271(noiseMixer, 0, waveformMixer8, 2);
-AudioConnection          patchCord272(noiseMixer, 0, waveformMixer9, 2);
-AudioConnection          patchCord273(noiseMixer, 0, waveformMixer10, 2);
-AudioConnection          patchCord274(noiseMixer, 0, waveformMixer11, 2);
-AudioConnection          patchCord275(noiseMixer, 0, waveformMixer12, 2);
+AudioConnection          patchCord32(noiseMixer1, 0, waveformMixer1, 2);
+AudioConnection          patchCord33(noiseMixer2, 0, waveformMixer2, 2);
+AudioConnection          patchCord34(noiseMixer3, 0, waveformMixer3, 2);
+AudioConnection          patchCord35(noiseMixer4, 0, waveformMixer4, 2);
+AudioConnection          patchCord151(noiseMixer5, 0, waveformMixer5, 2);
+AudioConnection          patchCord152(noiseMixer6, 0, waveformMixer6, 2);
+AudioConnection          patchCord270(noiseMixer7, 0, waveformMixer7, 2);
+AudioConnection          patchCord271(noiseMixer8, 0, waveformMixer8, 2);
+AudioConnection          patchCord272(noiseMixer9, 0, waveformMixer9, 2);
+AudioConnection          patchCord273(noiseMixer10, 0, waveformMixer10, 2);
+AudioConnection          patchCord274(noiseMixer11, 0, waveformMixer11, 2);
+AudioConnection          patchCord275(noiseMixer12, 0, waveformMixer12, 2);
 
 
 AudioConnection          patchCord36(pwMixer1a, 0, waveformMod1a, 1);
@@ -705,8 +717,31 @@ AudioConnection          patchCord428(waveformMod12b, 0, oscModMixer12a, 3);
 AudioConnection          patchCord440(waveformMod12a, 0, oscModMixer12b, 3);
 
 //Noise
-AudioConnection          patchCord137(pink, 0, noiseMixer, 0);
-AudioConnection          patchCord138(white, 0, noiseMixer, 1);
+AudioConnection          patchCord452(pink, 0, noiseMixer1, 0);
+AudioConnection          patchCord453(pink, 0, noiseMixer2, 0);
+AudioConnection          patchCord454(pink, 0, noiseMixer3, 0);
+AudioConnection          patchCord455(pink, 0, noiseMixer4, 0);
+AudioConnection          patchCord456(pink, 0, noiseMixer5, 0);
+AudioConnection          patchCord457(pink, 0, noiseMixer6, 0);
+AudioConnection          patchCord458(pink, 0, noiseMixer7, 0);
+AudioConnection          patchCord459(pink, 0, noiseMixer8, 0);
+AudioConnection          patchCord460(pink, 0, noiseMixer9, 0);
+AudioConnection          patchCord461(pink, 0, noiseMixer10, 0);
+AudioConnection          patchCord462(pink, 0, noiseMixer11, 0);
+AudioConnection          patchCord463(pink, 0, noiseMixer12, 0);
+
+AudioConnection          patchCord137(white, 0, noiseMixer1, 1);
+AudioConnection          patchCord138(white, 0, noiseMixer2, 1);
+AudioConnection          patchCord442(white, 0, noiseMixer3, 1);
+AudioConnection          patchCord443(white, 0, noiseMixer4, 1);
+AudioConnection          patchCord444(white, 0, noiseMixer5, 1);
+AudioConnection          patchCord445(white, 0, noiseMixer6, 1);
+AudioConnection          patchCord446(white, 0, noiseMixer7, 1);
+AudioConnection          patchCord447(white, 0, noiseMixer8, 1);
+AudioConnection          patchCord448(white, 0, noiseMixer9, 1);
+AudioConnection          patchCord449(white, 0, noiseMixer10, 1);
+AudioConnection          patchCord450(white, 0, noiseMixer11, 1);
+AudioConnection          patchCord451(white, 0, noiseMixer12, 1);
 
 AudioConnection          patchCord197(voiceMixer1, 0, voiceMixerM, 0);
 AudioConnection          patchCord198(voiceMixer2, 0, voiceMixerM, 1);
@@ -745,6 +780,7 @@ struct Patch {
     AudioMixer4 &oscModMixer_a;
     AudioMixer4 &oscModMixer_b;
 
+    AudioMixer4 &noiseMixer_;
     AudioSynthWaveform &filterLfo_;
     AudioSynthWaveformModulated &waveformMod_a;
     AudioSynthWaveformModulated &waveformMod_b;
@@ -773,6 +809,7 @@ Patch Oscillators[12] = {
         keytracking1,
         oscModMixer1a,
         oscModMixer1b,
+        noiseMixer1,
         filterLfo1,
         waveformMod1a,
         waveformMod1b,
@@ -792,6 +829,7 @@ Patch Oscillators[12] = {
         keytracking2,
         oscModMixer2a,
         oscModMixer2b,
+        noiseMixer2,
         filterLfo2,
         waveformMod2a,
         waveformMod2b,
@@ -811,6 +849,7 @@ Patch Oscillators[12] = {
         keytracking3,
         oscModMixer3a,
         oscModMixer3b,
+        noiseMixer3,
         filterLfo3,
         waveformMod3a,
         waveformMod3b,
@@ -830,6 +869,7 @@ Patch Oscillators[12] = {
         keytracking4,
         oscModMixer4a,
         oscModMixer4b,
+        noiseMixer4,
         filterLfo4,
         waveformMod4a,
         waveformMod4b,
@@ -849,6 +889,7 @@ Patch Oscillators[12] = {
         keytracking5,
         oscModMixer5a,
         oscModMixer5b,
+        noiseMixer5,
         filterLfo5,
         waveformMod5a,
         waveformMod5b,
@@ -868,6 +909,7 @@ Patch Oscillators[12] = {
         keytracking6,
         oscModMixer6a,
         oscModMixer6b,
+        noiseMixer6,
         filterLfo6,
         waveformMod6a,
         waveformMod6b,
@@ -887,6 +929,7 @@ Patch Oscillators[12] = {
         keytracking7,
         oscModMixer7a,
         oscModMixer7b,
+        noiseMixer7,
         filterLfo7,
         waveformMod7a,
         waveformMod7b,
@@ -906,6 +949,7 @@ Patch Oscillators[12] = {
         keytracking8,
         oscModMixer8a,
         oscModMixer8b,
+        noiseMixer8,
         filterLfo8,
         waveformMod8a,
         waveformMod8b,
@@ -925,6 +969,7 @@ Patch Oscillators[12] = {
         keytracking9,
         oscModMixer9a,
         oscModMixer9b,
+        noiseMixer9,
         filterLfo9,
         waveformMod9a,
         waveformMod9b,
@@ -944,6 +989,7 @@ Patch Oscillators[12] = {
         keytracking10,
         oscModMixer10a,
         oscModMixer10b,
+        noiseMixer10,
         filterLfo10,
         waveformMod10a,
         waveformMod10b,
@@ -963,6 +1009,7 @@ Patch Oscillators[12] = {
         keytracking11,
         oscModMixer11a,
         oscModMixer11b,
+        noiseMixer11,
         filterLfo11,
         waveformMod11a,
         waveformMod11b,
@@ -982,6 +1029,7 @@ Patch Oscillators[12] = {
         keytracking12,
         oscModMixer12a,
         oscModMixer12b,
+        noiseMixer12,
         filterLfo12,
         waveformMod12a,
         waveformMod12b,
