@@ -966,7 +966,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCfiltersustain:
-      updateFilterSustain(ENVTIMES[value]);
+      updateFilterSustain(LINEAR[value]);
       break;
 
     case CCfilterrelease:
@@ -982,7 +982,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCampsustain:
-      updateSustain(ENVTIMES[value]);
+      updateSustain(LINEAR[value]);
       break;
 
     case CCamprelease:
