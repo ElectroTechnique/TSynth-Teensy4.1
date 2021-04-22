@@ -191,12 +191,6 @@ FLASHMEM void setup() {
   voiceMixerM.gain(2, 0.25f);
   voiceMixerM.gain(3, 0.25f);
 
-  pwmLfoA.amplitude(ONE);
-  pwmLfoA.begin(PWMWAVEFORM);
-  pwmLfoB.amplitude(ONE);
-  pwmLfoB.begin(PWMWAVEFORM);
-  pwmLfoB.phase(10.0f);//Off set phase of second osc
-
   pink.amplitude(ONE);
   white.amplitude(ONE);
 

@@ -203,9 +203,10 @@ class VoiceGroup {
     void setPwmRate(float value) {
         pwmRate = value;
 
-        // TODO: 12 copies of this.
-        pwmLfoA.frequency(pwmRate);
-        pwmLfoB.frequency(pwmRate);
+        VG_FOR_EACH_VOICE(
+            voices[i]->patch().pwmLfoA_.frequency(pwmRate);
+            voices[i]->patch().pwmLfoB_.frequency(pwmRate);
+        )
 
         if (pwmRate == PWMRATE_PW_MODE) {
             //Set to fixed PW mode
