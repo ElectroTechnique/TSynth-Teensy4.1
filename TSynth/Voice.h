@@ -17,6 +17,7 @@ struct VoiceParams {
     float detune;
     int oscPitchA;
     int oscPitchB;
+    bool filterLfoRetrig;
 };
 
 class Voice {
@@ -30,6 +31,9 @@ class Voice {
 
     public:
         Voice(Patch& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i) {
+            p.noiseMixer_.gain(0, 0);
+            p.noiseMixer_.gain(1, 0);
+            
             p.waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
             p.waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, WAVEFORM_SQUARE);
             p.waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
@@ -38,6 +42,12 @@ class Voice {
             //Arbitary waveform needs initializing to something
             p.waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
             p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
+
+            p.pwmLfoA_.amplitude(ONE);
+            p.pwmLfoA_.begin(PWMWAVEFORM);
+            p.pwmLfoB_.amplitude(ONE);
+            p.pwmLfoB_.begin(PWMWAVEFORM);
+            p.pwmLfoB_.phase(10.0f);//Off set phase of second osc
         }
 
         inline uint8_t index() {
@@ -82,6 +92,11 @@ class Voice {
 
         void noteOn(uint8_t note, int velocity, VoiceParams &params, uint8_t notesOn) {
             Patch& osc = this->patch();
+
+            if (params.filterLfoRetrig) {
+                osc.filterLfo_.sync();
+            }
+
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
             osc.voiceMixer_.gain(this->_idx % 4, VELOCITY[velocitySens][velocity] * params.mixerLevel);
             osc.filterEnvelope_.noteOn();
