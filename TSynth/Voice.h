@@ -17,7 +17,6 @@ struct VoiceParams {
     float detune;
     int oscPitchA;
     int oscPitchB;
-    bool filterLfoRetrig;
 };
 
 class Voice {
@@ -92,10 +91,6 @@ class Voice {
 
         void noteOn(uint8_t note, int velocity, VoiceParams &params, uint8_t notesOn) {
             Patch& osc = this->patch();
-
-            if (params.filterLfoRetrig) {
-                osc.filterLfo_.sync();
-            }
 
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
             osc.voiceMixer_.gain(this->_idx % 4, VELOCITY[velocitySens][velocity] * params.mixerLevel);
