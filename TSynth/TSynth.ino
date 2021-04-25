@@ -239,7 +239,8 @@ void myNoteOn(byte channel, byte note, byte velocity) {
     return;
 
   if (oscLfoRetrig == 1) {
-    pitchLfo.sync();
+    //pitchLfo.sync();
+    SharedAudio[0].pitchLfo.sync();
   }
 
   voices.setMonophonic(monophonic);
@@ -584,7 +585,8 @@ FLASHMEM void updateKeyTracking(float value) {
 }
 
 FLASHMEM void updateOscLFOAmt() {
-  pitchLfo.amplitude(oscLfoAmt + modWhAmt);
+  //pitchLfo.amplitude(oscLfoAmt + modWhAmt);
+  SharedAudio[0].pitchLfo.amplitude(oscLfoAmt + modWhAmt);
   char buf[10];
   showCurrentParameterPage("LFO Amount", dtostrf(oscLfoAmt, 4, 3, buf));
 }
@@ -592,16 +594,19 @@ FLASHMEM void updateOscLFOAmt() {
 FLASHMEM void updateModWheel(float value) {
   // TODO: 12 of these?
   modWhAmt = value;
-  pitchLfo.amplitude(oscLfoAmt + modWhAmt);
+  //pitchLfo.amplitude(oscLfoAmt + modWhAmt);
+  SharedAudio[0].pitchLfo.amplitude(oscLfoAmt + modWhAmt);
 }
 
 FLASHMEM void updatePitchLFORate() {
-  pitchLfo.frequency(oscLfoRate);
+  //pitchLfo.frequency(oscLfoRate);
+  SharedAudio[0].pitchLfo.frequency(oscLfoRate);
   showCurrentParameterPage("LFO Rate", String(oscLfoRate) + " Hz");
 }
 
 FLASHMEM void updatePitchLFOWaveform() {
-  pitchLfo.begin(oscLFOWaveform);
+  //pitchLfo.begin(oscLFOWaveform);
+  SharedAudio[0].pitchLfo.begin(oscLFOWaveform);
   showCurrentParameterPage("Pitch LFO", getWaveformStr(oscLFOWaveform));
 }
 
@@ -723,7 +728,8 @@ FLASHMEM void updatePatch(String name, uint32_t index) {
 }
 
 void myPitchBend(byte channel, int bend) {
-  pitchBend.amplitude(bend * 0.5f * pitchBendRange * DIV12 * DIV8192); //)0.5 to give 1oct max - spread of mod is 2oct
+  //pitchBend.amplitude(bend * 0.5f * pitchBendRange * DIV12 * DIV8192); //)0.5 to give 1oct max - spread of mod is 2oct
+  SharedAudio[0].pitchBend.amplitude(bend * 0.5f * pitchBendRange * DIV12 * DIV8192);
 }
 
 void myControlChange(byte channel, byte control, byte value) {
@@ -749,12 +755,12 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCoscwaveformB:
       updateWaveformB(getWaveformB(value));
-      break;
-
-    case CCpitchA:
-      updatePitchA(PITCH[value]);
-      break;
-
+     
+     
+     
+     
+     
+     
     case CCpitchB:
       updatePitchB(PITCH[value]);
       break;
@@ -988,7 +994,8 @@ FLASHMEM void myMIDIClockStart() {
   //part of a track, such as in a DAW, the DAW must have same
   //rhythmic quantisation as Tempo Div.
   if (oscLFOMidiClkSync == 1) {
-    pitchLfo.sync();
+    //pitchLfo.sync();
+    SharedAudio[0].pitchLfo.sync();
   }
 
   // TODO: Apply to all voices. Maybe check channel?
@@ -1009,7 +1016,10 @@ FLASHMEM void myMIDIClock() {
     midiClkTimeInterval = (timeNow - previousMillis);
     lfoSyncFreq = 1000.0f / midiClkTimeInterval;
     previousMillis = timeNow;
-    if (oscLFOMidiClkSync == 1)pitchLfo.frequency(lfoSyncFreq * lfoTempoValue); //MIDI CC only
+    if (oscLFOMidiClkSync == 1) {
+      //pitchLfo.frequency(lfoSyncFreq * lfoTempoValue); //MIDI CC only
+      SharedAudio[0].pitchLfo.frequency(lfoSyncFreq * lfoTempoValue);
+    }
     //if (filterLFOMidiClkSync == 1){
     //  FOR_EACH_OSC(filterLfo_.frequency(lfoSyncFreq * lfoTempoValue));
     //}

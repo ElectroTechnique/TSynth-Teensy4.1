@@ -653,6 +653,8 @@ class VoiceGroup {
         // TODO: Below could be functions of the patch.
 
         // In case this was allocated before, delete it.
+        delete v->patch().pitchMixerAConnection;
+        delete v->patch().pitchMixerBConnection;
         delete v->patch().pwmLfoAConnection;
         delete v->patch().pwmLfoBConnection;
         delete v->patch().pwaConnection;
@@ -660,6 +662,8 @@ class VoiceGroup {
         delete v->patch().noiseMixerConnection;
         delete v->patch().filterLfoConnection;
 
+        v->patch().pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_a, 0);
+        v->patch().pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_b, 0);
         v->patch().pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, v->patch().pwMixer_a, 0);
         v->patch().pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, v->patch().pwMixer_b, 0);
         v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
