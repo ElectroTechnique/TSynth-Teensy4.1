@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.14
+  ElectroTechnique TSynth - Firmware Rev 2.15
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -296,7 +296,7 @@ void myNoteOn(byte channel, byte note, byte velocity) {
 
     if (unison == 2 || notesOn == 1) {
       for (uint8_t i = 0; i < NO_OF_VOICES; i++) {  
-        voiceOn(i, note, velocity, UNISONNOISEMIXERLEVEL);
+        voiceOn(i, note, velocity, UNISONVOICEMIXERLEVEL);
       }
     } else {
       // Note: This doesn't take into account notes that have been released.
@@ -311,23 +311,23 @@ void myNoteOn(byte channel, byte note, byte velocity) {
       // would need to be updated (or not).
       switch(notesOn) {
         case 2:
-          voiceOn(6, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(7, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(8, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(9, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(10, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(11, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(6, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(7, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(8, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(9, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(10, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(11, note, velocity, UNISONVOICEMIXERLEVEL);
           break;
         case 3:
-          voiceOn(4, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(5, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(6, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(7, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(4, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(5, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(6, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(7, note, velocity, UNISONVOICEMIXERLEVEL);
           break;
         case 4:
-          voiceOn(3, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(7, note, velocity, UNISONNOISEMIXERLEVEL);
-          voiceOn(8, note, velocity, UNISONNOISEMIXERLEVEL);
+          voiceOn(3, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(7, note, velocity, UNISONVOICEMIXERLEVEL);
+          voiceOn(8, note, velocity, UNISONVOICEMIXERLEVEL);
           break;
       }
     }
