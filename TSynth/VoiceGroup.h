@@ -59,6 +59,7 @@ class VoiceGroup {
     float ampDecay;
     float ampSustain;
     float ampRelease;
+    float filterLfoRetrig;
     float filterLfoRate;
     float filterLfoAmt;
     uint8_t filterLfoWaveform;
@@ -105,6 +106,7 @@ class VoiceGroup {
             ampDecay(35.0),
             ampSustain(1.0),
             ampRelease(300.0),
+            filterLfoRetrig(false),
             filterLfoRate(2.0),
             filterLfoAmt(0.0),
             filterLfoWaveform(WAVEFORM_SINE),
@@ -120,7 +122,7 @@ class VoiceGroup {
         _params.detune = 0;
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
-        _params.filterLfoRetrig = false;
+        filterLfoRetrig = false;
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -151,7 +153,7 @@ class VoiceGroup {
     float getAmpDecay()             { return ampDecay; }
     float getAmpSustain()           { return ampSustain; }
     float getAmpRelease()           { return ampRelease; }
-    bool getFilterLfoRetrig()       { return this->_params.filterLfoRetrig; }
+    bool getFilterLfoRetrig()       { return filterLfoRetrig; }
     float getFilterLfoRate()        { return filterLfoRate; }
     float getFilterLfoAmt()         { return filterLfoAmt; }
     uint32_t getFilterLfoWaveform() { return filterLfoWaveform; }
@@ -553,7 +555,7 @@ class VoiceGroup {
     }
 
     void setFilterLfoRetrig(bool value) {
-        _params.filterLfoRetrig = value;
+        filterLfoRetrig = value;
         VG_FOR_EACH_OSC(filterLfo_.sync())
     }
 
@@ -869,6 +871,11 @@ class VoiceGroup {
     }
 
     void noteOn(uint8_t note, uint8_t velocity, bool monoRetrigger) {
+
+        if (filterLfoRetrig) {
+            VG_FOR_EACH_OSC(filterLfo_.sync());
+        }
+
         switch (this->_params.unisonMode) {
             case 0:
                 this->_params.mixerLevel = VOICEMIXERLEVEL;
