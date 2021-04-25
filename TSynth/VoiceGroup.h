@@ -131,6 +131,12 @@ class VoiceGroup {
 
         shared.noiseMixer.gain(0, 0);
         shared.noiseMixer.gain(1, 0);
+
+        shared.pwmLfoA.amplitude(ONE);
+        shared.pwmLfoA.begin(PWMWAVEFORM);
+        shared.pwmLfoB.amplitude(ONE);
+        shared.pwmLfoB.begin(PWMWAVEFORM);
+        shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -213,10 +219,8 @@ class VoiceGroup {
     void setPwmRate(float value) {
         pwmRate = value;
 
-        VG_FOR_EACH_VOICE(
-            voices[i]->patch().pwmLfoA_.frequency(pwmRate);
-            voices[i]->patch().pwmLfoB_.frequency(pwmRate);
-        )
+        shared.pwmLfoA.frequency(pwmRate);
+        shared.pwmLfoB.frequency(pwmRate);
 
         if (pwmRate == PWMRATE_PW_MODE) {
             //Set to fixed PW mode
@@ -649,15 +653,19 @@ class VoiceGroup {
         // TODO: Below could be functions of the patch.
 
         // In case this was allocated before, delete it.
+        delete v->patch().pwmLfoAConnection;
+        delete v->patch().pwmLfoBConnection;
         delete v->patch().pwaConnection;
         delete v->patch().pwbConnection;
         delete v->patch().noiseMixerConnection;
-        //delete v->patch().filterLfoConnection;
+        delete v->patch().filterLfoConnection;
 
+        v->patch().pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, v->patch().pwMixer_a, 0);
+        v->patch().pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, v->patch().pwMixer_b, 0);
         v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
         v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
         v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
-        //v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
+        v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices

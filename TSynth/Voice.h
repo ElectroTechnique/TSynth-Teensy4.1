@@ -38,12 +38,6 @@ class Voice {
             //Arbitary waveform needs initializing to something
             p.waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
             p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
-
-            p.pwmLfoA_.amplitude(ONE);
-            p.pwmLfoA_.begin(PWMWAVEFORM);
-            p.pwmLfoB_.amplitude(ONE);
-            p.pwmLfoB_.begin(PWMWAVEFORM);
-            p.pwmLfoB_.phase(10.0f);//Off set phase of second osc
         }
 
         inline uint8_t index() {

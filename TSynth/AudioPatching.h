@@ -316,32 +316,9 @@ AudioConnection          patchCord231(constant1Dc, filterEnvelope10);
 AudioConnection          patchCord232(constant1Dc, filterEnvelope11);
 AudioConnection          patchCord233(constant1Dc, filterEnvelope12);
 
-AudioConnection          patchCord5(pwmLfoA1, 0, pwMixer1a, 0);
-AudioConnection          patchCord6(pwmLfoB1, 0, pwMixer1b, 0);
-AudioConnection          patchCord7(pwmLfoA2, 0, pwMixer2a, 0);
-AudioConnection          patchCord8(pwmLfoB2, 0, pwMixer2b, 0);
-AudioConnection          patchCord9(pwmLfoA3, 0, pwMixer3a, 0);
-AudioConnection          patchCord10(pwmLfoB3, 0, pwMixer3b, 0);
-AudioConnection          patchCord11(pwmLfoA4, 0, pwMixer4a, 0);
-AudioConnection          patchCord12(pwmLfoB4, 0, pwMixer4b, 0);
-AudioConnection          patchCord139(pwmLfoA5, 0, pwMixer5a, 0);
-AudioConnection          patchCord140(pwmLfoB5, 0, pwMixer5b, 0);
-AudioConnection          patchCord141(pwmLfoA6, 0, pwMixer6a, 0);
-AudioConnection          patchCord142(pwmLfoB6, 0, pwMixer6b, 0);
-AudioConnection          patchCord234(pwmLfoA7, 0, pwMixer7a, 0);
-AudioConnection          patchCord235(pwmLfoB7, 0, pwMixer7b, 0);
-AudioConnection          patchCord236(pwmLfoA8, 0, pwMixer8a, 0);
-AudioConnection          patchCord237(pwmLfoB8, 0, pwMixer8b, 0);
-AudioConnection          patchCord238(pwmLfoA9, 0, pwMixer9a, 0);
-AudioConnection          patchCord239(pwmLfoB9, 0, pwMixer9b, 0);
-AudioConnection          patchCord240(pwmLfoA10, 0, pwMixer10a, 0);
-AudioConnection          patchCord241(pwmLfoB10, 0, pwMixer10b, 0);
-AudioConnection          patchCord242(pwmLfoA11, 0, pwMixer11a, 0);
-AudioConnection          patchCord243(pwmLfoB11, 0, pwMixer11b, 0);
-AudioConnection          patchCord244(pwmLfoA12, 0, pwMixer12a, 0);
-AudioConnection          patchCord245(pwmLfoB12, 0, pwMixer12b, 0);
-
 // These are now dynamic.
+// pwmLfoA_ -> pwMixer_a, 0
+// pwmLfoB_ -> pwMixer_b, 0
 // pwa_ -> pwMixer_a
 // pwb_ -> pwMixer_b
 
@@ -768,8 +745,6 @@ struct Patch {
 
     AudioEffectEnvelope &filterEnvelope_; // 1-12
 
-    AudioSynthWaveform &pwmLfoA_;
-    AudioSynthWaveform &pwmLfoB_;
     AudioMixer4 &pwMixer_a;
     AudioMixer4 &pwMixer_b;
 
@@ -797,13 +772,17 @@ struct Patch {
     AudioEffectEnvelope &ampEnvelope_;
 
     // When added to a voice group, connect PWA/PWB.
+    AudioConnection *pwmLfoAConnection;
+    AudioConnection *pwmLfoBConnection;
+    AudioConnection *filterLfoConnection;
     AudioConnection *pwaConnection;
     AudioConnection *pwbConnection;
     AudioConnection *noiseMixerConnection;
-    AudioConnection *filterLfoConnection;
 };
 
 struct PatchShared {
+    AudioSynthWaveform &pwmLfoA;
+    AudioSynthWaveform &pwmLfoB;
     AudioSynthWaveform& filterLfo;
     AudioSynthWaveformDc& pwa;
     AudioSynthWaveformDc& pwb;
@@ -812,78 +791,104 @@ struct PatchShared {
 
 PatchShared SharedAudio[12] = {
     {
+        pwmLfoA1,
+        pwmLfoB1,
         filterLfo1,
         pwa1,
         pwb1,
         noiseMixer1
     },
     {
+        pwmLfoA2,
+        pwmLfoB2,
         filterLfo2,
         pwa2,
         pwb2,
         noiseMixer2
     },
     {
+        pwmLfoA3,
+        pwmLfoB3,
         filterLfo3,
         pwa3,
         pwb3,
         noiseMixer3
     },
     {
+        pwmLfoA4,
+        pwmLfoB4,
         filterLfo4,
         pwa4,
         pwb4,
         noiseMixer4
     },
     {
+        pwmLfoA5,
+        pwmLfoB5,
         filterLfo5,
         pwa5,
         pwb5,
         noiseMixer5
     },
     {
+        pwmLfoA6,
+        pwmLfoB6,
         filterLfo6,
         pwa6,
         pwb6,
         noiseMixer6
     },
     {
+        pwmLfoA7,
+        pwmLfoB7,
         filterLfo7,
         pwa7,
         pwb7,
         noiseMixer7
     },
     {
+        pwmLfoA8,
+        pwmLfoB8,
         filterLfo8,
         pwa8,
         pwb8,
         noiseMixer8
     },
     {
+        pwmLfoA9,
+        pwmLfoB9,
         filterLfo9,
         pwa9,
         pwb9,
         noiseMixer9
     },
     {
+        pwmLfoA10,
+        pwmLfoB10,
         filterLfo10,
         pwa10,
         pwb9,
         noiseMixer10
     },
     {
+        pwmLfoA11,
+        pwmLfoB11,
         filterLfo11,
         pwa11,
         pwb9,
         noiseMixer11
     },
     {
+        pwmLfoA12,
+        pwmLfoB12,
         filterLfo12,
         pwa12,
         pwb9,
         noiseMixer12
     }
 };
+
+
 //AudioSynthWaveform* filterLfo[12] = {&filterLfo1, &filterLfo2, &filterLfo}
 //AudioSynthWaveformDc* pwa[12] = {&pwa1, &pwa2, &pwa3, &pwa4, &pwa5, &pwa6, &pwa7, &pwa8, &pwa9, &pwa10, &pwa11, &pwa12 };
 //AudioSynthWaveformDc* pwb[12] = {&pwb1, &pwb2, &pwb3, &pwb4, &pwb5, &pwb6, &pwb7, &pwb8, &pwb9, &pwb10, &pwb11, &pwb12 };
@@ -894,8 +899,6 @@ Patch Oscillators[12] = {
     {
         voiceMixer1,
         filterEnvelope1,
-        pwmLfoA1,
-        pwmLfoB1,
         pwMixer1a,
         pwMixer1b,
         glide1,
@@ -914,13 +917,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer1,
         filterEnvelope2,
-        pwmLfoA2,
-        pwmLfoB2,
         pwMixer2a,
         pwMixer2b,
         glide2,
@@ -939,13 +942,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer1,
         filterEnvelope3,
-        pwmLfoA3,
-        pwmLfoB3,
         pwMixer3a,
         pwMixer3b,
         glide3,
@@ -964,13 +967,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer1,
         filterEnvelope4,
-        pwmLfoA4,
-        pwmLfoB4,
         pwMixer4a,
         pwMixer4b,
         glide4,
@@ -989,13 +992,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer2,
         filterEnvelope5,
-        pwmLfoA5,
-        pwmLfoB5,
         pwMixer5a,
         pwMixer5b,
         glide5,
@@ -1014,13 +1017,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer2,
         filterEnvelope6,
-        pwmLfoA6,
-        pwmLfoB6,
         pwMixer6a,
         pwMixer6b,
         glide6,
@@ -1039,13 +1042,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer2,
         filterEnvelope7,
-        pwmLfoA7,
-        pwmLfoB7,
         pwMixer7a,
         pwMixer7b,
         glide7,
@@ -1064,13 +1067,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer2,
         filterEnvelope8,
-        pwmLfoA8,
-        pwmLfoB8,
         pwMixer8a,
         pwMixer8b,
         glide8,
@@ -1089,13 +1092,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer3,
         filterEnvelope9,
-        pwmLfoA9,
-        pwmLfoB9,
         pwMixer9a,
         pwMixer9b,
         glide9,
@@ -1114,13 +1117,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer3,
         filterEnvelope10,
-        pwmLfoA10,
-        pwmLfoB10,
         pwMixer10a,
         pwMixer10b,
         glide10,
@@ -1139,13 +1142,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer3,
         filterEnvelope11,
-        pwmLfoA11,
-        pwmLfoB11,
         pwMixer11a,
         pwMixer11b,
         glide11,
@@ -1164,13 +1167,13 @@ Patch Oscillators[12] = {
         nullptr,
         nullptr,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
         voiceMixer3,
         filterEnvelope12,
-        pwmLfoA12,
-        pwmLfoB12,
         pwMixer12a,
         pwMixer12b,
         glide12,
@@ -1186,6 +1189,8 @@ Patch Oscillators[12] = {
         filter12,
         filterMixer12,
         ampEnvelope12,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr,
         nullptr,
