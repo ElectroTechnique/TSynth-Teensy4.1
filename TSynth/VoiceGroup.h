@@ -27,10 +27,15 @@ class VoiceGroup {
     String patchName;
     uint32_t patchIndex;
 
+    // Audio Objects
+    AudioSynthWaveformDc& pwa;
+    AudioSynthWaveformDc& pwb;
+    std::vector<Voice*> voices;
+
+    // Patch Configs
     bool midiClockSignal; // midiCC clock
     bool filterLfoMidiClockSync;
 
-    std::vector<Voice*> voices;
     VoiceParams _params;
     uint8_t notesOn;
     uint8_t monoNote;
@@ -75,9 +80,11 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(): 
+    VoiceGroup(AudioSynthWaveformDc& pwa_, AudioSynthWaveformDc& pwb_): 
             patchName(""),
             patchIndex(0),
+            pwa(pwa_),
+            pwb(pwb_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
             notesOn(0),
@@ -299,7 +306,7 @@ class VoiceGroup {
         float pwA_Adj = pwA;
         if (pwA > 0.98) pwA_Adj = 0.98f;
         if (pwA < -0.98) pwA_Adj = -0.98f;
-        VG_FOR_EACH_OSC(pwa_.amplitude(pwA_Adj))
+        pwa.amplitude(pwA_Adj);
     }
 
     void setPWB(float valuePwA, float valuePwmAmtA) {
@@ -329,7 +336,7 @@ class VoiceGroup {
         float pwB_Adj = pwB;
         if (pwB > 0.98) pwB_Adj = 0.98f;
         if (pwB < -0.98) pwB_Adj = -0.98f;
-        VG_FOR_EACH_OSC(pwb_.amplitude(pwB_Adj))
+        pwb.amplitude(pwB_Adj);
     }
 
     void setPWMSource(uint8_t value) {
@@ -637,6 +644,13 @@ class VoiceGroup {
 
     void add(Voice* v) {
         voices.push_back(v);
+
+        // In case this was allocated before, delete it.
+        delete v->patch().pwaConnection;
+        delete v->patch().pwbConnection;
+
+        v->patch().pwaConnection = new AudioConnection(pwa, 0, v->patch().pwMixer_a, 1);
+        v->patch().pwbConnection = new AudioConnection(pwb, 0, v->patch().pwMixer_b, 1);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices
