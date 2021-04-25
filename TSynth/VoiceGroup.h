@@ -34,6 +34,7 @@ class VoiceGroup {
     // Patch Configs
     bool midiClockSignal; // midiCC clock
     bool filterLfoMidiClockSync;
+    bool pitchLFOMidiClockSync;
 
     VoiceParams _params;
     uint8_t notesOn;
@@ -69,6 +70,12 @@ class VoiceGroup {
     uint8_t filterLfoWaveform;
     float pinkLevel;
     float whiteLevel;
+    uint8_t pitchLfoWaveform;
+    bool pitchLfoRetrig;
+    float pitchLfoAmount;
+    float pitchLfoRate;
+    float modWhAmount;
+
 
     struct noteStackData {
         uint8_t note;
@@ -85,6 +92,7 @@ class VoiceGroup {
             shared(shared_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
+            pitchLFOMidiClockSync(false),
             notesOn(0),
             monophonic(0),
             waveformA(WAVEFORM_SQUARE),
@@ -116,7 +124,12 @@ class VoiceGroup {
             filterLfoAmt(0.0),
             filterLfoWaveform(WAVEFORM_SINE),
             pinkLevel(0),
-            whiteLevel(0)
+            whiteLevel(0),
+            pitchLfoWaveform(WAVEFORM_SINE),
+            pitchLfoRetrig(false),
+            pitchLfoAmount(0),
+            pitchLfoRate(4.0),
+            modWhAmount(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -127,11 +140,11 @@ class VoiceGroup {
         _params.detune = 0;
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
-        filterLfoRetrig = false;
 
         shared.noiseMixer.gain(0, 0);
         shared.noiseMixer.gain(1, 0);
 
+        shared.pitchLfo.begin(WAVEFORM_SINE);
         shared.pwmLfoA.amplitude(ONE);
         shared.pwmLfoA.begin(PWMWAVEFORM);
         shared.pwmLfoB.amplitude(ONE);
@@ -142,6 +155,7 @@ class VoiceGroup {
     inline uint8_t size()           { return this->voices.size(); }
     inline String getPatchName()    { return this->patchName; }
     bool getFilterLfoMidiClockSync(){ return filterLfoMidiClockSync; }
+    bool getPitchLfoMidiClockSync() { return pitchLFOMidiClockSync; }
     inline uint32_t getPatchIndex() { return this->patchIndex; }
     uint32_t getWaveformA()         { return waveformA; }
     uint32_t getWaveformB()         { return waveformB; }
@@ -173,6 +187,12 @@ class VoiceGroup {
     uint32_t getFilterLfoWaveform() { return filterLfoWaveform; }
     float getPinkNoiseLevel()       { return pinkLevel; }
     float getWhiteNoiseLevel()      { return whiteLevel; }
+    bool getPitchLfoRetrig()        { return pitchLfoRetrig; }
+    uint32_t getPitchLfoWaveform()  { return pitchLfoWaveform; }
+    float getPitchLfoAmount()       { return pitchLfoAmount; }
+    float getPitchLfoRate()         { return pitchLfoRate; }
+    float getModWhAmount()          { return modWhAmount; }
+
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -603,6 +623,32 @@ class VoiceGroup {
         shared.noiseMixer.gain(1, whiteLevel * gain);
     }
 
+    void setPitchLfoRetrig(bool value) {
+        pitchLfoRetrig = value;
+        shared.pitchLfo.sync();
+    }
+
+    void setPitchLfoWaveform(uint32_t waveform) {
+        if (pitchLfoWaveform == waveform) return;
+        pitchLfoWaveform = waveform;
+        shared.pitchLfo.begin(waveform);
+    }
+
+    void setPitchLfoAmount(float value) {
+        pitchLfoAmount = value;
+        shared.pitchLfo.amplitude(value + modWhAmount);
+    }
+
+    void setPitchLfoRate(float value) {
+        pitchLfoRate = value;
+        shared.pitchLfo.frequency(value);
+    }
+
+    void setModWhAmount(float value) {
+        modWhAmount = value;
+        shared.pitchLfo.amplitude(value + pitchLfoAmount);
+    }
+
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
     }
@@ -620,6 +666,10 @@ class VoiceGroup {
 
     void setFilterLfoMidiClockSync(bool value) {
         filterLfoMidiClockSync = value;
+    }
+
+    void setPitchLfoMidiClockSync(bool value) {
+        pitchLFOMidiClockSync = value;
     }
 
     inline uint8_t unisonNotes() {
@@ -727,6 +777,10 @@ class VoiceGroup {
         }
     }
 
+    void pitchBend(float amount) {
+        shared.pitchLfo.amplitude(amount);
+    }
+
     void midiClockStart() {
         midiClockSignal = true;
         VG_FOR_EACH_OSC(filterLfo_.sync())
@@ -741,6 +795,10 @@ class VoiceGroup {
 
         if (filterLfoMidiClockSync) {
             VG_FOR_EACH_OSC(filterLfo_.frequency(frequency))
+        }
+
+        if (pitchLFOMidiClockSync) {
+            shared.pitchLfo.frequency(frequency);
         }
     }
 

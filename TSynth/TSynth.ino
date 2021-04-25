@@ -238,11 +238,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   if (note + voices.params().oscPitchA < 0 || note + voices.params().oscPitchA > 127 || note + voices.params().oscPitchB < 0 || note + voices.params().oscPitchB > 127)
     return;
 
-  if (oscLfoRetrig == 1) {
-    //pitchLfo.sync();
-    SharedAudio[0].pitchLfo.sync();
-  }
-
   voices.setMonophonic(monophonic);
 
   voices.noteOn(note, velocity);
@@ -297,11 +292,6 @@ FLASHMEM String getWaveformStr(int value) {
     default:
       return F("ERR_WAVE");
   }
-}
-
-FLASHMEM float getLFOTempoRate(int value) {
-  lfoTempoValue = LFOTEMPO[value];
-  return lfoSyncFreq * LFOTEMPO[value];
 }
 
 FLASHMEM int getWaveformA(int value) {
@@ -584,35 +574,30 @@ FLASHMEM void updateKeyTracking(float value) {
   showCurrentParameterPage("Key Tracking", String(value));
 }
 
-FLASHMEM void updateOscLFOAmt() {
-  //pitchLfo.amplitude(oscLfoAmt + modWhAmt);
-  SharedAudio[0].pitchLfo.amplitude(oscLfoAmt + modWhAmt);
+FLASHMEM void updatePitchLFOAmt(float value) {
+  voices.setPitchLfoAmount(value);
   char buf[10];
-  showCurrentParameterPage("LFO Amount", dtostrf(oscLfoAmt, 4, 3, buf));
+  showCurrentParameterPage("LFO Amount", dtostrf(value, 4, 3, buf));
 }
 
 FLASHMEM void updateModWheel(float value) {
-  // TODO: 12 of these?
-  modWhAmt = value;
-  //pitchLfo.amplitude(oscLfoAmt + modWhAmt);
-  SharedAudio[0].pitchLfo.amplitude(oscLfoAmt + modWhAmt);
+  voices.setModWhAmount(value);
 }
 
-FLASHMEM void updatePitchLFORate() {
-  //pitchLfo.frequency(oscLfoRate);
-  SharedAudio[0].pitchLfo.frequency(oscLfoRate);
-  showCurrentParameterPage("LFO Rate", String(oscLfoRate) + " Hz");
+FLASHMEM void updatePitchLFORate(float value) {
+  voices.setPitchLfoRate(value);
+  showCurrentParameterPage("LFO Rate", String(value) + " Hz");
 }
 
-FLASHMEM void updatePitchLFOWaveform() {
-  //pitchLfo.begin(oscLFOWaveform);
-  SharedAudio[0].pitchLfo.begin(oscLFOWaveform);
-  showCurrentParameterPage("Pitch LFO", getWaveformStr(oscLFOWaveform));
+FLASHMEM void updatePitchLFOWaveform(uint32_t waveform) {
+  voices.setPitchLfoWaveform(waveform);
+  showCurrentParameterPage("Pitch LFO", getWaveformStr(waveform));
 }
 
 //MIDI CC only
-FLASHMEM void updatePitchLFOMidiClkSync() {
-  showCurrentParameterPage("P. LFO Sync", oscLFOMidiClkSync == 1 ? "On" : "Off");
+FLASHMEM void updatePitchLFOMidiClkSync(bool value) {
+  voices.setPitchLfoMidiClockSync(value);
+  showCurrentParameterPage("P. LFO Sync", value ? "On" : "Off");
 }
 
 FLASHMEM void updateFilterLfoRate(float value, String timeDivStr) {
@@ -635,8 +620,9 @@ FLASHMEM void updateFilterLFOWaveform(uint32_t waveform) {
   showCurrentParameterPage("Filter LFO", getWaveformStr(waveform));
 }
 
-FLASHMEM void updatePitchLFORetrig() {
-  showCurrentParameterPage("P. LFO Retrig", oscLfoRetrig == 1 ? "On" : "Off");
+FLASHMEM void updatePitchLFORetrig(bool value) {
+  voices.setPitchLfoRetrig(value);
+  showCurrentParameterPage("P. LFO Retrig", value ? "On" : "Off");
 }
 
 FLASHMEM void updateFilterLFORetrig(bool value) {
@@ -728,8 +714,8 @@ FLASHMEM void updatePatch(String name, uint32_t index) {
 }
 
 void myPitchBend(byte channel, int bend) {
-  //pitchBend.amplitude(bend * 0.5f * pitchBendRange * DIV12 * DIV8192); //)0.5 to give 1oct max - spread of mod is 2oct
-  SharedAudio[0].pitchBend.amplitude(bend * 0.5f * pitchBendRange * DIV12 * DIV8192);
+  // 0.5 to give 1oct max - spread of mod is 2oct
+  voices.pitchBend(bend * 0.5f * pitchBendRange * DIV12 * DIV8192);
 }
 
 void myControlChange(byte channel, byte control, byte value) {
@@ -846,34 +832,36 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCosclfoamt:
       //Pick up
       if (!pickUpActive && pickUp && (oscLfoAmtPrevValue <  POWER[value - TOLERANCE] || oscLfoAmtPrevValue >  POWER[value + TOLERANCE])) return; //PICK-UP
-      oscLfoAmt = POWER[value];
-      updateOscLFOAmt();
-      oscLfoAmtPrevValue = oscLfoAmt;//PICK-UP
+
+      updatePitchLFOAmt(POWER[value]);
+      oscLfoAmtPrevValue = POWER[value];//PICK-UP
       break;
 
-    case CCoscLfoRate:
-      //Pick up
-      if (!pickUpActive && pickUp && (oscLfoRatePrevValue <  LFOMAXRATE * POWER[value - TOLERANCE] || oscLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE])) return; //PICK-UP
-      if (oscLFOMidiClkSync == 1) {
-        oscLfoRate = getLFOTempoRate(value);
-        oscLFOTimeDivStr = LFOTEMPOSTR[value];
-      }
-      else {
-        oscLfoRate = LFOMAXRATE * POWER[value];
-      }
-      updatePitchLFORate();
-      oscLfoRatePrevValue = oscLfoRate;//PICK-UP
-      break;
+    case CCoscLfoRate: {
+       //Pick up
+       if (!pickUpActive && pickUp && (oscLfoRatePrevValue <  LFOMAXRATE * POWER[value - TOLERANCE] || oscLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE])) return; //PICK-UP
+      
+      float rate = 0.0;
+      if (voices.getPitchLfoMidiClockSync()) {
+        // TODO: MIDI Tempo stuff remains global?
+        lfoTempoValue = LFOTEMPO[value];
+         oscLFOTimeDivStr = LFOTEMPOSTR[value];
+        rate = lfoSyncFreq * LFOTEMPO[value];
+       }
+       else {
+        rate = LFOMAXRATE * POWER[value];
+       }
+      updatePitchLFORate(rate);
+      oscLfoRatePrevValue = rate;//PICK-UP
+       break;
+    }
 
     case CCoscLfoWaveform:
-      if (oscLFOWaveform == getLFOWaveform(value))return;
-      oscLFOWaveform = getLFOWaveform(value);
-      updatePitchLFOWaveform();
+      updatePitchLFOWaveform(getLFOWaveform(value));
       break;
 
     case CCosclforetrig:
-      value > 0 ? oscLfoRetrig = 1 : oscLfoRetrig = 0;
-      updatePitchLFORetrig();
+      updatePitchLFORetrig(value > 0);
       break;
 
     case CCfilterLFOMidiClkSync:
@@ -887,7 +875,8 @@ void myControlChange(byte channel, byte control, byte value) {
       float rate;
       String timeDivStr = "";
       if (voices.getFilterLfoMidiClockSync()) {
-        rate = getLFOTempoRate(value);
+        lfoTempoValue = LFOTEMPO[value];
+        rate = lfoSyncFreq * LFOTEMPO[value];
         timeDivStr = LFOTEMPOSTR[value];
       } else {
         rate = LFOMAXRATE * POWER[value];
@@ -916,8 +905,7 @@ void myControlChange(byte channel, byte control, byte value) {
 
     //MIDI Only
     case CCoscLFOMidiClkSync:
-      value > 0 ? oscLFOMidiClkSync = 1 : oscLFOMidiClkSync = 0;
-      updatePitchLFOMidiClkSync();
+      updatePitchLFOMidiClkSync(value > 0);
       break;
 
     case CCfilterattack:
@@ -993,10 +981,6 @@ FLASHMEM void myMIDIClockStart() {
   //When there's a jump to a different
   //part of a track, such as in a DAW, the DAW must have same
   //rhythmic quantisation as Tempo Div.
-  if (oscLFOMidiClkSync == 1) {
-    //pitchLfo.sync();
-    SharedAudio[0].pitchLfo.sync();
-  }
 
   // TODO: Apply to all voices. Maybe check channel?
   voices.midiClockStart();
@@ -1008,7 +992,7 @@ FLASHMEM void myMIDIClockStop() {
 
 FLASHMEM void myMIDIClock() {
   //This recalculates the LFO frequencies if the tempo changes (MIDI cLock is 24ppq)
-  if ((oscLFOMidiClkSync == 1) && count > 23) {
+  if (count > 23) {
     // TODO: Most of this needs to move into the VoiceGroup
 
     MIDIClkSignal = !MIDIClkSignal;
@@ -1016,17 +1000,11 @@ FLASHMEM void myMIDIClock() {
     midiClkTimeInterval = (timeNow - previousMillis);
     lfoSyncFreq = 1000.0f / midiClkTimeInterval;
     previousMillis = timeNow;
-    if (oscLFOMidiClkSync == 1) {
-      //pitchLfo.frequency(lfoSyncFreq * lfoTempoValue); //MIDI CC only
-      SharedAudio[0].pitchLfo.frequency(lfoSyncFreq * lfoTempoValue);
-    }
-    //if (filterLFOMidiClkSync == 1){
-    //  FOR_EACH_OSC(filterLfo_.frequency(lfoSyncFreq * lfoTempoValue));
-    //}
     voices.midiClock(lfoSyncFreq * lfoTempoValue);
     count = 0;
   }
-  if (count < 24) count++; //prevent eventual overflow
+
+  count++;
 }
 
 FLASHMEM void recallPatch(int patchNo) {
@@ -1051,6 +1029,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateUnison(data[4].toInt());
   updateOscFX(data[5].toInt());
   updateDetune(data[6].toFloat(), data[48].toInt());
+  // Why is this MIDI Clock stuff part of the patch??
   lfoSyncFreq = data[7].toInt();
   midiClkTimeInterval = data[8].toInt();
   lfoTempoValue = data[9].toFloat();
@@ -1071,13 +1050,13 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateFilterMixer(data[24].toFloat());
   filterMixPrevValue = data[24].toFloat(); //Pick-up
   updateFilterEnv(data[25].toFloat());
-  oscLfoAmt = data[26].toFloat();
-  oscLfoAmtPrevValue = oscLfoAmt;//PICK-UP
-  oscLfoRate = data[27].toFloat();
-  oscLfoRatePrevValue = oscLfoRate;//PICK-UP
-  oscLFOWaveform = data[28].toFloat();
-  oscLfoRetrig = data[29].toInt();
-  oscLFOMidiClkSync = data[30].toFloat(); //MIDI CC Only
+  updatePitchLFOAmt(data[26].toFloat());
+  oscLfoAmtPrevValue = data[26].toFloat();//PICK-UP
+  updatePitchLFORate(data[27].toFloat());
+  oscLfoRatePrevValue = data[27].toFloat();//PICK-UP
+  updatePitchLFOWaveform(data[28].toInt());
+  updatePitchLFORetrig(data[29].toInt() > 0);
+  updatePitchLFOMidiClkSync(data[30].toInt() > 0); // MIDI CC Only
   updateFilterLfoRate(data[31].toFloat(), "");
   filterLfoRatePrevValue = data[31].toFloat();//PICK-UP
   updateFilterLFORetrig(data[32].toInt() > 0);
@@ -1103,10 +1082,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateOscLFOAmt();
-  updatePitchLFORate();
-  updatePitchLFOWaveform();
-  //updatePitchLFOMidiClkSync(); // this doesn't do anything.
   updateFXAmt();
   updateFXMix();
   Serial.print(F("Set Patch: "));
@@ -1116,7 +1091,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
-         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(oscLfoAmt, 5) + "," + String(oscLfoRate, 5) + "," + String(oscLFOWaveform) + "," + String(oscLfoRetrig) + "," + String(oscLFOMidiClkSync) + "," + String(voices.getFilterLfoRate(), 5) + "," +
+         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(voices.getPitchLfoAmount(), 5) + "," + String(voices.getPitchLfoRate(), 5) + "," + String(voices.getPitchLfoWaveform()) + "," + String(int(voices.getPitchLfoRetrig())) + "," + String(int(voices.getPitchLfoMidiClockSync())) + "," + String(voices.getFilterLfoRate(), 5) + "," +
          voices.getFilterLfoRetrig() + "," + voices.getFilterLfoMidiClockSync() + "," + voices.getFilterLfoAmt() + "," + voices.getFilterLfoWaveform() + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
          String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
 }
