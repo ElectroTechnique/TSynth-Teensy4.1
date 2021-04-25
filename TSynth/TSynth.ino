@@ -77,7 +77,7 @@
 
 uint32_t state = PARAMETER;
 
-VoiceGroup voices{*pwa[0], *pwb[0], *noiseMixer[0]};
+VoiceGroup voices{SharedAudio[0]};
 
 #include "ST7735Display.h"
 

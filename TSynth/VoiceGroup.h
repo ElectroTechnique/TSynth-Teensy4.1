@@ -28,9 +28,7 @@ class VoiceGroup {
     uint32_t patchIndex;
 
     // Audio Objects
-    AudioSynthWaveformDc& pwa;
-    AudioSynthWaveformDc& pwb;
-    AudioMixer4& noiseMixer;
+    PatchShared &shared;
     std::vector<Voice*> voices;
 
     // Patch Configs
@@ -81,12 +79,10 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(AudioSynthWaveformDc& pwa_, AudioSynthWaveformDc& pwb_, AudioMixer4& noiseMixer_): 
+    VoiceGroup(PatchShared& shared_): 
             patchName(""),
             patchIndex(0),
-            pwa(pwa_),
-            pwb(pwb_),
-            noiseMixer(noiseMixer_),
+            shared(shared_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
             notesOn(0),
@@ -133,8 +129,8 @@ class VoiceGroup {
         _params.oscPitchB = 12;
         filterLfoRetrig = false;
 
-        noiseMixer.gain(0, 0);
-        noiseMixer.gain(1, 0);
+        shared.noiseMixer.gain(0, 0);
+        shared.noiseMixer.gain(1, 0);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -311,7 +307,7 @@ class VoiceGroup {
         float pwA_Adj = pwA;
         if (pwA > 0.98) pwA_Adj = 0.98f;
         if (pwA < -0.98) pwA_Adj = -0.98f;
-        pwa.amplitude(pwA_Adj);
+        shared.pwa.amplitude(pwA_Adj);
     }
 
     void setPWB(float valuePwA, float valuePwmAmtA) {
@@ -341,7 +337,7 @@ class VoiceGroup {
         float pwB_Adj = pwB;
         if (pwB > 0.98) pwB_Adj = 0.98f;
         if (pwB < -0.98) pwB_Adj = -0.98f;
-        pwb.amplitude(pwB_Adj);
+        shared.pwb.amplitude(pwB_Adj);
     }
 
     void setPWMSource(uint8_t value) {
@@ -592,7 +588,7 @@ class VoiceGroup {
         float gain;
         if (_params.unisonMode == 0) gain = 1.0;
         else                         gain = UNISONNOISEMIXERLEVEL;
-        noiseMixer.gain(0, pinkLevel * gain);
+        shared.noiseMixer.gain(0, pinkLevel * gain);
     }
 
     void setWhiteNoiseLevel(float value) {
@@ -600,7 +596,7 @@ class VoiceGroup {
         float gain;
         if (_params.unisonMode == 0) gain = 1.0;
         else                         gain = UNISONNOISEMIXERLEVEL;
-        noiseMixer.gain(1, whiteLevel * gain);
+        shared.noiseMixer.gain(1, whiteLevel * gain);
     }
 
     inline void setMonophonic(uint8_t mode) {
@@ -656,10 +652,12 @@ class VoiceGroup {
         delete v->patch().pwaConnection;
         delete v->patch().pwbConnection;
         delete v->patch().noiseMixerConnection;
+        //delete v->patch().filterLfoConnection;
 
-        v->patch().pwaConnection = new AudioConnection(pwa, 0, v->patch().pwMixer_a, 1);
-        v->patch().pwbConnection = new AudioConnection(pwb, 0, v->patch().pwMixer_b, 1);
-        v->patch().noiseMixerConnection = new AudioConnection(noiseMixer, 0, v->patch().waveformMixer_, 2);
+        v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
+        v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
+        v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
+        //v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices

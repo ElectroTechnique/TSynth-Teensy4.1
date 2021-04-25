@@ -348,20 +348,6 @@ AudioConnection          patchCord245(pwmLfoB12, 0, pwMixer12b, 0);
 AudioConnection          patchCord21(pitchLfo, 0, oscGlobalModMixer, 1);
 AudioConnection          patchCord23(pitchBend, 0, oscGlobalModMixer, 0);
 
-AudioConnection          patchCord24(filterLfo1, 0, filterModMixer1, 1);
-AudioConnection          patchCord25(filterLfo2, 0, filterModMixer2, 1);
-AudioConnection          patchCord26(filterLfo3, 0, filterModMixer3, 1);
-AudioConnection          patchCord27(filterLfo4, 0, filterModMixer4, 1);
-AudioConnection          patchCord147(filterLfo5, 0, filterModMixer5, 1);
-AudioConnection          patchCord148(filterLfo6, 0, filterModMixer6, 1);
-AudioConnection          patchCord258(filterLfo7, 0, filterModMixer7, 1);
-AudioConnection          patchCord259(filterLfo8, 0, filterModMixer8, 1);
-AudioConnection          patchCord260(filterLfo9, 0, filterModMixer9, 1);
-AudioConnection          patchCord261(filterLfo10, 0, filterModMixer10, 1);
-AudioConnection          patchCord262(filterLfo11, 0, filterModMixer11, 1);
-AudioConnection          patchCord263(filterLfo12, 0, filterModMixer12, 1);
-
-
 AudioConnection          patchCord28(keytracking1, 0, filterModMixer1, 2);
 AudioConnection          patchCord29(keytracking2, 0, filterModMixer2, 2);
 AudioConnection          patchCord30(keytracking3, 0, filterModMixer3, 2);
@@ -814,11 +800,94 @@ struct Patch {
     AudioConnection *pwaConnection;
     AudioConnection *pwbConnection;
     AudioConnection *noiseMixerConnection;
+    AudioConnection *filterLfoConnection;
 };
 
-AudioSynthWaveformDc* pwa[12] = {&pwa1, &pwa2, &pwa3, &pwa4, &pwa5, &pwa6, &pwa7, &pwa8, &pwa9, &pwa10, &pwa11, &pwa12 };
-AudioSynthWaveformDc* pwb[12] = {&pwb1, &pwb2, &pwb3, &pwb4, &pwb5, &pwb6, &pwb7, &pwb8, &pwb9, &pwb10, &pwb11, &pwb12 };
-AudioMixer4* noiseMixer[12] = {&noiseMixer1, &noiseMixer2, &noiseMixer3, &noiseMixer4, &noiseMixer5, &noiseMixer6, &noiseMixer7, &noiseMixer8, &noiseMixer9, &noiseMixer10, &noiseMixer11, &noiseMixer12 };
+struct PatchShared {
+    AudioSynthWaveform& filterLfo;
+    AudioSynthWaveformDc& pwa;
+    AudioSynthWaveformDc& pwb;
+    AudioMixer4& noiseMixer;
+};
+
+PatchShared SharedAudio[12] = {
+    {
+        filterLfo1,
+        pwa1,
+        pwb1,
+        noiseMixer1
+    },
+    {
+        filterLfo2,
+        pwa2,
+        pwb2,
+        noiseMixer2
+    },
+    {
+        filterLfo3,
+        pwa3,
+        pwb3,
+        noiseMixer3
+    },
+    {
+        filterLfo4,
+        pwa4,
+        pwb4,
+        noiseMixer4
+    },
+    {
+        filterLfo5,
+        pwa5,
+        pwb5,
+        noiseMixer5
+    },
+    {
+        filterLfo6,
+        pwa6,
+        pwb6,
+        noiseMixer6
+    },
+    {
+        filterLfo7,
+        pwa7,
+        pwb7,
+        noiseMixer7
+    },
+    {
+        filterLfo8,
+        pwa8,
+        pwb8,
+        noiseMixer8
+    },
+    {
+        filterLfo9,
+        pwa9,
+        pwb9,
+        noiseMixer9
+    },
+    {
+        filterLfo10,
+        pwa10,
+        pwb9,
+        noiseMixer10
+    },
+    {
+        filterLfo11,
+        pwa11,
+        pwb9,
+        noiseMixer11
+    },
+    {
+        filterLfo12,
+        pwa12,
+        pwb9,
+        noiseMixer12
+    }
+};
+//AudioSynthWaveform* filterLfo[12] = {&filterLfo1, &filterLfo2, &filterLfo}
+//AudioSynthWaveformDc* pwa[12] = {&pwa1, &pwa2, &pwa3, &pwa4, &pwa5, &pwa6, &pwa7, &pwa8, &pwa9, &pwa10, &pwa11, &pwa12 };
+//AudioSynthWaveformDc* pwb[12] = {&pwb1, &pwb2, &pwb3, &pwb4, &pwb5, &pwb6, &pwb7, &pwb8, &pwb9, &pwb10, &pwb11, &pwb12 };
+//AudioMixer4* noiseMixer[12] = {&noiseMixer1, &noiseMixer2, &noiseMixer3, &noiseMixer4, &noiseMixer5, &noiseMixer6, &noiseMixer7, &noiseMixer8, &noiseMixer9, &noiseMixer10, &noiseMixer11, &noiseMixer12 };
 
 // The 12 oscillator pairs in one data structure to allow for easier programming.
 Patch Oscillators[12] = {
@@ -843,6 +912,8 @@ Patch Oscillators[12] = {
         filterMixer1,
         ampEnvelope1,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
@@ -865,6 +936,8 @@ Patch Oscillators[12] = {
         filter2,
         filterMixer2,
         ampEnvelope2,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr
     },
@@ -889,6 +962,8 @@ Patch Oscillators[12] = {
         filterMixer3,
         ampEnvelope3,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
@@ -911,6 +986,8 @@ Patch Oscillators[12] = {
         filter4,
         filterMixer4,
         ampEnvelope4,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr
     },
@@ -935,6 +1012,8 @@ Patch Oscillators[12] = {
         filterMixer5,
         ampEnvelope5,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
@@ -957,6 +1036,8 @@ Patch Oscillators[12] = {
         filter6,
         filterMixer6,
         ampEnvelope6,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr
     },
@@ -981,6 +1062,8 @@ Patch Oscillators[12] = {
         filterMixer7,
         ampEnvelope7,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
@@ -1003,6 +1086,8 @@ Patch Oscillators[12] = {
         filter8,
         filterMixer8,
         ampEnvelope8,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr
     },
@@ -1027,6 +1112,8 @@ Patch Oscillators[12] = {
         filterMixer9,
         ampEnvelope9,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
@@ -1049,6 +1136,8 @@ Patch Oscillators[12] = {
         filter10,
         filterMixer10,
         ampEnvelope10,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr
     },
@@ -1073,6 +1162,8 @@ Patch Oscillators[12] = {
         filterMixer11,
         ampEnvelope11,
         nullptr,
+        nullptr,
+        nullptr,
         nullptr
     },
     {
@@ -1095,6 +1186,8 @@ Patch Oscillators[12] = {
         filter12,
         filterMixer12,
         ampEnvelope12,
+        nullptr,
+        nullptr,
         nullptr,
         nullptr
     }
