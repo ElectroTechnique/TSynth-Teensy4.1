@@ -376,20 +376,6 @@ AudioConnection          patchCord268(keytracking11, 0, filterModMixer11, 2);
 AudioConnection          patchCord269(keytracking12, 0, filterModMixer12, 2);
 
 
-AudioConnection          patchCord32(noiseMixer1, 0, waveformMixer1, 2);
-AudioConnection          patchCord33(noiseMixer2, 0, waveformMixer2, 2);
-AudioConnection          patchCord34(noiseMixer3, 0, waveformMixer3, 2);
-AudioConnection          patchCord35(noiseMixer4, 0, waveformMixer4, 2);
-AudioConnection          patchCord151(noiseMixer5, 0, waveformMixer5, 2);
-AudioConnection          patchCord152(noiseMixer6, 0, waveformMixer6, 2);
-AudioConnection          patchCord270(noiseMixer7, 0, waveformMixer7, 2);
-AudioConnection          patchCord271(noiseMixer8, 0, waveformMixer8, 2);
-AudioConnection          patchCord272(noiseMixer9, 0, waveformMixer9, 2);
-AudioConnection          patchCord273(noiseMixer10, 0, waveformMixer10, 2);
-AudioConnection          patchCord274(noiseMixer11, 0, waveformMixer11, 2);
-AudioConnection          patchCord275(noiseMixer12, 0, waveformMixer12, 2);
-
-
 AudioConnection          patchCord36(pwMixer1a, 0, waveformMod1a, 1);
 AudioConnection          patchCord37(pwMixer1b, 0, waveformMod1b, 1);
 AudioConnection          patchCord38(pwMixer3b, 0, waveformMod3b, 1);
@@ -808,7 +794,6 @@ struct Patch {
     AudioMixer4 &oscModMixer_a;
     AudioMixer4 &oscModMixer_b;
 
-    AudioMixer4 &noiseMixer_;
     AudioSynthWaveform &filterLfo_;
     AudioSynthWaveformModulated &waveformMod_a;
     AudioSynthWaveformModulated &waveformMod_b;
@@ -828,10 +813,12 @@ struct Patch {
     // When added to a voice group, connect PWA/PWB.
     AudioConnection *pwaConnection;
     AudioConnection *pwbConnection;
+    AudioConnection *noiseMixerConnection;
 };
 
 AudioSynthWaveformDc* pwa[12] = {&pwa1, &pwa2, &pwa3, &pwa4, &pwa5, &pwa6, &pwa7, &pwa8, &pwa9, &pwa10, &pwa11, &pwa12 };
 AudioSynthWaveformDc* pwb[12] = {&pwb1, &pwb2, &pwb3, &pwb4, &pwb5, &pwb6, &pwb7, &pwb8, &pwb9, &pwb10, &pwb11, &pwb12 };
+AudioMixer4* noiseMixer[12] = {&noiseMixer1, &noiseMixer2, &noiseMixer3, &noiseMixer4, &noiseMixer5, &noiseMixer6, &noiseMixer7, &noiseMixer8, &noiseMixer9, &noiseMixer10, &noiseMixer11, &noiseMixer12 };
 
 // The 12 oscillator pairs in one data structure to allow for easier programming.
 Patch Oscillators[12] = {
@@ -846,7 +833,6 @@ Patch Oscillators[12] = {
         keytracking1,
         oscModMixer1a,
         oscModMixer1b,
-        noiseMixer1,
         filterLfo1,
         waveformMod1a,
         waveformMod1b,
@@ -870,7 +856,6 @@ Patch Oscillators[12] = {
         keytracking2,
         oscModMixer2a,
         oscModMixer2b,
-        noiseMixer2,
         filterLfo2,
         waveformMod2a,
         waveformMod2b,
@@ -894,7 +879,6 @@ Patch Oscillators[12] = {
         keytracking3,
         oscModMixer3a,
         oscModMixer3b,
-        noiseMixer3,
         filterLfo3,
         waveformMod3a,
         waveformMod3b,
@@ -918,7 +902,6 @@ Patch Oscillators[12] = {
         keytracking4,
         oscModMixer4a,
         oscModMixer4b,
-        noiseMixer4,
         filterLfo4,
         waveformMod4a,
         waveformMod4b,
@@ -942,7 +925,6 @@ Patch Oscillators[12] = {
         keytracking5,
         oscModMixer5a,
         oscModMixer5b,
-        noiseMixer5,
         filterLfo5,
         waveformMod5a,
         waveformMod5b,
@@ -966,7 +948,6 @@ Patch Oscillators[12] = {
         keytracking6,
         oscModMixer6a,
         oscModMixer6b,
-        noiseMixer6,
         filterLfo6,
         waveformMod6a,
         waveformMod6b,
@@ -990,7 +971,6 @@ Patch Oscillators[12] = {
         keytracking7,
         oscModMixer7a,
         oscModMixer7b,
-        noiseMixer7,
         filterLfo7,
         waveformMod7a,
         waveformMod7b,
@@ -1014,7 +994,6 @@ Patch Oscillators[12] = {
         keytracking8,
         oscModMixer8a,
         oscModMixer8b,
-        noiseMixer8,
         filterLfo8,
         waveformMod8a,
         waveformMod8b,
@@ -1038,7 +1017,6 @@ Patch Oscillators[12] = {
         keytracking9,
         oscModMixer9a,
         oscModMixer9b,
-        noiseMixer9,
         filterLfo9,
         waveformMod9a,
         waveformMod9b,
@@ -1062,7 +1040,6 @@ Patch Oscillators[12] = {
         keytracking10,
         oscModMixer10a,
         oscModMixer10b,
-        noiseMixer10,
         filterLfo10,
         waveformMod10a,
         waveformMod10b,
@@ -1086,7 +1063,6 @@ Patch Oscillators[12] = {
         keytracking11,
         oscModMixer11a,
         oscModMixer11b,
-        noiseMixer11,
         filterLfo11,
         waveformMod11a,
         waveformMod11b,
@@ -1110,7 +1086,6 @@ Patch Oscillators[12] = {
         keytracking12,
         oscModMixer12a,
         oscModMixer12b,
-        noiseMixer12,
         filterLfo12,
         waveformMod12a,
         waveformMod12b,

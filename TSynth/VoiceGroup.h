@@ -30,6 +30,7 @@ class VoiceGroup {
     // Audio Objects
     AudioSynthWaveformDc& pwa;
     AudioSynthWaveformDc& pwb;
+    AudioMixer4& noiseMixer;
     std::vector<Voice*> voices;
 
     // Patch Configs
@@ -80,11 +81,12 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(AudioSynthWaveformDc& pwa_, AudioSynthWaveformDc& pwb_): 
+    VoiceGroup(AudioSynthWaveformDc& pwa_, AudioSynthWaveformDc& pwb_, AudioMixer4& noiseMixer_): 
             patchName(""),
             patchIndex(0),
             pwa(pwa_),
             pwb(pwb_),
+            noiseMixer(noiseMixer_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
             notesOn(0),
@@ -130,6 +132,9 @@ class VoiceGroup {
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
         filterLfoRetrig = false;
+
+        noiseMixer.gain(0, 0);
+        noiseMixer.gain(1, 0);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -587,7 +592,7 @@ class VoiceGroup {
         float gain;
         if (_params.unisonMode == 0) gain = 1.0;
         else                         gain = UNISONNOISEMIXERLEVEL;
-        VG_FOR_EACH_OSC(noiseMixer_.gain(0, pinkLevel * gain))
+        noiseMixer.gain(0, pinkLevel * gain);
     }
 
     void setWhiteNoiseLevel(float value) {
@@ -595,7 +600,7 @@ class VoiceGroup {
         float gain;
         if (_params.unisonMode == 0) gain = 1.0;
         else                         gain = UNISONNOISEMIXERLEVEL;
-        VG_FOR_EACH_OSC(noiseMixer_.gain(1, whiteLevel * gain))
+        noiseMixer.gain(1, whiteLevel * gain);
     }
 
     inline void setMonophonic(uint8_t mode) {
@@ -645,12 +650,16 @@ class VoiceGroup {
     void add(Voice* v) {
         voices.push_back(v);
 
+        // TODO: Below could be functions of the patch.
+
         // In case this was allocated before, delete it.
         delete v->patch().pwaConnection;
         delete v->patch().pwbConnection;
+        delete v->patch().noiseMixerConnection;
 
         v->patch().pwaConnection = new AudioConnection(pwa, 0, v->patch().pwMixer_a, 1);
         v->patch().pwbConnection = new AudioConnection(pwb, 0, v->patch().pwMixer_b, 1);
+        v->patch().noiseMixerConnection = new AudioConnection(noiseMixer, 0, v->patch().waveformMixer_, 2);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices
