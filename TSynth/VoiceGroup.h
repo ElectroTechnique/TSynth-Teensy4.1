@@ -27,10 +27,15 @@ class VoiceGroup {
     String patchName;
     uint32_t patchIndex;
 
+    // Audio Objects
+    PatchShared &shared;
+    std::vector<Voice*> voices;
+
+    // Patch Configs
     bool midiClockSignal; // midiCC clock
     bool filterLfoMidiClockSync;
+    bool pitchLFOMidiClockSync;
 
-    std::vector<Voice*> voices;
     VoiceParams _params;
     uint8_t notesOn;
     uint8_t monoNote;
@@ -65,6 +70,12 @@ class VoiceGroup {
     uint8_t filterLfoWaveform;
     float pinkLevel;
     float whiteLevel;
+    uint8_t pitchLfoWaveform;
+    bool pitchLfoRetrig;
+    float pitchLfoAmount;
+    float pitchLfoRate;
+    float modWhAmount;
+
 
     struct noteStackData {
         uint8_t note;
@@ -75,11 +86,13 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(): 
+    VoiceGroup(PatchShared& shared_): 
             patchName(""),
             patchIndex(0),
+            shared(shared_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
+            pitchLFOMidiClockSync(false),
             notesOn(0),
             monophonic(0),
             waveformA(WAVEFORM_SQUARE),
@@ -111,7 +124,12 @@ class VoiceGroup {
             filterLfoAmt(0.0),
             filterLfoWaveform(WAVEFORM_SINE),
             pinkLevel(0),
-            whiteLevel(0)
+            whiteLevel(0),
+            pitchLfoWaveform(WAVEFORM_SINE),
+            pitchLfoRetrig(false),
+            pitchLfoAmount(0),
+            pitchLfoRate(4.0),
+            modWhAmount(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -122,12 +140,22 @@ class VoiceGroup {
         _params.detune = 0;
         _params.oscPitchA = 0;
         _params.oscPitchB = 12;
-        filterLfoRetrig = false;
+
+        shared.noiseMixer.gain(0, 0);
+        shared.noiseMixer.gain(1, 0);
+
+        shared.pitchLfo.begin(WAVEFORM_SINE);
+        shared.pwmLfoA.amplitude(ONE);
+        shared.pwmLfoA.begin(PWMWAVEFORM);
+        shared.pwmLfoB.amplitude(ONE);
+        shared.pwmLfoB.begin(PWMWAVEFORM);
+        shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
     }
 
     inline uint8_t size()           { return this->voices.size(); }
     inline String getPatchName()    { return this->patchName; }
     bool getFilterLfoMidiClockSync(){ return filterLfoMidiClockSync; }
+    bool getPitchLfoMidiClockSync() { return pitchLFOMidiClockSync; }
     inline uint32_t getPatchIndex() { return this->patchIndex; }
     uint32_t getWaveformA()         { return waveformA; }
     uint32_t getWaveformB()         { return waveformB; }
@@ -159,6 +187,12 @@ class VoiceGroup {
     uint32_t getFilterLfoWaveform() { return filterLfoWaveform; }
     float getPinkNoiseLevel()       { return pinkLevel; }
     float getWhiteNoiseLevel()      { return whiteLevel; }
+    bool getPitchLfoRetrig()        { return pitchLfoRetrig; }
+    uint32_t getPitchLfoWaveform()  { return pitchLfoWaveform; }
+    float getPitchLfoAmount()       { return pitchLfoAmount; }
+    float getPitchLfoRate()         { return pitchLfoRate; }
+    float getModWhAmount()          { return modWhAmount; }
+
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -205,10 +239,8 @@ class VoiceGroup {
     void setPwmRate(float value) {
         pwmRate = value;
 
-        VG_FOR_EACH_VOICE(
-            voices[i]->patch().pwmLfoA_.frequency(pwmRate);
-            voices[i]->patch().pwmLfoB_.frequency(pwmRate);
-        )
+        shared.pwmLfoA.frequency(pwmRate);
+        shared.pwmLfoB.frequency(pwmRate);
 
         if (pwmRate == PWMRATE_PW_MODE) {
             //Set to fixed PW mode
@@ -299,7 +331,7 @@ class VoiceGroup {
         float pwA_Adj = pwA;
         if (pwA > 0.98) pwA_Adj = 0.98f;
         if (pwA < -0.98) pwA_Adj = -0.98f;
-        VG_FOR_EACH_OSC(pwa_.amplitude(pwA_Adj))
+        shared.pwa.amplitude(pwA_Adj);
     }
 
     void setPWB(float valuePwA, float valuePwmAmtA) {
@@ -329,7 +361,7 @@ class VoiceGroup {
         float pwB_Adj = pwB;
         if (pwB > 0.98) pwB_Adj = 0.98f;
         if (pwB < -0.98) pwB_Adj = -0.98f;
-        VG_FOR_EACH_OSC(pwb_.amplitude(pwB_Adj))
+        shared.pwb.amplitude(pwB_Adj);
     }
 
     void setPWMSource(uint8_t value) {
@@ -580,7 +612,7 @@ class VoiceGroup {
         float gain;
         if (_params.unisonMode == 0) gain = 1.0;
         else                         gain = UNISONNOISEMIXERLEVEL;
-        VG_FOR_EACH_OSC(noiseMixer_.gain(0, pinkLevel * gain))
+        shared.noiseMixer.gain(0, pinkLevel * gain);
     }
 
     void setWhiteNoiseLevel(float value) {
@@ -588,7 +620,33 @@ class VoiceGroup {
         float gain;
         if (_params.unisonMode == 0) gain = 1.0;
         else                         gain = UNISONNOISEMIXERLEVEL;
-        VG_FOR_EACH_OSC(noiseMixer_.gain(1, whiteLevel * gain))
+        shared.noiseMixer.gain(1, whiteLevel * gain);
+    }
+
+    void setPitchLfoRetrig(bool value) {
+        pitchLfoRetrig = value;
+        shared.pitchLfo.sync();
+    }
+
+    void setPitchLfoWaveform(uint32_t waveform) {
+        if (pitchLfoWaveform == waveform) return;
+        pitchLfoWaveform = waveform;
+        shared.pitchLfo.begin(waveform);
+    }
+
+    void setPitchLfoAmount(float value) {
+        pitchLfoAmount = value;
+        shared.pitchLfo.amplitude(value + modWhAmount);
+    }
+
+    void setPitchLfoRate(float value) {
+        pitchLfoRate = value;
+        shared.pitchLfo.frequency(value);
+    }
+
+    void setModWhAmount(float value) {
+        modWhAmount = value;
+        shared.pitchLfo.amplitude(value + pitchLfoAmount);
     }
 
     inline void setMonophonic(uint8_t mode) {
@@ -608,6 +666,10 @@ class VoiceGroup {
 
     void setFilterLfoMidiClockSync(bool value) {
         filterLfoMidiClockSync = value;
+    }
+
+    void setPitchLfoMidiClockSync(bool value) {
+        pitchLFOMidiClockSync = value;
     }
 
     inline uint8_t unisonNotes() {
@@ -637,6 +699,27 @@ class VoiceGroup {
 
     void add(Voice* v) {
         voices.push_back(v);
+
+        // TODO: Below could be functions of the patch.
+
+        // In case this was allocated before, delete it.
+        delete v->patch().pitchMixerAConnection;
+        delete v->patch().pitchMixerBConnection;
+        delete v->patch().pwmLfoAConnection;
+        delete v->patch().pwmLfoBConnection;
+        delete v->patch().pwaConnection;
+        delete v->patch().pwbConnection;
+        delete v->patch().noiseMixerConnection;
+        delete v->patch().filterLfoConnection;
+
+        v->patch().pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_a, 0);
+        v->patch().pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_b, 0);
+        v->patch().pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, v->patch().pwMixer_a, 0);
+        v->patch().pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, v->patch().pwMixer_b, 0);
+        v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
+        v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
+        v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
+        v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices
@@ -694,6 +777,10 @@ class VoiceGroup {
         }
     }
 
+    void pitchBend(float amount) {
+        shared.pitchLfo.amplitude(amount);
+    }
+
     void midiClockStart() {
         midiClockSignal = true;
         VG_FOR_EACH_OSC(filterLfo_.sync())
@@ -708,6 +795,10 @@ class VoiceGroup {
 
         if (filterLfoMidiClockSync) {
             VG_FOR_EACH_OSC(filterLfo_.frequency(frequency))
+        }
+
+        if (pitchLFOMidiClockSync) {
+            shared.pitchLfo.frequency(frequency);
         }
     }
 
