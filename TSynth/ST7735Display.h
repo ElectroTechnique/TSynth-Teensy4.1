@@ -117,6 +117,8 @@ FLASHMEM void renderCurrentPatchPage() {
   //    3 B B B B O O O O Y Y Y Y
   //    4 B B B R O O O R R Y Y Y
 
+  VoiceGroup &voices = voices1;
+
   uint8_t notesOn = voices.unisonNotes();
   uint8_t unison = voices.params().unisonMode;
   //V4
@@ -191,7 +193,7 @@ FLASHMEM void renderCurrentPatchPage() {
 
   if (voices[ 9]->on())   tft.fillRect(127, 47, 8, 8, colour[9]); else tft.drawRect(127, 47, 8, 8, ST7735_BLUE);
   if (voices[10]->on())   tft.fillRect(137, 47, 8, 8, colour[10]); else tft.drawRect(137, 47, 8, 8, ST7735_BLUE);
-  if (voices[11]->on())   tft.fillRect(147, 47, 8, 8, colour[11]); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
+  //if (voices[11]->on())   tft.fillRect(147, 47, 8, 8, colour[11]); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
 
   tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans12pt7b);
@@ -253,6 +255,8 @@ FLASHMEM void renderCurrentParameterPage() {
         tft.fillCircle(150, 70, 5, ST77XX_DARKGREY);
         tft.drawFastHLine(146, 70, 4, ST7735_WHITE);
       }
+      /*
+      VoiceGroup &voices = *active;
       switch (paramType) {
         case PULSE:
           renderPulseWidth(currentFloatValue);
@@ -267,6 +271,7 @@ FLASHMEM void renderCurrentParameterPage() {
           renderEnv(voices.getAmpAttack() * 0.0001f, voices.getAmpDecay() * 0.0001f, voices.getAmpSustain(), voices.getAmpRelease() * 0.0001f);
           break;
       }
+      */
       break;
   }
 }

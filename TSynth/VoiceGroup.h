@@ -144,12 +144,18 @@ class VoiceGroup {
         shared.noiseMixer.gain(0, 0);
         shared.noiseMixer.gain(1, 0);
 
-        shared.pitchLfo.begin(WAVEFORM_SINE);
+        shared.pitchBend.amplitude(0.0);
+        shared.pitchLfo.begin(pitchLfoWaveform);
+        shared.pitchLfo.amplitude(pitchLfoAmount + modWhAmount);
+        shared.filterLfo.begin(filterLfoWaveform);
+        shared.filterLfo.amplitude(filterLfoAmt);
         shared.pwmLfoA.amplitude(ONE);
         shared.pwmLfoA.begin(PWMWAVEFORM);
         shared.pwmLfoB.amplitude(ONE);
         shared.pwmLfoB.begin(PWMWAVEFORM);
         shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
+        setPWA(pwA, pwmAmtA);
+        setPWB(pwB, pwmAmtB);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -933,12 +939,13 @@ class VoiceGroup {
 
     // Get the oldest free voice, of none free get the oldest active voice.
     Voice* getVoice() {
-        Voice* result = nullptr;
+        if (voices.size() == 0) return nullptr;
 
         //NoteOn() - Get the oldest free voice, or oldest on voice if all are on. (recent voices may be still on release stage)
-        for (uint8_t i = 0; i < voices.size(); i++) {
-            if (result == nullptr || !voices[i]->on() || result->on()) {
-                if (result == nullptr || voices[i]->timeOn() < result->timeOn()) {
+        Voice* result = voices[0];
+        for (uint8_t i = 1; i < voices.size(); i++) {
+            if (!voices[i]->on() || result->on()) {
+                if (voices[i]->timeOn() < result->timeOn()) {
                     result = voices[i];
                 }
             }
@@ -1000,7 +1007,7 @@ class VoiceGroup {
                         voices[8]->noteOn(note, velocity, this->_params, notesOn);
                         voices[9]->noteOn(note, velocity, this->_params, notesOn);
                         voices[10]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[11]->noteOn(note, velocity, this->_params, notesOn);
+                        //voices[11]->noteOn(note, velocity, this->_params, notesOn);
                         break;
                     case 3:
                         voices[4]->noteOn(note, velocity, this->_params, notesOn);
