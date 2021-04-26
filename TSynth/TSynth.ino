@@ -741,6 +741,7 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCoscwaveformB:
       updateWaveformB(getWaveformB(value));
+     break;
      
      case CCpitchA:
       updatePitchA(PITCH[value]);
