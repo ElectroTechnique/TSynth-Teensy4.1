@@ -742,10 +742,9 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCoscwaveformB:
       updateWaveformB(getWaveformB(value));
      
-     
-     
-     
-     
+     case CCpitchA:
+      updatePitchA(PITCH[value]);
+      break;    
      
     case CCpitchB:
       updatePitchB(PITCH[value]);
@@ -1642,5 +1641,5 @@ void loop() {
   checkMux();
   checkSwitches();
   checkEncoder();
-  //CPUMonitor();
+  CPUMonitor();
 }
