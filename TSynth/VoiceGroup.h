@@ -157,6 +157,8 @@ class VoiceGroup {
     bool getFilterLfoMidiClockSync(){ return filterLfoMidiClockSync; }
     bool getPitchLfoMidiClockSync() { return pitchLFOMidiClockSync; }
     inline uint32_t getPatchIndex() { return this->patchIndex; }
+    float getKeytrackingAmount()    { return this->_params.keytrackingAmount; }
+    uint8_t getMonophonicMode()     { return this->monophonic; }
     uint32_t getWaveformA()         { return waveformA; }
     uint32_t getWaveformB()         { return waveformB; }
     float getPitchEnvelope()        { return pitchEnvelope; }

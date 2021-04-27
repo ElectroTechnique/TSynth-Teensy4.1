@@ -93,16 +93,6 @@ FLASHMEM void storeBassEnhanceEnable(byte bassEnhanceEnable){
   EEPROM.update(EEPROM_BASSENHANCE_ENABLE, bassEnhanceEnable);
 }
 
-FLASHMEM uint8_t getMonophonic() {
-  byte me = EEPROM.read(EEPROM_MONOPHONIC); 
-  if (me < 1) return 0;
-  return me;
-}
-
-FLASHMEM void storeMonophonic(byte monophonic){
-  EEPROM.update(EEPROM_MONOPHONIC, monophonic);
-}
-
 FLASHMEM boolean getScopeEnable() {
   byte sc = EEPROM.read(EEPROM_SCOPE_ENABLE); 
   if (sc < 0 || sc > 1)return false; //If EEPROM has no scope enable stored

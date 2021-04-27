@@ -1,8 +1,8 @@
 //Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
 
 // Globals used for OLED Settings
-float keytrackingAmount = 0.5f; //Half - MIDI CC & settings option
-uint8_t monophonic;
+//float keytrackingAmount = 0.5f; //Half - MIDI CC & settings option
+//uint8_t monophonic;
 
 
 byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
