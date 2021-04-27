@@ -778,7 +778,7 @@ class VoiceGroup {
     }
 
     void pitchBend(float amount) {
-        shared.pitchLfo.amplitude(amount);
+        shared.pitchBend.amplitude(amount);
     }
 
     void midiClockStart() {
