@@ -656,22 +656,22 @@ FLASHMEM void updateFilterRelease(float value) {
 
 FLASHMEM void updateAttack(float value) {
   voices.setAmpAttack(value);
-  showCurrentParameterPage("Attack", milliToString(value), FILTER_ENV);
+  showCurrentParameterPage("Attack", milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateDecay(float value) {
   voices.setAmpDecay(value);
-  showCurrentParameterPage("Decay", milliToString(value), FILTER_ENV);
+  showCurrentParameterPage("Decay", milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateSustain(float value) {
   voices.setAmpSustain(value);
-  showCurrentParameterPage("Sustain", String(value), FILTER_ENV);
+  showCurrentParameterPage("Sustain", String(value), AMP_ENV);
 }
 
 FLASHMEM void updateRelease(float value) {
   voices.setAmpRelease(value);
-  showCurrentParameterPage("Release", milliToString(value), FILTER_ENV);
+  showCurrentParameterPage("Release", milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateOscFX(uint8_t value) {
