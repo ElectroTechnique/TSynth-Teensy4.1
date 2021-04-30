@@ -738,31 +738,29 @@ AudioConnection          patchCord2012(voiceMixerM_12, 0, ensemble12, 0);
 */
 
 AudioConnection          patchCord111(ensemble1, 0, voiceMixer1L, 0);
-AudioConnection          patchCord108(ensemble2, 0, voiceMixer1L, 1);
-/*
-AudioConnection          patchCord109(ensemble3, 0, voiceMixer1L, 2);
-AudioConnection          patchCord110(ensemble4, 0, voiceMixer1L, 3);
-AudioConnection          patchCord195(ensemble5, 0, voiceMixer2L, 0);
-AudioConnection          patchCord196(ensemble6, 0, voiceMixer2L, 1);
-AudioConnection          patchCord216(ensemble7, 0, voiceMixer2L, 2);
-AudioConnection          patchCord217(ensemble8, 0, voiceMixer2L, 3);
-AudioConnection          patchCord218(ensemble9, 0, voiceMixer3L, 0);
-AudioConnection          patchCord219(ensemble10, 0, voiceMixer3L, 1);
-AudioConnection          patchCord220(ensemble11, 0, voiceMixer3L, 2);
-AudioConnection          patchCord221(ensemble12, 0, voiceMixer3L, 3);
-*/
 AudioConnection          patchCord3111(ensemble1, 0, voiceMixer1R, 0);
+AudioConnection          patchCord108(ensemble2, 0, voiceMixer1L, 1);
 AudioConnection          patchCord3108(ensemble2, 0, voiceMixer1R, 1);
 /*
+AudioConnection          patchCord109(ensemble3, 0, voiceMixer1L, 2);
 AudioConnection          patchCord3109(ensemble3, 0, voiceMixer1R, 2);
+AudioConnection          patchCord110(ensemble4, 0, voiceMixer1L, 3);
 AudioConnection          patchCord3110(ensemble4, 0, voiceMixer1R, 3);
+AudioConnection          patchCord195(ensemble5, 0, voiceMixer2L, 0);
 AudioConnection          patchCord3195(ensemble5, 0, voiceMixer2R, 0);
+AudioConnection          patchCord196(ensemble6, 0, voiceMixer2L, 1);
 AudioConnection          patchCord3196(ensemble6, 0, voiceMixer2R, 1);
+AudioConnection          patchCord216(ensemble7, 0, voiceMixer2L, 2);
 AudioConnection          patchCord3216(ensemble7, 0, voiceMixer2R, 2);
+AudioConnection          patchCord217(ensemble8, 0, voiceMixer2L, 3);
 AudioConnection          patchCord3217(ensemble8, 0, voiceMixer2R, 3);
+AudioConnection          patchCord218(ensemble9, 0, voiceMixer3L, 0);
 AudioConnection          patchCord3218(ensemble9, 0, voiceMixer3R, 0);
+AudioConnection          patchCord219(ensemble10, 0, voiceMixer3L, 1);
 AudioConnection          patchCord3219(ensemble10, 0, voiceMixer3R, 1);
+AudioConnection          patchCord220(ensemble11, 0, voiceMixer3L, 2);
 AudioConnection          patchCord3220(ensemble11, 0, voiceMixer3R, 2);
+AudioConnection          patchCord221(ensemble12, 0, voiceMixer3L, 3);
 AudioConnection          patchCord3221(ensemble12, 0, voiceMixer3R, 3);
 */
 
