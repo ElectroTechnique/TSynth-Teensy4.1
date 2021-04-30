@@ -126,7 +126,7 @@ FLASHMEM void settingsMonophonic(const char * value) {
   if (strcmp(value, "Highest") == 0) monophonic = MONOPHONIC_HIGHEST;
   if (strcmp(value, "Lowest") == 0)  monophonic = MONOPHONIC_LOWEST;
   if (strcmp(value, "Legato") == 0)  monophonic = MONOPHONIC_LEGATO;
-  voices.setMonophonic(monophonic);
+  active->setMonophonic(monophonic);
 }
 
 FLASHMEM void settingsScopeEnable(const char * value) {
@@ -163,9 +163,9 @@ FLASHMEM int currentIndexVelocitySens() {
 }
 
 FLASHMEM int currentIndexKeyTracking() {
-  if (voices.getKeytrackingAmount() == 0.0f) return 0;
-  if (voices.getKeytrackingAmount() == 0.5f) return 1;
-  if (voices.getKeytrackingAmount() == 1.0f) return 2;
+  if (active->getKeytrackingAmount() == 0.0f) return 0;
+  if (active->getKeytrackingAmount() == 0.5f) return 1;
+  if (active->getKeytrackingAmount() == 1.0f) return 2;
   return 0;
 }
 
@@ -202,7 +202,7 @@ FLASHMEM int currentIndexBassEnhanceEnable() {
 }
 
 FLASHMEM int currentIndexMonophonicMode() {
-  return voices.getMonophonicMode();
+  return active->getMonophonicMode();
 }
 
 FLASHMEM int currentIndexScopeEnable() {

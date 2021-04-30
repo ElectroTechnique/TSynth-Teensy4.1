@@ -1110,7 +1110,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxMixPrevValue = fxMix;//PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
-  voices.setMonophonic(data[49].toInt());
+  active->setMonophonic(data[49].toInt());
   //  SPARE1 = data[49].toFloat();
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
@@ -1122,7 +1122,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 
 FLASHMEM String getCurrentPatchData() {
   auto p = active->params();
-  return patchName + "," + String(active->getOscLevelA()) + "," + String(active->getOscLevelB()) + "," + String(active->getPinkNoiseLevel() - active->getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(active->getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(active->getWaveformA()) + "," + String(active->getWaveformB()) + "," +
+  return patchName + "," + String(active->getOscLevelA()) + "," + String(active->getOscLevelB()) + "," + String(active->getPinkNoiseLevel() - active->getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(active->getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(active->getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(active->getWaveformA()) + "," + String(active->getWaveformB()) + "," +
          String(active->getPwmSource()) + "," + String(active->getPwmAmtA()) + "," + String(active->getPwmAmtB()) + "," + String(active->getPwmRate()) + "," + String(active->getPwA()) + "," + String(active->getPwB()) + "," + String(active->getResonance()) + "," + String(active->getCutoff()) + "," + String(active->getFilterMixer()) + "," + String(active->getFilterEnvelope()) + "," + String(active->getPitchLfoAmount(), 5) + "," + String(active->getPitchLfoRate(), 5) + "," + String(active->getPitchLfoWaveform()) + "," + String(int(active->getPitchLfoRetrig())) + "," + String(int(active->getPitchLfoMidiClockSync())) + "," + String(active->getFilterLfoRate(), 5) + "," +
          active->getFilterLfoRetrig() + "," + active->getFilterLfoMidiClockSync() + "," + active->getFilterLfoAmt() + "," + active->getFilterLfoWaveform() + "," + active->getFilterAttack() + "," + active->getFilterDecay() + "," + active->getFilterSustain() + "," + active->getFilterRelease() + "," + active->getAmpAttack() + "," + active->getAmpDecay() + "," + active->getAmpSustain() + "," + active->getAmpRelease() + "," +
          String(active->getFxAmount()) + "," + String(fxMix) + "," + String(active->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(active->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
