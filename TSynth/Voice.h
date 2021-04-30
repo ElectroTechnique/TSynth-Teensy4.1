@@ -1,6 +1,7 @@
 #ifndef TSYNTH_VOICE_H
 #define TSYNTH_VOICE_H
 
+#include "Audio.h"
 #include <stdint.h>
 #include <stddef.h>
 #include "AudioPatching.h"
@@ -22,6 +23,8 @@ struct VoiceParams {
 class Voice {
     private:
         Patch &_oscillator;
+        AudioMixer4 *mixer;
+        uint8_t mixer_index;
         long _timeOn;
         uint8_t _note;
         float _velocity;
@@ -38,6 +41,11 @@ class Voice {
             //Arbitary waveform needs initializing to something
             p.waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
             p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
+        }
+
+        inline void  setMixer(AudioMixer4 *_mixer, uint8_t idx) {
+            mixer = _mixer;
+            mixer_index = idx;
         }
 
         inline uint8_t index() {
@@ -84,7 +92,7 @@ class Voice {
             Patch& osc = this->patch();
 
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
-            osc.voiceMixer_.gain(this->_idx % 4, VELOCITY[velocitySens][velocity] * params.mixerLevel);
+            mixer->gain(mixer_index, VELOCITY[velocitySens][velocity] * params.mixerLevel);
             osc.filterEnvelope_.noteOn();
             osc.ampEnvelope_.noteOn();
             if (params.glideSpeed > 0 && note != params.prevNote) {

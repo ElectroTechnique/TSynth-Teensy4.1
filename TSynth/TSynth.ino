@@ -200,29 +200,41 @@ FLASHMEM void setup() {
 
   constant1Dc.amplitude(ONE);
 
-  voiceMixerM.gain(0, 0.25f);
-  voiceMixerM.gain(1, 0.25f);
-  voiceMixerM.gain(2, 0.25f);
-  voiceMixerM.gain(3, 0.25f);
+  voiceMixerML.gain(0, 0.25f);
+  voiceMixerML.gain(1, 0.25f);
+  voiceMixerML.gain(2, 0.25f);
+  voiceMixerML.gain(3, 0.25f);
+  voiceMixerMR.gain(0, 0.25f);
+  voiceMixerMR.gain(1, 0.25f);
+  voiceMixerMR.gain(2, 0.25f);
+  voiceMixerMR.gain(3, 0.25f);
 
   pink.amplitude(ONE);
   white.amplitude(ONE);
 
-  voiceMixerM.gain(0, VOICEMIXERLEVEL);
-  voiceMixerM.gain(1, VOICEMIXERLEVEL);
-  voiceMixerM.gain(2, VOICEMIXERLEVEL);
-  voiceMixerM.gain(3, VOICEMIXERLEVEL);
+  voiceMixerML.gain(0, VOICEMIXERLEVEL);
+  voiceMixerML.gain(1, VOICEMIXERLEVEL);
+  voiceMixerML.gain(2, VOICEMIXERLEVEL);
+  voiceMixerML.gain(3, VOICEMIXERLEVEL);
+  voiceMixerMR.gain(0, VOICEMIXERLEVEL);
+  voiceMixerMR.gain(1, VOICEMIXERLEVEL);
+  voiceMixerMR.gain(2, VOICEMIXERLEVEL);
+  voiceMixerMR.gain(3, VOICEMIXERLEVEL);
 
   //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
-  dcOffsetFilter.octaveControl(1.0f);
-  dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
+  dcOffsetFilterL.octaveControl(1.0f);
+  dcOffsetFilterL.frequency(12.0f);//Lower values will give clicks on note on/off
+  dcOffsetFilterR.octaveControl(1.0f);
+  dcOffsetFilterR.frequency(12.0f);//Lower values will give clicks on note on/off
 
-  volumeMixer.gain(0, 1.0f);
-  volumeMixer.gain(1, 0);
-  volumeMixer.gain(2, 0);
-  volumeMixer.gain(3, 0);
-
-  ensemble.lfoRate(fxAmt);
+  volumeMixerL.gain(0, 1.0f);
+  volumeMixerL.gain(1, 0);
+  volumeMixerL.gain(2, 0);
+  volumeMixerL.gain(3, 0);
+  volumeMixerR.gain(0, 1.0f);
+  volumeMixerR.gain(1, 0);
+  volumeMixerR.gain(2, 0);
+  volumeMixerR.gain(3, 0);
 
   volumePrevious = RE_READ; //Force volume control to be read and set to current
 
@@ -715,9 +727,9 @@ FLASHMEM void updateOscFX(uint8_t value) {
   }
 }
 
-FLASHMEM void updateFXAmt() {
-  ensemble.lfoRate(fxAmt);
-  showCurrentParameterPage("Effect Amt", String(fxAmt) + " Hz");
+FLASHMEM void updateFXAmt(float amount) {
+  active->setFxAmount(amount);
+  showCurrentParameterPage("Effect Amt", String(amount) + " Hz");
 }
 
 FLASHMEM void updateFXMix() {
@@ -968,9 +980,8 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCfxamt:
       //Pick up
       if (!pickUpActive && pickUp && (fxAmtPrevValue <  ENSEMBLE_LFO[value - TOLERANCE] || fxAmtPrevValue >  ENSEMBLE_LFO[value + TOLERANCE])) return; //PICK-UP
-      fxAmt = ENSEMBLE_LFO[value];
-      updateFXAmt();
-      fxAmtPrevValue = fxAmt;//PICK-UP
+      updateFXAmt(ENSEMBLE_LFO[value]);
+      fxAmtPrevValue = ENSEMBLE_LFO[value];//PICK-UP
       break;
 
     case CCfxmix:
@@ -1093,8 +1104,8 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateDecay(data[41].toFloat());
   updateSustain(data[42].toFloat());
   updateRelease(data[43].toFloat());
-  fxAmt = data[44].toFloat();
-  fxAmtPrevValue = fxAmt;//PICK-UP
+  updateFXAmt(data[44].toFloat());
+  fxAmtPrevValue = data[44].toFloat();//PICK-UP
   fxMix = data[45].toFloat();
   fxMixPrevValue = fxMix;//PICK-UP
   updatePitchEnv(data[46].toFloat());
@@ -1104,7 +1115,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateFXAmt();
   updateFXMix();
   Serial.print(F("Set Patch: "));
   Serial.println(patchName);
@@ -1115,7 +1125,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(active->getOscLevelA()) + "," + String(active->getOscLevelB()) + "," + String(active->getPinkNoiseLevel() - active->getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(active->getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(active->getWaveformA()) + "," + String(active->getWaveformB()) + "," +
          String(active->getPwmSource()) + "," + String(active->getPwmAmtA()) + "," + String(active->getPwmAmtB()) + "," + String(active->getPwmRate()) + "," + String(active->getPwA()) + "," + String(active->getPwB()) + "," + String(active->getResonance()) + "," + String(active->getCutoff()) + "," + String(active->getFilterMixer()) + "," + String(active->getFilterEnvelope()) + "," + String(active->getPitchLfoAmount(), 5) + "," + String(active->getPitchLfoRate(), 5) + "," + String(active->getPitchLfoWaveform()) + "," + String(int(active->getPitchLfoRetrig())) + "," + String(int(active->getPitchLfoMidiClockSync())) + "," + String(active->getFilterLfoRate(), 5) + "," +
          active->getFilterLfoRetrig() + "," + active->getFilterLfoMidiClockSync() + "," + active->getFilterLfoAmt() + "," + active->getFilterLfoWaveform() + "," + active->getFilterAttack() + "," + active->getFilterDecay() + "," + active->getFilterSustain() + "," + active->getFilterRelease() + "," + active->getAmpAttack() + "," + active->getAmpDecay() + "," + active->getAmpSustain() + "," + active->getAmpRelease() + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(active->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(active->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
+         String(active->getFxAmount()) + "," + String(fxMix) + "," + String(active->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(active->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
@@ -1649,6 +1659,8 @@ void CPUMonitor() {
   Serial.print(AudioProcessorUsageMax());
   Serial.print(F(")"));
   Serial.print(F("  MEM:"));
+  Serial.println(AudioMemoryUsage());
+  Serial.print(F("  / "));
   Serial.println(AudioMemoryUsageMax());
   delayMicroseconds(500);
 }

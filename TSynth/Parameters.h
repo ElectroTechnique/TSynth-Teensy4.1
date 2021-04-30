@@ -62,7 +62,7 @@ String oscLFOTimeDivStr = "";//For display
 //float ampSustain = 1.0f;
 //float ampRelease = 300.0f;
 
-float fxAmt = 1.0f;
+//float fxAmt = 1.0f;
 float fxMix = 0.0f;
 
 int velocitySens = 0;//Default off - settings option

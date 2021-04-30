@@ -75,6 +75,8 @@ class VoiceGroup {
     float pitchLfoAmount;
     float pitchLfoRate;
     float modWhAmount;
+    float fxAmt;
+    //float fxMix;
 
 
     struct noteStackData {
@@ -129,7 +131,9 @@ class VoiceGroup {
             pitchLfoRetrig(false),
             pitchLfoAmount(0),
             pitchLfoRate(4.0),
-            modWhAmount(0.0)
+            modWhAmount(0.0),
+            fxAmt(1.0)
+            //fxMix(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -156,6 +160,11 @@ class VoiceGroup {
         shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
         setPWA(pwA, pwmAmtA);
         setPWB(pwB, pwmAmtB);
+        shared.ensemble.lfoRate(fxAmt);
+        shared.voiceMixerM.gain(0, VOICEMIXERLEVEL);
+        shared.voiceMixerM.gain(1, VOICEMIXERLEVEL);
+        shared.voiceMixerM.gain(2, VOICEMIXERLEVEL);
+        shared.voiceMixerM.gain(3, VOICEMIXERLEVEL);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -200,6 +209,8 @@ class VoiceGroup {
     float getPitchLfoAmount()       { return pitchLfoAmount; }
     float getPitchLfoRate()         { return pitchLfoRate; }
     float getModWhAmount()          { return modWhAmount; }
+    float getFxAmount()             { return fxAmt; }
+    //float getFxMix()                { return fxMix; }
 
 
     inline void setPatchName(String name) {
@@ -657,6 +668,18 @@ class VoiceGroup {
         shared.pitchLfo.amplitude(value + pitchLfoAmount);
     }
 
+    void setFxAmount(float value) {
+        fxAmt = value;
+        shared.ensemble.lfoRate(fxAmt);
+    }
+
+/*
+    void setFxMix(float value) {
+        fxMix = value;
+
+    }
+*/
+
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
     }
@@ -719,6 +742,7 @@ class VoiceGroup {
         delete v->patch().pwbConnection;
         delete v->patch().noiseMixerConnection;
         delete v->patch().filterLfoConnection;
+        delete v->patch().ampConnection;
 
         v->patch().pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_a, 0);
         v->patch().pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_b, 0);
@@ -728,6 +752,30 @@ class VoiceGroup {
         v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
         v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
         v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
+        uint8_t mixerIdx = v->index() % 4;
+        switch(v->index()) {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+                v->patch().ampConnection = new AudioConnection(v->patch().ampEnvelope_, 0, shared.voiceMixer1, mixerIdx);
+                v->setMixer(&shared.voiceMixer1, mixerIdx);
+                break;
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                v->patch().ampConnection = new AudioConnection(v->patch().ampEnvelope_, 0, shared.voiceMixer2, mixerIdx);
+                v->setMixer(&shared.voiceMixer2, mixerIdx);
+                break;
+            case 8:
+            case 9:
+            case 10:
+            case 11:
+                v->patch().ampConnection = new AudioConnection(v->patch().ampEnvelope_, 0, shared.voiceMixer3, mixerIdx);
+                v->setMixer(&shared.voiceMixer3, mixerIdx);
+                break;
+        }
     }
 
     // Merges the other VoiceGroup into this one, making additional voices
