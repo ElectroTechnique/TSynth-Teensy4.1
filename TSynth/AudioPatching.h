@@ -3,11 +3,12 @@
 
 // Make the visual audio design tool work by substituting the *TS locally changed classes by those it knows: 
 // but also ensure all redefined class names are undefined within this scope, if lingering defines exist, raise an error:
-#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated)
+#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated) || defined(AudioEffectEnvelope)
 # error "Either AudioSynthWaveform or AudioSynthWaveformModulated are already redefined!"
 #endif
 #define AudioSynthWaveform          AudioSynthWaveformTS
 #define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
+#define AudioEffectEnvelope AudioEffectEnvelopeTS
 
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=3197,1821
@@ -968,3 +969,4 @@ Patch Oscillators[12] = {
 // Undefine custom classes renaming:
 #undef AudioSynthWaveform
 #undef AudioSynthWaveformModulated
+#undef AudioEffectEnvelope

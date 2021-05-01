@@ -82,3 +82,6 @@ float filterLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
 float filterLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxMixPrevValue = 0.0f;//Need to set these when patch loaded
+// Added for exponential envelopes. VRP
+int8_t envTypeAmp=-128; // Linear
+int8_t envTypeFilt=-128; // Linear
