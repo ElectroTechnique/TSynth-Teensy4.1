@@ -12,6 +12,127 @@
 #define AudioSynthWaveform          AudioSynthWaveformTS
 #define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
 
+// VoiceShared are all of the audio objects shared across a single patch.
+struct VoiceShared {
+    public:
+
+    AudioSynthWaveformDc pitchBend;
+    AudioSynthWaveform pitchLfo;
+    AudioMixer4 pitchMixer;
+    AudioSynthWaveform pwmLfoA;
+    AudioSynthWaveform pwmLfoB;
+    AudioSynthWaveform filterLfo;
+    AudioSynthWaveformDc pwa;
+    AudioSynthWaveformDc pwb;
+    AudioMixer4 noiseMixer;
+
+    AudioMixer4 voiceMixer1;
+    AudioMixer4 voiceMixer2;
+    AudioMixer4 voiceMixer3;
+    AudioMixer4 voiceMixerM;
+
+    AudioEffectEnsemble ensemble;
+
+    // Connected at runtime.
+    // pwmLfoA_ -> pwMixer_a, 0
+    // pwmLfoB_ -> pwMixer_b, 0
+    // pwa_ -> pwMixer_a
+    // pwb_ -> pwMixer_b
+    // oscPitchMixer -> oscModMixer_a, 0
+    // oscPitchMixer -> oscModMixer_b, 0
+    AudioConnection          patchCord[6] = {
+        {pitchBend, 0, pitchMixer, 0},
+        {pitchLfo, 0, pitchMixer, 1},
+        {voiceMixer1, 0, voiceMixerM, 0},
+        {voiceMixer2, 0, voiceMixerM, 1},
+        {voiceMixer3, 0, voiceMixerM, 2},
+        {voiceMixerM, 0, ensemble, 0}
+    };
+
+    // These go to the global mixer for final output.
+    AudioConnection *pinkNoiseConnection;
+    AudioConnection *whiteNoiseConnection;
+    AudioConnection *ensembleToMixerLConnection;
+    AudioConnection *ensembleToMixerRConnection;
+};
+
+// VoicePath are all the audio objects for a single voice.
+class VoicePath {
+    public:
+    AudioEffectEnvelope filterEnvelope_; // 1-12
+
+    AudioMixer4 pwMixer_a;
+    AudioMixer4 pwMixer_b;
+
+    AudioSynthWaveformDc glide_;
+
+    AudioSynthWaveformDc keytracking_;
+
+    AudioMixer4 oscModMixer_a;
+    AudioMixer4 oscModMixer_b;
+
+    AudioSynthWaveform filterLfo_;
+    AudioSynthWaveformModulated waveformMod_a;
+    AudioSynthWaveformModulated waveformMod_b;
+
+    AudioEffectDigitalCombine oscFX_;
+
+    AudioMixer4 waveformMixer_;
+
+    AudioMixer4 filterModMixer_;
+
+    AudioFilterStateVariable filter_;
+
+    AudioMixer4 filterMixer_;
+
+    AudioEffectEnvelope ampEnvelope_;
+
+    // Dynamic connections when added to a voice group, connect PWA/PWB.
+    AudioConnection *pitchMixerAConnection;
+    AudioConnection *pitchMixerBConnection;
+    AudioConnection *pwmLfoAConnection;
+    AudioConnection *pwmLfoBConnection;
+    AudioConnection *filterLfoConnection;
+    AudioConnection *pwaConnection;
+    AudioConnection *pwbConnection;
+    AudioConnection *noiseMixerConnection;
+    AudioConnection *ampConnection;
+
+    // Static connections
+    AudioConnection patchCord[24] = {
+        {keytracking_, 0, filterModMixer_, 2},
+        {pwMixer_a, 0, waveformMod_a, 1},
+        {pwMixer_b, 0, waveformMod_b, 1},
+        {waveformMod_b, 0, waveformMixer_, 1},
+        {waveformMod_b, 0, oscFX_, 1},
+        {waveformMod_a, 0, waveformMixer_, 0},
+        {waveformMod_a, 0, oscFX_, 0},
+        {filterEnvelope_, 0, filterModMixer_, 0},
+        {filterEnvelope_, 0, pwMixer_a, 2},
+        {filterEnvelope_, 0, pwMixer_b, 2},
+        {oscFX_, 0, waveformMixer_, 3},
+        {waveformMixer_, 0, filter_, 0},
+        {filterModMixer_, 0, filter_, 1},
+        {filter_, 0, filterMixer_, 0},
+        {filter_, 1, filterMixer_, 1},
+        {filter_, 2, filterMixer_, 2},
+        {filterMixer_, ampEnvelope_},
+        {oscModMixer_a, 0, waveformMod_a, 0},
+        {oscModMixer_b, 0, waveformMod_b, 0},
+        {filterEnvelope_, 0, oscModMixer_a, 1},
+        {filterEnvelope_, 0, oscModMixer_b, 1},
+        {glide_, 0, oscModMixer_a, 2},
+        {waveformMod_b, 0, oscModMixer_a, 3},
+        {waveformMod_a, 0, oscModMixer_b, 3}
+    };
+
+    public:
+    VoicePath(){
+    }
+
+        
+};
+
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=3197,1821
 AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
@@ -30,6 +151,18 @@ AudioFilterStateVariable dcOffsetFilterL; //xy=2591,1804
 AudioFilterStateVariable dcOffsetFilterR; //xy=2591,1804
 AudioMixer4              volumeMixerL;    //xy=2774,1756
 AudioMixer4              volumeMixerR;    //xy=2774,1756
+
+VoicePath voices[12];
+VoiceShared voicesShared[2];
+
+Oscilloscope             scope;
+AudioMixer4              effectMixerR;   //xy=2984,1823
+AudioMixer4              effectMixerL;   //xy=2985,1728
+AudioOutputI2S           i2s;            //xy=3190,1737
+
+
+//#define OLD_STUFF
+#ifdef OLD_STUFF
 AudioEffectEnsemble      ensemble1;
 AudioEffectEnsemble      ensemble2;
 AudioEffectEnsemble      ensemble3;
@@ -42,10 +175,6 @@ AudioEffectEnsemble      ensemble9;
 AudioEffectEnsemble      ensemble10;
 AudioEffectEnsemble      ensemble11;
 AudioEffectEnsemble      ensemble12;
-Oscilloscope             scope;
-AudioMixer4              effectMixerR;   //xy=2984,1823
-AudioMixer4              effectMixerL;   //xy=2985,1728
-AudioOutputI2S           i2s;            //xy=3190,1737
 
 AudioMixer4              voiceMixer1_1;
 AudioMixer4              voiceMixer2_1;
@@ -416,10 +545,10 @@ AudioEffectEnvelope      ampEnvelope10;  //xy=1996,2845
 AudioEffectEnvelope      ampEnvelope11;  //xy=1996,3145
 AudioEffectEnvelope      ampEnvelope12;  //xy=1996,3445
 
+AudioConnection          patchCord4(constant1Dc, filterEnvelope1);
 AudioConnection          patchCord1(constant1Dc, filterEnvelope2);
 AudioConnection          patchCord2(constant1Dc, filterEnvelope3);
 AudioConnection          patchCord3(constant1Dc, filterEnvelope4);
-AudioConnection          patchCord4(constant1Dc, filterEnvelope1);
 AudioConnection          patchCord199(constant1Dc, filterEnvelope5);
 AudioConnection          patchCord200(constant1Dc, filterEnvelope6);
 AudioConnection          patchCord228(constant1Dc, filterEnvelope7);
@@ -898,6 +1027,7 @@ AudioConnection          patchCord448(white, 0, noiseMixer9, 1);
 AudioConnection          patchCord449(white, 0, noiseMixer10, 1);
 AudioConnection          patchCord450(white, 0, noiseMixer11, 1);
 AudioConnection          patchCord451(white, 0, noiseMixer12, 1);
+#endif
 
 AudioConnection          patchCord197(voiceMixer1L, 0, voiceMixerML, 0);
 AudioConnection          patchCord198(voiceMixer2L, 0, voiceMixerML, 1);
@@ -905,8 +1035,6 @@ AudioConnection          patchCord215(voiceMixer3L, 0, voiceMixerML, 2);
 AudioConnection          patchCord3197(voiceMixer1R, 0, voiceMixerMR, 0);
 AudioConnection          patchCord3198(voiceMixer2R, 0, voiceMixerMR, 1);
 AudioConnection          patchCord3215(voiceMixer3R, 0, voiceMixerMR, 2);
-//AudioConnection          patchCord203(voiceMixerM, 0, dcOffsetFilter, 0);
-//AudioConnection          patchCord203(voiceMixerM, 0, ensemble, 0);
 
 AudioConnection          patchCord2203(voiceMixerML, 0, dcOffsetFilterL, 0);
 AudioConnection          patchCord2204(voiceMixerMR, 1, dcOffsetFilterR, 0);
@@ -914,12 +1042,10 @@ AudioConnection          patchCord2204(voiceMixerMR, 1, dcOffsetFilterR, 0);
 AudioConnection          patchCord441(dcOffsetFilterL, 2, volumeMixerL, 0);
 AudioConnection          patchCord4441(dcOffsetFilterR, 2, volumeMixerR, 0);
 
-//AudioConnection          patchCord441(dcOffsetFilter, 2, volumeMixer, 0);
-//AudioConnection          patchCord112(volumeMixer, 0, ensemble, 0);
 AudioConnection          patchCord415(dcOffsetFilterL, 2, scope, 0);
 AudioConnection          patchCord416(dcOffsetFilterL, 2, peak, 0);
-//AudioConnection          patchCord113(ensemble, 0, effectMixerL, 1);
-//AudioConnection          patchCord114(ensemble, 1, effectMixerR, 1);
+
+// TODO: Get rid of effect mixer here...
 AudioConnection          patchCord115(volumeMixerL, 0, effectMixerL, 0);
 AudioConnection          patchCord116(volumeMixerR, 0, effectMixerR, 0);
 AudioConnection          patchCord117(effectMixerR, 0, usbAudio, 1);
@@ -929,7 +1055,7 @@ AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
 // GUItool: end automatically generated code
 
-
+#ifdef OLD_STUFF
 // Oscillator configurations.
 struct Patch {
     AudioEffectEnvelope &filterEnvelope_; // 1-12
@@ -1518,6 +1644,7 @@ Patch Oscillators[12] = {
         nullptr
     }
 };
+#endif
 
 // Undefine custom classes renaming:
 #undef AudioSynthWaveform

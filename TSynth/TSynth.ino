@@ -77,8 +77,8 @@
 
 uint32_t state = PARAMETER;
 
-VoiceGroup voices1{SharedAudio[0]};
-VoiceGroup voices2{SharedAudio[1]};
+VoiceGroup voices1{voicesShared[0], 0};
+VoiceGroup voices2{voicesShared[1], 1};
 VoiceGroup* active = &voices1;
 //VoiceGroup voices{SharedAudio[0]};
 
@@ -259,9 +259,9 @@ FLASHMEM void setup() {
   vuMeter = getVUEnable();
 
   for (uint8_t i = 0; i < NO_OF_VOICES-1; i++) {
-    voices1.add(new Voice(Oscillators[i], i));
+    voices1.add(new Voice(voices[i], i));
   }
-  voices2.add(new Voice(Oscillators[11], 0));
+  voices2.add(new Voice(voices[11], 0));
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {

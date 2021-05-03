@@ -26,9 +26,10 @@ class VoiceGroup {
     private:
     String patchName;
     uint32_t patchIndex;
+    uint8_t patchNum;
 
     // Audio Objects
-    PatchShared &shared;
+    VoiceShared &shared;
     std::vector<Voice*> voices;
 
     // Patch Configs
@@ -88,9 +89,10 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(PatchShared& shared_):
+    VoiceGroup(VoiceShared& shared_, uint8_t num_):
             patchName(""),
             patchIndex(0),
+            patchNum(num_),
             shared(shared_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
@@ -165,6 +167,15 @@ class VoiceGroup {
         shared.voiceMixerM.gain(1, VOICEMIXERLEVEL);
         shared.voiceMixerM.gain(2, VOICEMIXERLEVEL);
         shared.voiceMixerM.gain(3, VOICEMIXERLEVEL);
+
+        shared.pinkNoiseConnection = new AudioConnection(pink, 0, shared.noiseMixer, 0);
+        shared.pinkNoiseConnection = new AudioConnection(white, 0, shared.noiseMixer, 1);
+        shared.ensembleToMixerLConnection = new AudioConnection(shared.ensemble, 0, voiceMixer1L, patchNum);
+        shared.ensembleToMixerRConnection = new AudioConnection(shared.ensemble, 0, voiceMixer1R, patchNum);
+        //AudioConnection          patchCord111(ensemble1, 0, voiceMixer1L, 0);
+        //AudioConnection          patchCord3111(ensemble1, 0, voiceMixer1R, 0);
+        //AudioConnection          patchCord108(ensemble2, 0, voiceMixer1L, 1);
+        //AudioConnection          patchCord3108(ensemble2, 0, voiceMixer1R, 1);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
