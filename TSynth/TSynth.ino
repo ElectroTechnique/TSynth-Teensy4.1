@@ -77,8 +77,8 @@
 
 uint32_t state = PARAMETER;
 
-VoiceGroup voices1{SharedAudio[0]};
-VoiceGroup voices2{SharedAudio[1]};
+VoiceGroup voices1{voicesShared[0], 0};
+VoiceGroup voices2{voicesShared[1], 1};
 VoiceGroup* active = &voices1;
 //VoiceGroup voices{SharedAudio[0]};
 
@@ -127,6 +127,11 @@ VoiceGroup* getVoiceFor(int channel) {
 }
 
 FLASHMEM void setup() {
+  for (uint8_t i = 0; i < NO_OF_VOICES-1; i++) {
+    voices1.add(new Voice(voices[i], i));
+  }
+  voices2.add(new Voice(voices[11], 0));
+
   setupDisplay();
   setUpSettings();
   setupHardware();
@@ -257,11 +262,6 @@ FLASHMEM void setup() {
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
-
-  for (uint8_t i = 0; i < NO_OF_VOICES-1; i++) {
-    voices1.add(new Voice(Oscillators[i], i));
-  }
-  voices2.add(new Voice(Oscillators[11], 0));
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
@@ -732,12 +732,9 @@ FLASHMEM void updateFXAmt(float amount) {
   showCurrentParameterPage("Effect Amt", String(amount) + " Hz");
 }
 
-FLASHMEM void updateFXMix() {
-  effectMixerL.gain(0, 1.0f - fxMix); //Dry
-  effectMixerL.gain(1, fxMix);       //Wet
-  effectMixerR.gain(0, 1.0f - fxMix); //Dry
-  effectMixerR.gain(1, fxMix);       //Wet
-  showCurrentParameterPage("Effect Mix", String(fxMix));
+FLASHMEM void updateFXMix(float value) {
+  active->setFxMix(value);
+  showCurrentParameterPage("Effect Mix", String(value));
 }
 
 FLASHMEM void updatePatch(String name, uint32_t index) {
@@ -987,9 +984,8 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCfxmix:
       //Pick up
       if (!pickUpActive && pickUp && (fxMixPrevValue <  LINEAR[value - TOLERANCE] || fxMixPrevValue >  LINEAR[value + TOLERANCE])) return; //PICK-UP
-      fxMix = LINEAR[value];
-      updateFXMix();
-      fxMixPrevValue = fxMix;//PICK-UP
+      updateFXMix(LINEAR[value]);
+      fxMixPrevValue = LINEAR[value];//PICK-UP
       break;
 
     case CCallnotesoff:
@@ -1106,8 +1102,8 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateRelease(data[43].toFloat());
   updateFXAmt(data[44].toFloat());
   fxAmtPrevValue = data[44].toFloat();//PICK-UP
-  fxMix = data[45].toFloat();
-  fxMixPrevValue = fxMix;//PICK-UP
+  updateFXMix(data[45].toFloat());
+  fxMixPrevValue = data[45].toFloat();//PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   active->setMonophonic(data[49].toInt());
@@ -1115,7 +1111,6 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
 
-  updateFXMix();
   Serial.print(F("Set Patch: "));
   Serial.println(patchName);
 }
@@ -1125,7 +1120,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(active->getOscLevelA()) + "," + String(active->getOscLevelB()) + "," + String(active->getPinkNoiseLevel() - active->getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(active->getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(active->getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(active->getWaveformA()) + "," + String(active->getWaveformB()) + "," +
          String(active->getPwmSource()) + "," + String(active->getPwmAmtA()) + "," + String(active->getPwmAmtB()) + "," + String(active->getPwmRate()) + "," + String(active->getPwA()) + "," + String(active->getPwB()) + "," + String(active->getResonance()) + "," + String(active->getCutoff()) + "," + String(active->getFilterMixer()) + "," + String(active->getFilterEnvelope()) + "," + String(active->getPitchLfoAmount(), 5) + "," + String(active->getPitchLfoRate(), 5) + "," + String(active->getPitchLfoWaveform()) + "," + String(int(active->getPitchLfoRetrig())) + "," + String(int(active->getPitchLfoMidiClockSync())) + "," + String(active->getFilterLfoRate(), 5) + "," +
          active->getFilterLfoRetrig() + "," + active->getFilterLfoMidiClockSync() + "," + active->getFilterLfoAmt() + "," + active->getFilterLfoWaveform() + "," + active->getFilterAttack() + "," + active->getFilterDecay() + "," + active->getFilterSustain() + "," + active->getFilterRelease() + "," + active->getAmpAttack() + "," + active->getAmpDecay() + "," + active->getAmpSustain() + "," + active->getAmpRelease() + "," +
-         String(active->getFxAmount()) + "," + String(fxMix) + "," + String(active->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(active->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
+         String(active->getFxAmount()) + "," + String(active->getFxMix()) + "," + String(active->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(active->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {

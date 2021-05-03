@@ -26,9 +26,10 @@ class VoiceGroup {
     private:
     String patchName;
     uint32_t patchIndex;
+    uint8_t patchNum;
 
     // Audio Objects
-    PatchShared &shared;
+    VoiceShared &shared;
     std::vector<Voice*> voices;
 
     // Patch Configs
@@ -76,7 +77,7 @@ class VoiceGroup {
     float pitchLfoRate;
     float modWhAmount;
     float fxAmt;
-    //float fxMix;
+    float fxMix;
 
 
     struct noteStackData {
@@ -88,9 +89,10 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(PatchShared& shared_):
+    VoiceGroup(VoiceShared& shared_, uint8_t num_):
             patchName(""),
             patchIndex(0),
+            patchNum(num_),
             shared(shared_),
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
@@ -132,8 +134,8 @@ class VoiceGroup {
             pitchLfoAmount(0),
             pitchLfoRate(4.0),
             modWhAmount(0.0),
-            fxAmt(1.0)
-            //fxMix(0.0)
+            fxAmt(1.0),
+            fxMix(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -165,6 +167,17 @@ class VoiceGroup {
         shared.voiceMixerM.gain(1, VOICEMIXERLEVEL);
         shared.voiceMixerM.gain(2, VOICEMIXERLEVEL);
         shared.voiceMixerM.gain(3, VOICEMIXERLEVEL);
+        setFxMix(fxMix);
+
+        shared.connectNoise(pink, white);
+        //shared.connectOutput(voiceMixer1L, voiceMixer1R, patchNum);
+        shared.connectOutput(voiceMixer1L, voiceMixer1R, patchNum);
+        /*
+        shared.pinkNoiseConnection = new AudioConnection(pink, 0, shared.noiseMixer, 0);
+        shared.pinkNoiseConnection = new AudioConnection(white, 0, shared.noiseMixer, 1);
+        shared.ensembleToMixerLConnection = new AudioConnection(shared.ensemble, 0, voiceMixer1L, patchNum);
+        shared.ensembleToMixerRConnection = new AudioConnection(shared.ensemble, 0, voiceMixer1R, patchNum);
+        */
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -210,7 +223,7 @@ class VoiceGroup {
     float getPitchLfoRate()         { return pitchLfoRate; }
     float getModWhAmount()          { return modWhAmount; }
     float getFxAmount()             { return fxAmt; }
-    //float getFxMix()                { return fxMix; }
+    float getFxMix()                { return fxMix; }
 
 
     inline void setPatchName(String name) {
@@ -673,12 +686,13 @@ class VoiceGroup {
         shared.ensemble.lfoRate(fxAmt);
     }
 
-/*
     void setFxMix(float value) {
         fxMix = value;
-
+        shared.effectMixerL.gain(0, 1.0f - fxMix); //Dry
+        shared.effectMixerL.gain(1, fxMix);       //Wet
+        shared.effectMixerR.gain(0, 1.0f - fxMix); //Dry
+        shared.effectMixerR.gain(1, fxMix);       //Wet
     }
-*/
 
     inline void setMonophonic(uint8_t mode) {
         this->monophonic = mode;
@@ -733,6 +747,9 @@ class VoiceGroup {
 
         // TODO: Below could be functions of the patch.
 
+        auto mixer = v->patch().connectTo(shared, v->index());
+        v->setMixer(&mixer);
+        /*
         // In case this was allocated before, delete it.
         delete v->patch().pitchMixerAConnection;
         delete v->patch().pitchMixerBConnection;
@@ -776,6 +793,7 @@ class VoiceGroup {
                 v->setMixer(&shared.voiceMixer3, mixerIdx);
                 break;
         }
+        */
     }
 
     // Merges the other VoiceGroup into this one, making additional voices

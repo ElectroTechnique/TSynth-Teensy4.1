@@ -22,9 +22,8 @@ struct VoiceParams {
 
 class Voice {
     private:
-        Patch &_oscillator;
-        AudioMixer4 *mixer;
-        uint8_t mixer_index;
+        VoicePath &_oscillator;
+        Mixer *mixer;
         long _timeOn;
         uint8_t _note;
         float _velocity;
@@ -32,7 +31,7 @@ class Voice {
         uint8_t _idx;
 
     public:
-        Voice(Patch& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i) {
+        Voice(VoicePath& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i) {
             p.waveformMod_a.frequencyModulation(PITCHLFOOCTAVERANGE);
             p.waveformMod_a.begin(WAVEFORMLEVEL, 440.0f, WAVEFORM_SQUARE);
             p.waveformMod_b.frequencyModulation(PITCHLFOOCTAVERANGE);
@@ -43,9 +42,8 @@ class Voice {
             p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
         }
 
-        inline void  setMixer(AudioMixer4 *_mixer, uint8_t idx) {
+        inline void  setMixer(Mixer *_mixer) {
             mixer = _mixer;
-            mixer_index = idx;
         }
 
         inline uint8_t index() {
@@ -68,12 +66,12 @@ class Voice {
             return this->_timeOn;
         }
 
-        inline Patch& patch() {
+        inline VoicePath& patch() {
             return this->_oscillator;
         }
 
         void updateVoice(VoiceParams &params, uint8_t notesOn) {
-            Patch& osc = this->patch();
+            VoicePath& osc = this->patch();
 
             if (params.unisonMode == 1) {
                 int offset = 2 * this->index();
@@ -89,10 +87,10 @@ class Voice {
         }
 
         void noteOn(uint8_t note, int velocity, VoiceParams &params, uint8_t notesOn) {
-            Patch& osc = this->patch();
+            VoicePath& osc = this->patch();
 
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
-            mixer->gain(mixer_index, VELOCITY[velocitySens][velocity] * params.mixerLevel);
+            mixer->gain(VELOCITY[velocitySens][velocity] * params.mixerLevel);
             osc.filterEnvelope_.noteOn();
             osc.ampEnvelope_.noteOn();
             if (params.glideSpeed > 0 && note != params.prevNote) {
