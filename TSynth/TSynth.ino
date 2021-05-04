@@ -127,6 +127,11 @@ VoiceGroup* getVoiceFor(int channel) {
 }
 
 FLASHMEM void setup() {
+  for (uint8_t i = 0; i < NO_OF_VOICES-1; i++) {
+    voices1.add(new Voice(voices[i], i));
+  }
+  voices2.add(new Voice(voices[11], 0));
+
   setupDisplay();
   setUpSettings();
   setupHardware();
@@ -257,11 +262,6 @@ FLASHMEM void setup() {
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
-
-  for (uint8_t i = 0; i < NO_OF_VOICES-1; i++) {
-    voices1.add(new Voice(voices[i], i));
-  }
-  voices2.add(new Voice(voices[11], 0));
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
