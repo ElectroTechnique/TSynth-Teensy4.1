@@ -1,5 +1,6 @@
 /* Audio Library for Teensy 3.X
- * Copyright (c) 2017, Paul Stoffregen, paul@pjrc.com
+ * Portions Copyright (c) 2017, Paul Stoffregen, paul@pjrc.com
+ * Portions Copyright (c) 2021 Vince R. Pearson
  *
  * Development of this audio library was funded by PJRC.COM, LLC by sales of
  * Teensy and Audio Adaptor boards.  Please support PJRC's efforts to develop
@@ -28,11 +29,7 @@
 #include "effect_envelope.h"
 
 // Difference equation for exponential envelope.
-// This has the form y_new=k1*y_old+k2.
-// k2 is (1-k1)*xin. Since xin is constant for any given state k2*xin is calculated every time a parameter has change.
-// An alternate form is k1*(y_old-xin)+xin where x1 is fixed per state regardless of parameter value.
-// The former equation takes one multiply and one addition whereas the second uses one multiply, one subraction, and one addition.
-// The second form is simpler for parameter changes but the first is faster in the audio loop and the parameter recalculations do not have to be fast.
+// y(n+1) = k1*y(n)+k2 using unsigned 1.31 fixed point format
 #define EXP_ITERATION(y,k1,k2) ((uint32_t)(((uint64_t)(y)*(k1))>>31)+(k2));
 
 // STATE_IDLE_NEXT is added for exponential envelope. Variables are set in STATE_IDLE and then

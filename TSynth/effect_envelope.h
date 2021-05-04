@@ -38,7 +38,7 @@
 #define NUM_ENV_TYPES 18 // Linear, Exp -8 through Exp +8
 
 // The exponential difference equations are based on the impulse invariant method. 
-// The equation used for attack is k1 = exp(curveFactor*Ts/To) and k2=(1-k1)/((e^curveFactor)-1)
+// The equation used for attack is k1 = exp(curveFactor*Ts/To) and k2=(k1-1)/((e^curveFactor)-1)
 // and ynew = k1*yold+k2 (normalized).
 // This allows different eponential curvatures (positive and negative) with the endpoints constrained
 // to start at 0 and end at 1 (normalized) in the specified time interval.
