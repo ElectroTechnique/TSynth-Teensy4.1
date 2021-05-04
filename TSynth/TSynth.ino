@@ -250,6 +250,14 @@ FLASHMEM void setup() {
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
+
+  // For loading envelope generatrors
+  envTypeFilt=getFiltEnv();
+  updateFilterAttack();
+  envTypeAmp=getAmpEnv();
+  updateAttack();
+  FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeAmp));
+  FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
 }
 
 void incNotesOn() {

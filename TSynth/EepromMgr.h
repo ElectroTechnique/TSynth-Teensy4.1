@@ -27,7 +27,7 @@ FLASHMEM int8_t getAmpEnv() {
 }
 
 FLASHMEM int8_t getFiltEnv() {
-  return  (int8_t)EEPROM.read(EEPROM_AMP_ENV);
+  return  (int8_t)EEPROM.read(EEPROM_FILT_ENV);
 }
 
 
