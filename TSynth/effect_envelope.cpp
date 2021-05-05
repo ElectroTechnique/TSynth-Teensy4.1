@@ -28,9 +28,13 @@
 #include <Arduino.h>
 #include "effect_envelope.h"
 
+#define RELEASE_BIAS 256 // based on a 1.31 fixed point integer. This is the level below zero that is the release target and causes the output to go to zero earlier. Otherwise it can take a relatively long time.
 // Difference equation for exponential envelope.
 // y(n+1) = k1*y(n)+k2 using unsigned 1.31 fixed point format
-#define EXP_ITERATION(y,k1,k2) ((uint32_t)(((uint64_t)(y)*(k1))>>31)+(k2));
+#define EXP_ITERATION(y,k1,k2) ((uint32_t)(((uint64_t)(y)*(k1))>>31)+(k2))
+// y(n+1)=k1*(y(n)-x)+x
+#define EXP_ITERATION2(y,k1,k2)      (uint32_t)(((uint64_t)(y)*(k1)+(uint64_t)k1*k2)>>32)
+//(uint32_t)((uint64_t)(y)*(k1)+(uint64_t)k2*(EXP_ENV_ONE-k1)>>32)
 
 // STATE_IDLE_NEXT is added for exponential envelope. Variables are set in STATE_IDLE and then
 // transitions to STATE_IDLE_NEXT while note is off so the variables are not reinitialized every loop while idle.
@@ -248,6 +252,7 @@ void AudioEffectEnvelopeTS::update(void)
             break;
           case STATE_RELEASE:
             ysum=EXP_ITERATION(ysum,release_k,0);
+            if(ysum>RELEASE_BIAS) ysum-=RELEASE_BIAS; // added to end release a bit sooner. Must check value for underflow since unsigned integers are used.
             if((ysum>>15)==0) // All of the useful bits are zero so no reason to stay in this state.
               state=STATE_IDLE;
             break;
