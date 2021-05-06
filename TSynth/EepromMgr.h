@@ -10,13 +10,31 @@
 #define EEPROM_MIDI_OUT_CH 7
 #define EEPROM_VU_ENABLE 8
 #define EEPROM_MIDI_THRU 9
-#define EEPROM_MONOPHONIC 10
+#define EEPROM_AMP_ENV 10
+#define EEPROM_FILT_ENV 11
+
+FLASHMEM void storeAmpEnv(byte type){
+  EEPROM.update(EEPROM_AMP_ENV, type);
+}
+
+FLASHMEM void storeFiltEnv(byte type){
+  EEPROM.update(EEPROM_FILT_ENV, type);
+}
+
+FLASHMEM int8_t getAmpEnv() {
+  return  (int8_t)EEPROM.read(EEPROM_AMP_ENV);
+}
+
+FLASHMEM int8_t getFiltEnv() {
+  return  (int8_t)EEPROM.read(EEPROM_FILT_ENV);
+}
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
   if (midiChannel < 0 || midiChannel > 16) midiChannel = MIDI_CHANNEL_OMNI;//If EEPROM has no MIDI channel stored
   return midiChannel;
 }
+
 
 FLASHMEM void storeMidiChannel(byte channel){
   EEPROM.update(EEPROM_MIDI_CH, channel);

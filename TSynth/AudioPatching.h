@@ -6,18 +6,28 @@
 
 // Make the visual audio design tool work by substituting the *TS locally changed classes by those it knows: 
 // but also ensure all redefined class names are undefined within this scope, if lingering defines exist, raise an error:
-#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated)
-# error "Either AudioSynthWaveform or AudioSynthWaveformModulated are already redefined!"
+#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated  || defined(AudioEffectEnvelope)
+# error "Either AudioSynthWaveform or AudioSynthWaveformModulated or AudioEffectEnvelope are already redefined!"
 #endif
 #define AudioSynthWaveform          AudioSynthWaveformTS
 #define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
+#define AudioEffectEnvelope AudioEffectEnvelopeTS												 
 
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=3197,1821
 AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
 AudioSynthNoisePink      pink;           //xy=1462
 AudioSynthNoiseWhite     white;          //xy=1460
+												  
+													
+													
+													  
+													  
 AudioAnalyzePeak         peak;           //xy=2756,1817
+													 
+														 
+													  
+													 
 AudioMixer4              voiceMixer1;    //xy=2233,581
 AudioMixer4              voiceMixer2;    //xy=2240,1791
 AudioMixer4              voiceMixer3;    //xy=2237,2976
@@ -353,12 +363,58 @@ AudioConnection          patchCord232(constant1Dc, filterEnvelope11);
 AudioConnection          patchCord233(constant1Dc, filterEnvelope12);
 
 // These are now dynamic.
+															  
 // pwmLfoA_ -> pwMixer_a, 0
+															  
+															  
 // pwmLfoB_ -> pwMixer_b, 0
 // pwa_ -> pwMixer_a
 // pwb_ -> pwMixer_b
 // oscPitchMixer -> oscModMixer_a, 0
 // oscPitchMixer -> oscModMixer_b, 0
+																
+																
+																
+																
+																
+																
+																
+																
+																 
+																 
+																 
+																 
+																 
+																 
+
+
+														   
+														   
+														   
+														   
+														   
+														   
+														   
+														   
+															
+															
+															
+															
+															
+															
+															
+															
+															
+															
+															 
+															 
+															 
+															 
+															 
+															 
+
+																		
+																		 
 
 AudioConnection          patchCord21(pitchLfo1, 0, oscPitchMixer1, 1);
 AudioConnection          patchCord23(pitchLfo2, 0, oscPitchMixer2, 1);
@@ -400,6 +456,20 @@ AudioConnection          patchCord268(keytracking11, 0, filterModMixer11, 2);
 AudioConnection          patchCord269(keytracking12, 0, filterModMixer12, 2);
 
 
+																	   
+																	   
+																	   
+																	   
+																		
+																		
+																		
+																		
+																		
+																		 
+																		 
+																		 
+
+
 AudioConnection          patchCord36(pwMixer1a, 0, waveformMod1a, 1);
 AudioConnection          patchCord37(pwMixer1b, 0, waveformMod1b, 1);
 AudioConnection          patchCord38(pwMixer3b, 0, waveformMod3b, 1);
@@ -424,6 +494,31 @@ AudioConnection          patchCord284(pwMixer11a, 0, waveformMod11a, 1);
 AudioConnection          patchCord285(pwMixer11b, 0, waveformMod11b, 1);
 AudioConnection          patchCord286(pwMixer12a, 0, waveformMod12a, 1);
 AudioConnection          patchCord287(pwMixer12b, 0, waveformMod12b, 1);
+
+																			 
+																			 
+																			 
+																			 
+																			 
+																			 
+																			 
+																			 
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			   
+																			   
+																			   
+																			   
+																			   
+																			   
 
 
 AudioConnection          patchCord52(waveformMod1b, 0, waveformMixer1, 1);
@@ -1301,5 +1396,5 @@ Patch Oscillators[12] = {
 // Undefine custom classes renaming:
 #undef AudioSynthWaveform
 #undef AudioSynthWaveformModulated
-
+#undef AudioEffectEnvelope
 #endif

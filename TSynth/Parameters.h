@@ -13,13 +13,17 @@ boolean encCW = true;//This is to set the encoder to increment when turned CW - 
 //float oscALevel = 1.0f;
 //float oscBLevel = 1.0f;
 //float noiseLevel = 0.0f;
+			   
 //int oscFX = 0;
+					 
+						 
 float lfoSyncFreq = 1.0f;
 float midiClkTimeInterval = 0.0f;
 float lfoTempoValue = 1.0f;
 int pitchBendRange = 12;
 float modWheelDepth = 0.2f;
 //float modWhAmt = 0.0f;
+																 
 //float glideSpeed = 0.0f;
 //int oscPitchA = 0;
 //int oscPitchB = 12;
@@ -84,3 +88,6 @@ float filterLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
 float filterLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxMixPrevValue = 0.0f;//Need to set these when patch loaded
+// Added for exponential envelopes. VRP
+int8_t envTypeAmp=-128; // Linear
+int8_t envTypeFilt=-128; // Linear

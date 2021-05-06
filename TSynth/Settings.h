@@ -1,5 +1,5 @@
-#define SETTINGSOPTIONSNO 12//No of options
-#define SETTINGSVALUESNO 18//Maximum number of settings option values needed
+#define SETTINGSOPTIONSNO 15//No of options
+#define SETTINGSVALUESNO 19//Maximum number of settings option values needed
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
 struct SettingsOption
@@ -38,6 +38,70 @@ int currentIndexScopeEnable();
 int currentIndexVUEnable();
 int getCurrentIndex(int (*f)());
 
+// Added for exponential/linear envelopes types.
+int currentIndexAmpEnv();
+int currentIndexFiltEnv();
+void settingsAmpEnv(const char *value);
+void settingsFiltEnv(const char *value);
+
+
+FLASHMEM int currentIndexAmpEnv() {
+  if((envTypeAmp>=-8) && (envTypeAmp<=8))return envTypeAmp+9;
+  else return 0;
+}
+
+FLASHMEM int currentIndexFiltEnv() {
+  if((envTypeFilt>=-8) && (envTypeFilt<=8))return envTypeFilt+9;
+  else return 0;
+}
+
+FLASHMEM void settingsAmpEnv(const char * value) {
+  if (strcmp(value, "Lin") == 0) envTypeAmp = -128;
+  else if (strcmp(value, "Exp -8") == 0)  envTypeAmp = -8;
+  else if (strcmp(value, "Exp -7") == 0)  envTypeAmp = -7;
+  else if (strcmp(value, "Exp -6") == 0)  envTypeAmp = -6;
+  else if (strcmp(value, "Exp -5") == 0)  envTypeAmp = -5;
+  else if (strcmp(value, "Exp -4") == 0)  envTypeAmp = -4;
+  else if (strcmp(value, "Exp -3") == 0)  envTypeAmp = -3;
+  else if (strcmp(value, "Exp -2") == 0)  envTypeAmp = -2;
+  else if (strcmp(value, "Exp -1") == 0)  envTypeAmp = -1;
+  else if (strcmp(value, "Exp 0") == 0)  envTypeAmp = 0;
+  else if (strcmp(value, "Exp +1") == 0)  envTypeAmp = 1;
+  else if (strcmp(value, "Exp +2") == 0)  envTypeAmp = 2;
+  else if (strcmp(value, "Exp +3") == 0)  envTypeAmp = 3;
+  else if (strcmp(value, "Exp +4") == 0)  envTypeAmp = 4;
+  else if (strcmp(value, "Exp +5") == 0)  envTypeAmp = 5;
+  else if (strcmp(value, "Exp +6") == 0)  envTypeAmp = 6;
+  else if (strcmp(value, "Exp +7") == 0)  envTypeAmp = 7;
+  else if (strcmp(value, "Exp +8") == 0)  envTypeAmp = 8;
+  else envTypeAmp = -128;
+  FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeAmp));
+  storeAmpEnv(envTypeAmp);
+}
+
+FLASHMEM void settingsFiltEnv(const char * value) {
+  if (strcmp(value, "Lin") == 0) envTypeFilt = -128;
+  else if (strcmp(value, "Exp -8") == 0)  envTypeFilt = -8;
+  else if (strcmp(value, "Exp -7") == 0)  envTypeFilt = -7;
+  else if (strcmp(value, "Exp -6") == 0)  envTypeFilt = -6;
+  else if (strcmp(value, "Exp -5") == 0)  envTypeFilt = -5;
+  else if (strcmp(value, "Exp -4") == 0)  envTypeFilt = -4;
+  else if (strcmp(value, "Exp -3") == 0)  envTypeFilt = -3;
+  else if (strcmp(value, "Exp -2") == 0)  envTypeFilt = -2;
+  else if (strcmp(value, "Exp -1") == 0)  envTypeFilt = -1;
+  else if (strcmp(value, "Exp 0") == 0)  envTypeFilt = 0;
+  else if (strcmp(value, "Exp +1") == 0)  envTypeFilt = 1;
+  else if (strcmp(value, "Exp +2") == 0)  envTypeFilt = 2;
+  else if (strcmp(value, "Exp +3") == 0)  envTypeFilt = 3;
+  else if (strcmp(value, "Exp +4") == 0)  envTypeFilt = 4;
+  else if (strcmp(value, "Exp +5") == 0)  envTypeFilt = 5;
+  else if (strcmp(value, "Exp +6") == 0)  envTypeFilt = 6;
+  else if (strcmp(value, "Exp +7") == 0)  envTypeFilt = 7;
+  else if (strcmp(value, "Exp +8") == 0)  envTypeFilt = 8;
+  else envTypeFilt = -128;
+  FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
+  storeFiltEnv(envTypeFilt);
+}																	 
 
 FLASHMEM void settingsMIDICh(const char * value) {
   if (strcmp(value, "ALL") == 0) {
@@ -233,6 +297,8 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
   settingsOptions.push(SettingsOption{"Monophonic", {"Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0"}, settingsMonophonic, currentIndexMonophonicMode});
+  settingsOptions.push(SettingsOption{"Amp Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsAmpEnv, currentIndexAmpEnv});
+  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsFiltEnv, currentIndexFiltEnv});																												
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
   settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
 }
