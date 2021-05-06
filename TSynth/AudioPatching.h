@@ -1,30 +1,33 @@
+#ifndef TSYNTH_AUDIO_PATCHING_H
+#define TSYNTH_AUDIO_PATCHING_H
+
 //waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM  --> volumeMixer
 //WAVEFORMLEVEL        oscA/BLevel             VELOCITY    VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL    volume
 
 // Make the visual audio design tool work by substituting the *TS locally changed classes by those it knows: 
 // but also ensure all redefined class names are undefined within this scope, if lingering defines exist, raise an error:
-#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated) || defined(AudioEffectEnvelope)
-# error "Either AudioSynthWaveform or AudioSynthWaveformModulated are already redefined!"
+#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated  || defined(AudioEffectEnvelope)
+# error "Either AudioSynthWaveform or AudioSynthWaveformModulated or AudioEffectEnvelope are already redefined!"
 #endif
 #define AudioSynthWaveform          AudioSynthWaveformTS
 #define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
-#define AudioEffectEnvelope AudioEffectEnvelopeTS
+#define AudioEffectEnvelope AudioEffectEnvelopeTS												 
 
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=3197,1821
 AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
 AudioSynthNoisePink      pink;           //xy=1462
 AudioSynthNoiseWhite     white;          //xy=1460
-AudioMixer4              noiseMixer;     //xy=1610
-AudioSynthWaveform       pwmLfoA;        //xy=92,208
-AudioSynthWaveform       pwmLfoB;        //xy=92,208
-AudioSynthWaveformDc     pwa;            //xy=305,1758
-AudioSynthWaveformDc     pwb;            //xy=308,1803
+												  
+													
+													
+													  
+													  
 AudioAnalyzePeak         peak;           //xy=2756,1817
-AudioSynthWaveform       pitchLfo;       //xy=122,111
-AudioMixer4              oscGlobalModMixer; //xy=628,1486
-AudioSynthWaveformDc     pitchBend;      //xy=460,1465
-AudioSynthWaveform       filterLfo;      //xy=166,632
+													 
+														 
+													  
+													 
 AudioMixer4              voiceMixer1;    //xy=2233,581
 AudioMixer4              voiceMixer2;    //xy=2240,1791
 AudioMixer4              voiceMixer3;    //xy=2237,2976
@@ -36,6 +39,123 @@ Oscilloscope             scope;
 AudioMixer4              effectMixerR;   //xy=2984,1823
 AudioMixer4              effectMixerL;   //xy=2985,1728
 AudioOutputI2S           i2s;            //xy=3190,1737
+
+AudioSynthWaveformDc     pitchBend1; //xy=472,342
+AudioSynthWaveformDc     pitchBend2; //xy=441.5,661
+AudioSynthWaveformDc     pitchBend3; //xy=439.5,946
+AudioSynthWaveformDc     pitchBend4; //xy=442.5,1254
+AudioSynthWaveformDc     pitchBend5; //xy=440.5,1559
+AudioSynthWaveformDc     pitchBend6; //xy=441.5,1855
+AudioSynthWaveformDc     pitchBend7; //xy=442.5,2163
+AudioSynthWaveformDc     pitchBend8; //xy=439.5,2457
+AudioSynthWaveformDc     pitchBend9; //xy=437.5,2744
+AudioSynthWaveformDc     pitchBend10; //xy=440,3051
+AudioSynthWaveformDc     pitchBend11; //xy=436.5,3361
+AudioSynthWaveformDc     pitchBend12; //xy=441.5,3656
+
+AudioSynthWaveform       pitchLfo1; //xy=466.5,382
+AudioSynthWaveform       pitchLfo2; //xy=436,701
+AudioSynthWaveform       pitchLfo3; //xy=434,986
+AudioSynthWaveform       pitchLfo4; //xy=437,1294
+AudioSynthWaveform       pitchLfo5; //xy=435,1599
+AudioSynthWaveform       pitchLfo6; //xy=436,1895
+AudioSynthWaveform       pitchLfo7; //xy=437,2203
+AudioSynthWaveform       pitchLfo8; //xy=434,2497
+AudioSynthWaveform       pitchLfo9; //xy=432,2784
+AudioSynthWaveform       pitchLfo10; //xy=434.5,3091
+AudioSynthWaveform       pitchLfo11; //xy=431,3401
+AudioSynthWaveform       pitchLfo12; //xy=436,3696
+
+AudioMixer4              oscPitchMixer1; //xy=647,373
+AudioMixer4              oscPitchMixer2; //xy=616.5,692
+AudioMixer4              oscPitchMixer3; //xy=614.5,977
+AudioMixer4              oscPitchMixer4; //xy=617.5,1285
+AudioMixer4              oscPitchMixer5; //xy=615.5,1590
+AudioMixer4              oscPitchMixer6; //xy=616.5,1886
+AudioMixer4              oscPitchMixer7; //xy=617.5,2194
+AudioMixer4              oscPitchMixer8; //xy=614.5,2488
+AudioMixer4              oscPitchMixer9; //xy=612.5,2775
+AudioMixer4              oscPitchMixer10; //xy=615,3082
+AudioMixer4              oscPitchMixer11; //xy=611.5,3392
+AudioMixer4              oscPitchMixer12; //xy=616.5,3687
+
+AudioSynthWaveformDc     pwa1;  //xy=783,715
+AudioSynthWaveformDc     pwa2;  //xy=783,1028
+AudioSynthWaveformDc     pwa3;  //xy=783,1319
+AudioSynthWaveformDc     pwa4;  //xy=783,1617
+AudioSynthWaveformDc     pwa5;  //xy=783,1911
+AudioSynthWaveformDc     pwa6;  //xy=783,2205
+AudioSynthWaveformDc     pwa7;  //xy=783,2508
+AudioSynthWaveformDc     pwa8;  //xy=783,2806
+AudioSynthWaveformDc     pwa9;  //xy=783,3118
+AudioSynthWaveformDc     pwa10; //xy=783,3418
+AudioSynthWaveformDc     pwa11; //xy=783,3716
+AudioSynthWaveformDc     pwa12; //xy=783,4013
+
+AudioSynthWaveformDc     pwb1;  //xy=783,786
+AudioSynthWaveformDc     pwb2;  //xy=783,1094
+AudioSynthWaveformDc     pwb3;  //xy=783,1394
+AudioSynthWaveformDc     pwb4;  //xy=783,1695
+AudioSynthWaveformDc     pwb5;  //xy=783,1986
+AudioSynthWaveformDc     pwb6;  //xy=783,2291
+AudioSynthWaveformDc     pwb7;  //xy=783,2575
+AudioSynthWaveformDc     pwb8;  //xy=783,2875
+AudioSynthWaveformDc     pwb9;  //xy=783,3192
+AudioSynthWaveformDc     pwb10; //xy=783,3492
+AudioSynthWaveformDc     pwb11; //xy=783,3790
+AudioSynthWaveformDc     pwb12; //xy=783,4089
+
+AudioSynthWaveform       pwmLfoA1;  //xy=773,678
+AudioSynthWaveform       pwmLfoA2;  //xy=782,987
+AudioSynthWaveform       pwmLfoA3;  //xy=777,1283
+AudioSynthWaveform       pwmLfoA4;  //xy=786,1582
+AudioSynthWaveform       pwmLfoA5;  //xy=776,1876
+AudioSynthWaveform       pwmLfoA6;  //xy=768,2170
+AudioSynthWaveform       pwmLfoA7;  //xy=773,2470
+AudioSynthWaveform       pwmLfoA8;  //xy=778,2770
+AudioSynthWaveform       pwmLfoA9;  //xy=787,3081
+AudioSynthWaveform       pwmLfoA10; //xy=781,3381
+AudioSynthWaveform       pwmLfoA11; //xy=785,3682
+AudioSynthWaveform       pwmLfoA12; //xy=781,3976
+
+AudioSynthWaveform       pwmLfoB1;  //xy=776,751
+AudioSynthWaveform       pwmLfoB2;  //xy=777,1058
+AudioSynthWaveform       pwmLfoB3;  //xy=773,1360
+AudioSynthWaveform       pwmLfoB4;  //xy=783,1655
+AudioSynthWaveform       pwmLfoB5;  //xy=782,1950
+AudioSynthWaveform       pwmLfoB6;  //xy=784,2257
+AudioSynthWaveform       pwmLfoB7;  //xy=780,2542
+AudioSynthWaveform       pwmLfoB8;  //xy=784,2841
+AudioSynthWaveform       pwmLfoB9;  //xy=786,3152
+AudioSynthWaveform       pwmLfoB10; //xy=781,3452
+AudioSynthWaveform       pwmLfoB11; //xy=782,3753
+AudioSynthWaveform       pwmLfoB12; //xy=785,4051
+
+AudioMixer4              noiseMixer1;  //xy=1207,621
+AudioMixer4              noiseMixer2;  //xy=1205,930
+AudioMixer4              noiseMixer3;  //xy=1189,1239
+AudioMixer4              noiseMixer4;  //xy=1198,1521
+AudioMixer4              noiseMixer5;  //xy=1198,1824
+AudioMixer4              noiseMixer6;  //xy=1195,2116
+AudioMixer4              noiseMixer7;  //xy=1191,2425
+AudioMixer4              noiseMixer8;  //xy=1198,2724
+AudioMixer4              noiseMixer9;  //xy=1199,3021
+AudioMixer4              noiseMixer10; //xy=1184,3326
+AudioMixer4              noiseMixer11; //xy=1190,3619
+AudioMixer4              noiseMixer12; //xy=1178,3928
+
+AudioSynthWaveform       filterLfo1;  //xy=1335,693
+AudioSynthWaveform       filterLfo2;  //xy=1342,997
+AudioSynthWaveform       filterLfo3;  //xy=1343,1288
+AudioSynthWaveform       filterLfo4;  //xy=1331,1587
+AudioSynthWaveform       filterLfo5;  //xy=1330,1892
+AudioSynthWaveform       filterLfo6;  //xy=1336,2188
+AudioSynthWaveform       filterLfo7;  //xy=1336,2482
+AudioSynthWaveform       filterLfo8;  //xy=1333,2785
+AudioSynthWaveform       filterLfo9;  //xy=1333,3084
+AudioSynthWaveform       filterLfo10; //xy=1327,3388
+AudioSynthWaveform       filterLfo11; //xy=1335,3686
+AudioSynthWaveform       filterLfo12; //xy=1341,3988
 
 AudioEffectEnvelope      filterEnvelope1; //xy=611,145
 AudioEffectEnvelope      filterEnvelope2; //xy=611,445
@@ -75,18 +195,18 @@ AudioMixer4              pwMixer11b;     //xy=941,3255
 AudioMixer4              pwMixer12a;     //xy=941,3485
 AudioMixer4              pwMixer12b;     //xy=941,3555
 
-AudioSynthWaveformDc     glide1;         //xy=776,75
-AudioSynthWaveformDc     glide2;         //xy=776,375
-AudioSynthWaveformDc     glide3;         //xy=776,675
-AudioSynthWaveformDc     glide4;         //xy=776,975
-AudioSynthWaveformDc     glide5;         //xy=776,1275
-AudioSynthWaveformDc     glide6;         //xy=776,1575
-AudioSynthWaveformDc     glide7;         //xy=776,1875
-AudioSynthWaveformDc     glide8;         //xy=776,2175
-AudioSynthWaveformDc     glide9;         //xy=776,2475
-AudioSynthWaveformDc     glide10;        //xy=776,2775
-AudioSynthWaveformDc     glide11;        //xy=776,3075
-AudioSynthWaveformDc     glide12;        //xy=776,3375
+AudioSynthWaveformDc     glide1;         //xy=619,430
+AudioSynthWaveformDc     glide2;         //xy=588,741
+AudioSynthWaveformDc     glide3;         //xy=586,1036
+AudioSynthWaveformDc     glide4;         //xy=591,1340
+AudioSynthWaveformDc     glide5;         //xy=588,1640
+AudioSynthWaveformDc     glide6;         //xy=589,1939
+AudioSynthWaveformDc     glide7;         //xy=588,2243
+AudioSynthWaveformDc     glide8;         //xy=584,2541
+AudioSynthWaveformDc     glide9;         //xy=587,2834
+AudioSynthWaveformDc     glide10;        //xy=582,3138
+AudioSynthWaveformDc     glide11;        //xy=582,3442
+AudioSynthWaveformDc     glide12;        //xy=584,3739
 
 AudioSynthWaveformDc     keytracking1;   //xy=1326,172
 AudioSynthWaveformDc     keytracking2;   //xy=1326,472
@@ -242,73 +362,85 @@ AudioConnection          patchCord231(constant1Dc, filterEnvelope10);
 AudioConnection          patchCord232(constant1Dc, filterEnvelope11);
 AudioConnection          patchCord233(constant1Dc, filterEnvelope12);
 
-AudioConnection          patchCord5(pwmLfoA, 0, pwMixer1a, 0);
-AudioConnection          patchCord6(pwmLfoB, 0, pwMixer1b, 0);
-AudioConnection          patchCord7(pwmLfoA, 0, pwMixer2a, 0);
-AudioConnection          patchCord8(pwmLfoB, 0, pwMixer2b, 0);
-AudioConnection          patchCord9(pwmLfoA, 0, pwMixer3a, 0);
-AudioConnection          patchCord10(pwmLfoB, 0, pwMixer3b, 0);
-AudioConnection          patchCord11(pwmLfoA, 0, pwMixer4a, 0);
-AudioConnection          patchCord12(pwmLfoB, 0, pwMixer4b, 0);
-AudioConnection          patchCord139(pwmLfoA, 0, pwMixer5a, 0);
-AudioConnection          patchCord140(pwmLfoB, 0, pwMixer5b, 0);
-AudioConnection          patchCord141(pwmLfoA, 0, pwMixer6a, 0);
-AudioConnection          patchCord142(pwmLfoB, 0, pwMixer6b, 0);
-AudioConnection          patchCord234(pwmLfoA, 0, pwMixer7a, 0);
-AudioConnection          patchCord235(pwmLfoB, 0, pwMixer7b, 0);
-AudioConnection          patchCord236(pwmLfoA, 0, pwMixer8a, 0);
-AudioConnection          patchCord237(pwmLfoB, 0, pwMixer8b, 0);
-AudioConnection          patchCord238(pwmLfoA, 0, pwMixer9a, 0);
-AudioConnection          patchCord239(pwmLfoB, 0, pwMixer9b, 0);
-AudioConnection          patchCord240(pwmLfoA, 0, pwMixer10a, 0);
-AudioConnection          patchCord241(pwmLfoB, 0, pwMixer10b, 0);
-AudioConnection          patchCord242(pwmLfoA, 0, pwMixer11a, 0);
-AudioConnection          patchCord243(pwmLfoB, 0, pwMixer11b, 0);
-AudioConnection          patchCord244(pwmLfoA, 0, pwMixer12a, 0);
-AudioConnection          patchCord245(pwmLfoB, 0, pwMixer12b, 0);
+// These are now dynamic.
+															  
+// pwmLfoA_ -> pwMixer_a, 0
+															  
+															  
+// pwmLfoB_ -> pwMixer_b, 0
+// pwa_ -> pwMixer_a
+// pwb_ -> pwMixer_b
+// oscPitchMixer -> oscModMixer_a, 0
+// oscPitchMixer -> oscModMixer_b, 0
+																
+																
+																
+																
+																
+																
+																
+																
+																 
+																 
+																 
+																 
+																 
+																 
 
 
-AudioConnection          patchCord13(pwa, 0, pwMixer1a, 1);
-AudioConnection          patchCord14(pwa, 0, pwMixer2a, 1);
-AudioConnection          patchCord15(pwa, 0, pwMixer3a, 1);
-AudioConnection          patchCord16(pwa, 0, pwMixer4a, 1);
-AudioConnection          patchCord17(pwb, 0, pwMixer1b, 1);
-AudioConnection          patchCord18(pwb, 0, pwMixer2b, 1);
-AudioConnection          patchCord19(pwb, 0, pwMixer3b, 1);
-AudioConnection          patchCord20(pwb, 0, pwMixer4b, 1);
-AudioConnection          patchCord143(pwa, 0, pwMixer5a, 1);
-AudioConnection          patchCord144(pwb, 0, pwMixer5b, 1);
-AudioConnection          patchCord145(pwa, 0, pwMixer6a, 1);
-AudioConnection          patchCord146(pwb, 0, pwMixer6b, 1);
-AudioConnection          patchCord246(pwa, 0, pwMixer7a, 1);
-AudioConnection          patchCord247(pwb, 0, pwMixer7b, 1);
-AudioConnection          patchCord248(pwa, 0, pwMixer8a, 1);
-AudioConnection          patchCord249(pwb, 0, pwMixer8b, 1);
-AudioConnection          patchCord250(pwa, 0, pwMixer9a, 1);
-AudioConnection          patchCord251(pwb, 0, pwMixer9b, 1);
-AudioConnection          patchCord252(pwa, 0, pwMixer10a, 1);
-AudioConnection          patchCord253(pwb, 0, pwMixer10b, 1);
-AudioConnection          patchCord254(pwa, 0, pwMixer11a, 1);
-AudioConnection          patchCord255(pwb, 0, pwMixer11b, 1);
-AudioConnection          patchCord256(pwa, 0, pwMixer12a, 1);
-AudioConnection          patchCord257(pwb, 0, pwMixer12b, 1);
+														   
+														   
+														   
+														   
+														   
+														   
+														   
+														   
+															
+															
+															
+															
+															
+															
+															
+															
+															
+															
+															 
+															 
+															 
+															 
+															 
+															 
 
-AudioConnection          patchCord21(pitchLfo, 0, oscGlobalModMixer, 1);
-AudioConnection          patchCord23(pitchBend, 0, oscGlobalModMixer, 0);
+																		
+																		 
 
-AudioConnection          patchCord24(filterLfo, 0, filterModMixer1, 1);
-AudioConnection          patchCord25(filterLfo, 0, filterModMixer2, 1);
-AudioConnection          patchCord26(filterLfo, 0, filterModMixer3, 1);
-AudioConnection          patchCord27(filterLfo, 0, filterModMixer4, 1);
-AudioConnection          patchCord147(filterLfo, 0, filterModMixer5, 1);
-AudioConnection          patchCord148(filterLfo, 0, filterModMixer6, 1);
-AudioConnection          patchCord258(filterLfo, 0, filterModMixer7, 1);
-AudioConnection          patchCord259(filterLfo, 0, filterModMixer8, 1);
-AudioConnection          patchCord260(filterLfo, 0, filterModMixer9, 1);
-AudioConnection          patchCord261(filterLfo, 0, filterModMixer10, 1);
-AudioConnection          patchCord262(filterLfo, 0, filterModMixer11, 1);
-AudioConnection          patchCord263(filterLfo, 0, filterModMixer12, 1);
+AudioConnection          patchCord21(pitchLfo1, 0, oscPitchMixer1, 1);
+AudioConnection          patchCord23(pitchLfo2, 0, oscPitchMixer2, 1);
+AudioConnection          patchCord485(pitchLfo3, 0, oscPitchMixer3, 1);
+AudioConnection          patchCord486(pitchLfo4, 0, oscPitchMixer4, 1);
+AudioConnection          patchCord464(pitchLfo5, 0, oscPitchMixer5, 1);
+AudioConnection          patchCord465(pitchLfo6, 0, oscPitchMixer6, 1);
+AudioConnection          patchCord466(pitchLfo7, 0, oscPitchMixer7, 1);
+AudioConnection          patchCord467(pitchLfo8, 0, oscPitchMixer8, 1);
+AudioConnection          patchCord469(pitchLfo9, 0, oscPitchMixer9, 1);
+AudioConnection          patchCord470(pitchLfo10, 0, oscPitchMixer10, 1);
+AudioConnection          patchCord471(pitchLfo11, 0, oscPitchMixer11, 1);
+AudioConnection          patchCord472(pitchLfo12, 0, oscPitchMixer12, 1);
 
+AudioConnection          patchCord473(pitchBend1, 0, oscPitchMixer1, 0);
+AudioConnection          patchCord474(pitchBend2, 0, oscPitchMixer2, 0);
+AudioConnection          patchCord475(pitchBend3, 0, oscPitchMixer3, 0);
+AudioConnection          patchCord476(pitchBend4, 0, oscPitchMixer4, 0);
+AudioConnection          patchCord477(pitchBend5, 0, oscPitchMixer5, 0);
+AudioConnection          patchCord478(pitchBend6, 0, oscPitchMixer6, 0);
+AudioConnection          patchCord479(pitchBend7, 0, oscPitchMixer7, 0);
+AudioConnection          patchCord480(pitchBend8, 0, oscPitchMixer8, 0);
+AudioConnection          patchCord481(pitchBend9, 0, oscPitchMixer9, 0);
+AudioConnection          patchCord482(pitchBend10, 0, oscPitchMixer10, 0);
+AudioConnection          patchCord483(pitchBend11, 0, oscPitchMixer11, 0);
+AudioConnection          patchCord484(pitchBend12, 0, oscPitchMixer12, 0);
 
 AudioConnection          patchCord28(keytracking1, 0, filterModMixer1, 2);
 AudioConnection          patchCord29(keytracking2, 0, filterModMixer2, 2);
@@ -324,18 +456,18 @@ AudioConnection          patchCord268(keytracking11, 0, filterModMixer11, 2);
 AudioConnection          patchCord269(keytracking12, 0, filterModMixer12, 2);
 
 
-AudioConnection          patchCord32(noiseMixer, 0, waveformMixer1, 2);
-AudioConnection          patchCord33(noiseMixer, 0, waveformMixer2, 2);
-AudioConnection          patchCord34(noiseMixer, 0, waveformMixer3, 2);
-AudioConnection          patchCord35(noiseMixer, 0, waveformMixer4, 2);
-AudioConnection          patchCord151(noiseMixer, 0, waveformMixer5, 2);
-AudioConnection          patchCord152(noiseMixer, 0, waveformMixer6, 2);
-AudioConnection          patchCord270(noiseMixer, 0, waveformMixer7, 2);
-AudioConnection          patchCord271(noiseMixer, 0, waveformMixer8, 2);
-AudioConnection          patchCord272(noiseMixer, 0, waveformMixer9, 2);
-AudioConnection          patchCord273(noiseMixer, 0, waveformMixer10, 2);
-AudioConnection          patchCord274(noiseMixer, 0, waveformMixer11, 2);
-AudioConnection          patchCord275(noiseMixer, 0, waveformMixer12, 2);
+																	   
+																	   
+																	   
+																	   
+																		
+																		
+																		
+																		
+																		
+																		 
+																		 
+																		 
 
 
 AudioConnection          patchCord36(pwMixer1a, 0, waveformMod1a, 1);
@@ -363,30 +495,30 @@ AudioConnection          patchCord285(pwMixer11b, 0, waveformMod11b, 1);
 AudioConnection          patchCord286(pwMixer12a, 0, waveformMod12a, 1);
 AudioConnection          patchCord287(pwMixer12b, 0, waveformMod12b, 1);
 
-AudioConnection          patchCord39(oscGlobalModMixer, 0, oscModMixer1a, 0);
-AudioConnection          patchCord40(oscGlobalModMixer, 0, oscModMixer1b, 0);
-AudioConnection          patchCord41(oscGlobalModMixer, 0, oscModMixer2a, 0);
-AudioConnection          patchCord42(oscGlobalModMixer, 0, oscModMixer2b, 0);
-AudioConnection          patchCord43(oscGlobalModMixer, 0, oscModMixer3a, 0);
-AudioConnection          patchCord44(oscGlobalModMixer, 0, oscModMixer3b, 0);
-AudioConnection          patchCord45(oscGlobalModMixer, 0, oscModMixer4a, 0);
-AudioConnection          patchCord46(oscGlobalModMixer, 0, oscModMixer4b, 0);
-AudioConnection          patchCord153(oscGlobalModMixer, 0, oscModMixer5a, 0);
-AudioConnection          patchCord154(oscGlobalModMixer, 0, oscModMixer5b, 0);
-AudioConnection          patchCord155(oscGlobalModMixer, 0, oscModMixer6a, 0);
-AudioConnection          patchCord156(oscGlobalModMixer, 0, oscModMixer6b, 0);
-AudioConnection          patchCord288(oscGlobalModMixer, 0, oscModMixer7a, 0);
-AudioConnection          patchCord289(oscGlobalModMixer, 0, oscModMixer7b, 0);
-AudioConnection          patchCord290(oscGlobalModMixer, 0, oscModMixer8a, 0);
-AudioConnection          patchCord291(oscGlobalModMixer, 0, oscModMixer8b, 0);
-AudioConnection          patchCord292(oscGlobalModMixer, 0, oscModMixer9a, 0);
-AudioConnection          patchCord293(oscGlobalModMixer, 0, oscModMixer9b, 0);
-AudioConnection          patchCord294(oscGlobalModMixer, 0, oscModMixer10a, 0);
-AudioConnection          patchCord295(oscGlobalModMixer, 0, oscModMixer10b, 0);
-AudioConnection          patchCord296(oscGlobalModMixer, 0, oscModMixer11a, 0);
-AudioConnection          patchCord297(oscGlobalModMixer, 0, oscModMixer11b, 0);
-AudioConnection          patchCord298(oscGlobalModMixer, 0, oscModMixer12a, 0);
-AudioConnection          patchCord299(oscGlobalModMixer, 0, oscModMixer12b, 0);
+																			 
+																			 
+																			 
+																			 
+																			 
+																			 
+																			 
+																			 
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			  
+																			   
+																			   
+																			   
+																			   
+																			   
+																			   
 
 
 AudioConnection          patchCord52(waveformMod1b, 0, waveformMixer1, 1);
@@ -691,8 +823,31 @@ AudioConnection          patchCord428(waveformMod12b, 0, oscModMixer12a, 3);
 AudioConnection          patchCord440(waveformMod12a, 0, oscModMixer12b, 3);
 
 //Noise
-AudioConnection          patchCord137(pink, 0, noiseMixer, 0);
-AudioConnection          patchCord138(white, 0, noiseMixer, 1);
+AudioConnection          patchCord452(pink, 0, noiseMixer1, 0);
+AudioConnection          patchCord453(pink, 0, noiseMixer2, 0);
+AudioConnection          patchCord454(pink, 0, noiseMixer3, 0);
+AudioConnection          patchCord455(pink, 0, noiseMixer4, 0);
+AudioConnection          patchCord456(pink, 0, noiseMixer5, 0);
+AudioConnection          patchCord457(pink, 0, noiseMixer6, 0);
+AudioConnection          patchCord458(pink, 0, noiseMixer7, 0);
+AudioConnection          patchCord459(pink, 0, noiseMixer8, 0);
+AudioConnection          patchCord460(pink, 0, noiseMixer9, 0);
+AudioConnection          patchCord461(pink, 0, noiseMixer10, 0);
+AudioConnection          patchCord462(pink, 0, noiseMixer11, 0);
+AudioConnection          patchCord463(pink, 0, noiseMixer12, 0);
+
+AudioConnection          patchCord137(white, 0, noiseMixer1, 1);
+AudioConnection          patchCord138(white, 0, noiseMixer2, 1);
+AudioConnection          patchCord442(white, 0, noiseMixer3, 1);
+AudioConnection          patchCord443(white, 0, noiseMixer4, 1);
+AudioConnection          patchCord444(white, 0, noiseMixer5, 1);
+AudioConnection          patchCord445(white, 0, noiseMixer6, 1);
+AudioConnection          patchCord446(white, 0, noiseMixer7, 1);
+AudioConnection          patchCord447(white, 0, noiseMixer8, 1);
+AudioConnection          patchCord448(white, 0, noiseMixer9, 1);
+AudioConnection          patchCord449(white, 0, noiseMixer10, 1);
+AudioConnection          patchCord450(white, 0, noiseMixer11, 1);
+AudioConnection          patchCord451(white, 0, noiseMixer12, 1);
 
 AudioConnection          patchCord197(voiceMixer1, 0, voiceMixerM, 0);
 AudioConnection          patchCord198(voiceMixer2, 0, voiceMixerM, 1);
@@ -713,6 +868,7 @@ AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
 // GUItool: end automatically generated code
 
+
 // Oscillator configurations.
 struct Patch {
     // What is this?
@@ -730,6 +886,7 @@ struct Patch {
     AudioMixer4 &oscModMixer_a;
     AudioMixer4 &oscModMixer_b;
 
+    AudioSynthWaveform &filterLfo_;
     AudioSynthWaveformModulated &waveformMod_a;
     AudioSynthWaveformModulated &waveformMod_b;
 
@@ -744,7 +901,170 @@ struct Patch {
     AudioMixer4 &filterMixer_;
 
     AudioEffectEnvelope &ampEnvelope_;
+
+    // When added to a voice group, connect PWA/PWB.
+    AudioConnection *pitchMixerAConnection;
+    AudioConnection *pitchMixerBConnection;
+    AudioConnection *pwmLfoAConnection;
+    AudioConnection *pwmLfoBConnection;
+    AudioConnection *filterLfoConnection;
+    AudioConnection *pwaConnection;
+    AudioConnection *pwbConnection;
+    AudioConnection *noiseMixerConnection;
 };
+
+struct PatchShared {
+    AudioSynthWaveformDc &pitchBend;
+    AudioSynthWaveform &pitchLfo;
+    AudioMixer4 &pitchMixer;
+    AudioSynthWaveform &pwmLfoA;
+    AudioSynthWaveform &pwmLfoB;
+    AudioSynthWaveform& filterLfo;
+    AudioSynthWaveformDc& pwa;
+    AudioSynthWaveformDc& pwb;
+    AudioMixer4& noiseMixer;
+};
+
+PatchShared SharedAudio[12] = {
+    {
+        pitchBend1,
+        pitchLfo1,
+        oscPitchMixer1,
+        pwmLfoA1,
+        pwmLfoB1,
+        filterLfo1,
+        pwa1,
+        pwb1,
+        noiseMixer1
+    },
+    {
+        pitchBend2,
+        pitchLfo2,
+        oscPitchMixer2,
+        pwmLfoA2,
+        pwmLfoB2,
+        filterLfo2,
+        pwa2,
+        pwb2,
+        noiseMixer2
+    },
+    {
+        pitchBend3,
+        pitchLfo3,
+        oscPitchMixer3,
+        pwmLfoA3,
+        pwmLfoB3,
+        filterLfo3,
+        pwa3,
+        pwb3,
+        noiseMixer3
+    },
+    {
+        pitchBend4,
+        pitchLfo4,
+        oscPitchMixer4,
+        pwmLfoA4,
+        pwmLfoB4,
+        filterLfo4,
+        pwa4,
+        pwb4,
+        noiseMixer4
+    },
+    {
+        pitchBend5,
+        pitchLfo5,
+        oscPitchMixer5,
+        pwmLfoA5,
+        pwmLfoB5,
+        filterLfo5,
+        pwa5,
+        pwb5,
+        noiseMixer5
+    },
+    {
+        pitchBend6,
+        pitchLfo6,
+        oscPitchMixer6,
+        pwmLfoA6,
+        pwmLfoB6,
+        filterLfo6,
+        pwa6,
+        pwb6,
+        noiseMixer6
+    },
+    {
+        pitchBend7,
+        pitchLfo7,
+        oscPitchMixer7,
+        pwmLfoA7,
+        pwmLfoB7,
+        filterLfo7,
+        pwa7,
+        pwb7,
+        noiseMixer7
+    },
+    {
+        pitchBend8,
+        pitchLfo8,
+        oscPitchMixer8,
+        pwmLfoA8,
+        pwmLfoB8,
+        filterLfo8,
+        pwa8,
+        pwb8,
+        noiseMixer8
+    },
+    {
+        pitchBend9,
+        pitchLfo9,
+        oscPitchMixer9,
+        pwmLfoA9,
+        pwmLfoB9,
+        filterLfo9,
+        pwa9,
+        pwb9,
+        noiseMixer9
+    },
+    {
+        pitchBend10,
+        pitchLfo10,
+        oscPitchMixer10,
+        pwmLfoA10,
+        pwmLfoB10,
+        filterLfo10,
+        pwa10,
+        pwb9,
+        noiseMixer10
+    },
+    {
+        pitchBend11,
+        pitchLfo11,
+        oscPitchMixer11,
+        pwmLfoA11,
+        pwmLfoB11,
+        filterLfo11,
+        pwa11,
+        pwb9,
+        noiseMixer11
+    },
+    {
+        pitchBend12,
+        pitchLfo12,
+        oscPitchMixer12,
+        pwmLfoA12,
+        pwmLfoB12,
+        filterLfo12,
+        pwa12,
+        pwb9,
+        noiseMixer12
+    }
+};
+
+
+//AudioSynthWaveform* filterLfo[12] = {&filterLfo1, &filterLfo2, &filterLfo}
+//AudioSynthWaveformDc* pwa[12] = {&pwa1, &pwa2, &pwa3, &pwa4, &pwa5, &pwa6, &pwa7, &pwa8, &pwa9, &pwa10, &pwa11, &pwa12 };
+//AudioSynthWaveformDc* pwb[12] = {&pwb1, &pwb2, &pwb3, &pwb4, &pwb5, &pwb6, &pwb7, &pwb8, &pwb9, &pwb10, &pwb11, &pwb12 };
+//AudioMixer4* noiseMixer[12] = {&noiseMixer1, &noiseMixer2, &noiseMixer3, &noiseMixer4, &noiseMixer5, &noiseMixer6, &noiseMixer7, &noiseMixer8, &noiseMixer9, &noiseMixer10, &noiseMixer11, &noiseMixer12 };
 
 // The 12 oscillator pairs in one data structure to allow for easier programming.
 Patch Oscillators[12] = {
@@ -757,6 +1077,7 @@ Patch Oscillators[12] = {
         keytracking1,
         oscModMixer1a,
         oscModMixer1b,
+        filterLfo1,
         waveformMod1a,
         waveformMod1b,
         oscFX1,
@@ -764,7 +1085,14 @@ Patch Oscillators[12] = {
         filterModMixer1,
         filter1,
         filterMixer1,
-        ampEnvelope1
+        ampEnvelope1,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer1,
@@ -775,6 +1103,7 @@ Patch Oscillators[12] = {
         keytracking2,
         oscModMixer2a,
         oscModMixer2b,
+        filterLfo2,
         waveformMod2a,
         waveformMod2b,
         oscFX2,
@@ -782,7 +1111,15 @@ Patch Oscillators[12] = {
         filterModMixer2,
         filter2,
         filterMixer2,
-        ampEnvelope2
+        ampEnvelope2,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer1,
@@ -793,6 +1130,7 @@ Patch Oscillators[12] = {
         keytracking3,
         oscModMixer3a,
         oscModMixer3b,
+        filterLfo3,
         waveformMod3a,
         waveformMod3b,
         oscFX3,
@@ -800,7 +1138,15 @@ Patch Oscillators[12] = {
         filterModMixer3,
         filter3,
         filterMixer3,
-        ampEnvelope3
+        ampEnvelope3,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer1,
@@ -811,6 +1157,7 @@ Patch Oscillators[12] = {
         keytracking4,
         oscModMixer4a,
         oscModMixer4b,
+        filterLfo4,
         waveformMod4a,
         waveformMod4b,
         oscFX4,
@@ -818,7 +1165,15 @@ Patch Oscillators[12] = {
         filterModMixer4,
         filter4,
         filterMixer4,
-        ampEnvelope4
+        ampEnvelope4,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer2,
@@ -829,6 +1184,7 @@ Patch Oscillators[12] = {
         keytracking5,
         oscModMixer5a,
         oscModMixer5b,
+        filterLfo5,
         waveformMod5a,
         waveformMod5b,
         oscFX5,
@@ -836,7 +1192,15 @@ Patch Oscillators[12] = {
         filterModMixer5,
         filter5,
         filterMixer5,
-        ampEnvelope5
+        ampEnvelope5,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer2,
@@ -847,6 +1211,7 @@ Patch Oscillators[12] = {
         keytracking6,
         oscModMixer6a,
         oscModMixer6b,
+        filterLfo6,
         waveformMod6a,
         waveformMod6b,
         oscFX6,
@@ -854,7 +1219,15 @@ Patch Oscillators[12] = {
         filterModMixer6,
         filter6,
         filterMixer6,
-        ampEnvelope6
+        ampEnvelope6,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer2,
@@ -865,6 +1238,7 @@ Patch Oscillators[12] = {
         keytracking7,
         oscModMixer7a,
         oscModMixer7b,
+        filterLfo7,
         waveformMod7a,
         waveformMod7b,
         oscFX7,
@@ -872,7 +1246,15 @@ Patch Oscillators[12] = {
         filterModMixer7,
         filter7,
         filterMixer7,
-        ampEnvelope7
+        ampEnvelope7,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer2,
@@ -883,6 +1265,7 @@ Patch Oscillators[12] = {
         keytracking8,
         oscModMixer8a,
         oscModMixer8b,
+        filterLfo8,
         waveformMod8a,
         waveformMod8b,
         oscFX8,
@@ -890,7 +1273,15 @@ Patch Oscillators[12] = {
         filterModMixer8,
         filter8,
         filterMixer8,
-        ampEnvelope8
+        ampEnvelope8,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer3,
@@ -901,6 +1292,7 @@ Patch Oscillators[12] = {
         keytracking9,
         oscModMixer9a,
         oscModMixer9b,
+        filterLfo9,
         waveformMod9a,
         waveformMod9b,
         oscFX9,
@@ -908,7 +1300,15 @@ Patch Oscillators[12] = {
         filterModMixer9,
         filter9,
         filterMixer9,
-        ampEnvelope9
+        ampEnvelope9,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer3,
@@ -919,6 +1319,7 @@ Patch Oscillators[12] = {
         keytracking10,
         oscModMixer10a,
         oscModMixer10b,
+        filterLfo10,
         waveformMod10a,
         waveformMod10b,
         oscFX10,
@@ -926,7 +1327,15 @@ Patch Oscillators[12] = {
         filterModMixer10,
         filter10,
         filterMixer10,
-        ampEnvelope10
+        ampEnvelope10,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer3,
@@ -937,6 +1346,7 @@ Patch Oscillators[12] = {
         keytracking11,
         oscModMixer11a,
         oscModMixer11b,
+        filterLfo11,
         waveformMod11a,
         waveformMod11b,
         oscFX11,
@@ -944,7 +1354,15 @@ Patch Oscillators[12] = {
         filterModMixer11,
         filter11,
         filterMixer11,
-        ampEnvelope11
+        ampEnvelope11,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     },
     {
         voiceMixer3,
@@ -955,6 +1373,7 @@ Patch Oscillators[12] = {
         keytracking12,
         oscModMixer12a,
         oscModMixer12b,
+        filterLfo12,
         waveformMod12a,
         waveformMod12b,
         oscFX12,
@@ -962,7 +1381,15 @@ Patch Oscillators[12] = {
         filterModMixer12,
         filter12,
         filterMixer12,
-        ampEnvelope12
+        ampEnvelope12,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr
     }
 };
 
@@ -970,3 +1397,4 @@ Patch Oscillators[12] = {
 #undef AudioSynthWaveform
 #undef AudioSynthWaveformModulated
 #undef AudioEffectEnvelope
+#endif

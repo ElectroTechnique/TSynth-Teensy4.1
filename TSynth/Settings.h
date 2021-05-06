@@ -1,8 +1,5 @@
-#define SETTINGSOPTIONSNO 14//No of options
+#define SETTINGSOPTIONSNO 15//No of options
 #define SETTINGSVALUESNO 19//Maximum number of settings option values needed
-// Macros to help do things for each NO_OF_VOICES
-#define FOR_EACH_OSC(CMD) FOR_EACH_VOICE(Oscillators[i].CMD)
-#define FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < NO_OF_VOICES; i++){ CMD; }
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
 struct SettingsOption
@@ -104,7 +101,7 @@ FLASHMEM void settingsFiltEnv(const char * value) {
   else envTypeFilt = -128;
   FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
   storeFiltEnv(envTypeFilt);
-}
+}																	 
 
 FLASHMEM void settingsMIDICh(const char * value) {
   if (strcmp(value, "ALL") == 0) {
@@ -124,9 +121,9 @@ FLASHMEM void settingsVelocitySens(const char * value) {
 }
 
 FLASHMEM void settingsKeyTracking(const char * value) {
-  if (strcmp(value, "None") == 0) keytrackingAmount = 0;
-  if (strcmp(value, "Half") == 0)  keytrackingAmount =  0.5;
-  if (strcmp(value, "Full") == 0) keytrackingAmount =  1.0;
+  if (strcmp(value, "None") == 0) updateKeyTracking(0);
+  if (strcmp(value, "Half") == 0) updateKeyTracking(0.5);
+  if (strcmp(value, "Full") == 0) updateKeyTracking(1.0);
 }
 
 FLASHMEM void settingsPitchBend(const char * value) {
@@ -185,6 +182,17 @@ FLASHMEM void settingsBassEnhanceEnable(const char * value) {
   }
 }
 
+FLASHMEM void settingsMonophonic(const char * value) {
+  uint8_t monophonic;
+  if (strcmp(value, "Off") == 0)     monophonic = MONOPHONIC_OFF;
+  if (strcmp(value, "Last") == 0)    monophonic = MONOPHONIC_LAST;
+  if (strcmp(value, "First") == 0)   monophonic = MONOPHONIC_FIRST;
+  if (strcmp(value, "Highest") == 0) monophonic = MONOPHONIC_HIGHEST;
+  if (strcmp(value, "Lowest") == 0)  monophonic = MONOPHONIC_LOWEST;
+  if (strcmp(value, "Legato") == 0)  monophonic = MONOPHONIC_LEGATO;
+  voices.setMonophonic(monophonic);
+}
+
 FLASHMEM void settingsScopeEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
     enableScope(false);
@@ -219,9 +227,9 @@ FLASHMEM int currentIndexVelocitySens() {
 }
 
 FLASHMEM int currentIndexKeyTracking() {
-  if (keytrackingAmount == 0.0f) return 0;
-  if (keytrackingAmount == 0.5f)  return 1;
-  if (keytrackingAmount == 1.0f) return 2;
+  if (voices.getKeytrackingAmount() == 0.0f) return 0;
+  if (voices.getKeytrackingAmount() == 0.5f) return 1;
+  if (voices.getKeytrackingAmount() == 1.0f) return 2;
   return 0;
 }
 
@@ -257,6 +265,10 @@ FLASHMEM int currentIndexBassEnhanceEnable() {
   return getBassEnhanceEnable() ? 1 : 0;
 }
 
+FLASHMEM int currentIndexMonophonicMode() {
+  return voices.getMonophonicMode();
+}
+
 FLASHMEM int currentIndexScopeEnable() {
   return getScopeEnable() ? 1 : 0;
 }
@@ -265,28 +277,28 @@ FLASHMEM int currentIndexVUEnable() {
   return getVUEnable() ? 1 : 0;
 }
 
-
-
 //Takes a pointer to a specific method for the current settings option value and invokes it.
 FLASHMEM int getCurrentIndex(int (*f)() ) {
   return f();
 }
 
 CircularBuffer<SettingsOption, SETTINGSOPTIONSNO>  settingsOptions;
+
 // add settings to the circular buffer
 FLASHMEM void setUpSettings() {
-  settingsOptions.push(SettingsOption{"MIDI Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", NULL}, settingsMIDICh, currentIndexMIDICh});
-  settingsOptions.push(SettingsOption{"Key Tracking", {"None", "Half", "Full", NULL}, settingsKeyTracking, currentIndexKeyTracking});
-  settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", NULL}, settingsVelocitySens, currentIndexVelocitySens});
-  settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", NULL}, settingsPitchBend, currentIndexPitchBend});
-  settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", NULL}, settingsModWheelDepth, currentIndexModWheelDepth});
-  settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", NULL}, settingsMIDIOutCh, currentIndexMIDIOutCh});
-  settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", NULL}, settingsMIDIThru, currentIndexMIDIThru});
-  settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", NULL}, settingsEncoderDir, currentIndexEncoderDir});
-  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", NULL}, settingsPickupEnable, currentIndexPickupEnable});
-  settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", NULL}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
-  settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", NULL}, settingsScopeEnable, currentIndexScopeEnable});
-  settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", NULL}, settingsVUEnable, currentIndexVUEnable});
+  settingsOptions.push(SettingsOption{"MIDI Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDICh, currentIndexMIDICh});
+  settingsOptions.push(SettingsOption{"Key Tracking", {"None", "Half", "Full", "\0"}, settingsKeyTracking, currentIndexKeyTracking});
+  settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", "\0"}, settingsVelocitySens, currentIndexVelocitySens});
+  settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "\0"}, settingsPitchBend, currentIndexPitchBend});
+  settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "\0"}, settingsModWheelDepth, currentIndexModWheelDepth});
+  settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDIOutCh, currentIndexMIDIOutCh});
+  settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", "\0"}, settingsMIDIThru, currentIndexMIDIThru});
+  settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
+  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
+  settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
+  settingsOptions.push(SettingsOption{"Monophonic", {"Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0"}, settingsMonophonic, currentIndexMonophonicMode});
   settingsOptions.push(SettingsOption{"Amp Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsAmpEnv, currentIndexAmpEnv});
-  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsFiltEnv, currentIndexFiltEnv});
+  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsFiltEnv, currentIndexFiltEnv});																												
+  settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
+  settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
 }

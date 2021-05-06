@@ -10,10 +10,9 @@
 #define EEPROM_MIDI_OUT_CH 7
 #define EEPROM_VU_ENABLE 8
 #define EEPROM_MIDI_THRU 9
-
-// Added for exponential envelope with multiple attack curves.
 #define EEPROM_AMP_ENV 10
 #define EEPROM_FILT_ENV 11
+
 FLASHMEM void storeAmpEnv(byte type){
   EEPROM.update(EEPROM_AMP_ENV, type);
 }
@@ -29,7 +28,6 @@ FLASHMEM int8_t getAmpEnv() {
 FLASHMEM int8_t getFiltEnv() {
   return  (int8_t)EEPROM.read(EEPROM_FILT_ENV);
 }
-
 
 FLASHMEM int getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);

@@ -1,0 +1,1027 @@
+#ifndef TSYNTH_VOICE_GROUP_H
+#define TSYNTH_VOICE_GROUP_H
+
+#include <Arduino.h>
+#include <vector>
+#include <stdint.h>
+#include <stddef.h>
+#include "Voice.h"
+
+#define VG_FOR_EACH_OSC(CMD) VG_FOR_EACH_VOICE(voices[i]->patch().CMD)
+#define VG_FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < voices.size(); i++){ CMD; }
+
+// These are here because of a Settings.h circular dependency.
+#define MONOPHONIC_OFF 0
+#define MONOPHONIC_LAST 1
+#define MONOPHONIC_FIRST 2
+#define MONOPHONIC_HIGHEST 3
+#define MONOPHONIC_LOWEST 4
+// Legato isn't supported, the envelope state from the previous note needs to transfer to the new note
+#define MONOPHONIC_LEGATO 5
+
+const static uint32_t WAVEFORM_PARABOLIC = 103;
+const static uint32_t WAVEFORM_HARMONIC = 104;
+
+class VoiceGroup {
+    private:
+    String patchName;
+    uint32_t patchIndex;
+
+    // Audio Objects
+    PatchShared &shared;
+    std::vector<Voice*> voices;
+
+    // Patch Configs
+    bool midiClockSignal; // midiCC clock
+    bool filterLfoMidiClockSync;
+    bool pitchLFOMidiClockSync;
+
+    VoiceParams _params;
+    uint8_t notesOn;
+    uint8_t monoNote;
+    uint8_t monophonic;
+    uint8_t waveformA;
+    uint8_t waveformB;
+    float pitchEnvelope;
+    uint8_t pwmSource;
+    float pwmAmtA;
+    float pwmAmtB;
+    float pwA;
+    float pwB;
+    float pwmRate;
+    uint8_t oscFX;
+    float oscLevelA;
+    float oscLevelB;
+    float cutoff;
+    float resonance;
+    float filterMixer;
+    float filterEnvelope;
+    float filterAttack;
+    float filterDecay;
+    float filterSustain;
+    float filterRelease;
+    float ampAttack;
+    float ampDecay;
+    float ampSustain;
+    float ampRelease;
+    float filterLfoRetrig;
+    float filterLfoRate;
+    float filterLfoAmt;
+    uint8_t filterLfoWaveform;
+    float pinkLevel;
+    float whiteLevel;
+    uint8_t pitchLfoWaveform;
+    bool pitchLfoRetrig;
+    float pitchLfoAmount;
+    float pitchLfoRate;
+    float modWhAmount;
+
+
+    struct noteStackData {
+        uint8_t note;
+        uint8_t velocity;
+    };
+
+    noteStackData noteStack[NO_OF_VOICES];
+    uint8_t top = 0;
+
+    public:
+    VoiceGroup(PatchShared& shared_):
+            patchName(""),
+            patchIndex(0),
+            shared(shared_),
+            midiClockSignal(false),
+            filterLfoMidiClockSync(false),
+            pitchLFOMidiClockSync(false),
+            notesOn(0),
+            monophonic(0),
+            waveformA(WAVEFORM_SQUARE),
+            waveformB(WAVEFORM_SQUARE),
+            pitchEnvelope(0.0),
+            pwmSource(PWMSOURCELFO),
+            pwmAmtA(1.0),
+            pwmAmtB(1.0),
+            pwA(0.0),
+            pwB(0.0),
+            pwmRate(0.5),
+            oscFX(0),
+            oscLevelA(1.0),
+            oscLevelB(1.0),
+            cutoff(12000.0),
+            resonance(1.1),
+            filterMixer(0.0),
+            filterEnvelope(0.0),
+            filterAttack(100.0),
+            filterDecay(350.0),
+            filterSustain(0.7),
+            filterRelease(300.0),
+            ampAttack(10.0),
+            ampDecay(35.0),
+            ampSustain(1.0),
+            ampRelease(300.0),
+            filterLfoRetrig(false),
+            filterLfoRate(2.0),
+            filterLfoAmt(0.0),
+            filterLfoWaveform(WAVEFORM_SINE),
+            pinkLevel(0),
+            whiteLevel(0),
+            pitchLfoWaveform(WAVEFORM_SINE),
+            pitchLfoRetrig(false),
+            pitchLfoAmount(0),
+            pitchLfoRate(4.0),
+            modWhAmount(0.0)
+        {
+        _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
+        _params.mixerLevel = 0.0;
+        _params.prevNote = 48;
+        _params.glideSpeed = 0.0;
+        _params.unisonMode = 0;
+        _params.chordDetune = 0;
+        _params.detune = 0;
+        _params.oscPitchA = 0;
+        _params.oscPitchB = 12;
+
+        shared.noiseMixer.gain(0, 0);
+        shared.noiseMixer.gain(1, 0);
+
+        shared.pitchLfo.begin(WAVEFORM_SINE);
+        shared.pwmLfoA.amplitude(ONE);
+        shared.pwmLfoA.begin(PWMWAVEFORM);
+        shared.pwmLfoB.amplitude(ONE);
+        shared.pwmLfoB.begin(PWMWAVEFORM);
+        shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
+    }
+
+    inline uint8_t size()           { return this->voices.size(); }
+    inline String getPatchName()    { return this->patchName; }
+    bool getFilterLfoMidiClockSync(){ return filterLfoMidiClockSync; }
+    bool getPitchLfoMidiClockSync() { return pitchLFOMidiClockSync; }
+    inline uint32_t getPatchIndex() { return this->patchIndex; }
+    float getKeytrackingAmount()    { return this->_params.keytrackingAmount; }
+    uint8_t getMonophonicMode()     { return this->monophonic; }
+    uint32_t getWaveformA()         { return waveformA; }
+    uint32_t getWaveformB()         { return waveformB; }
+    float getPitchEnvelope()        { return pitchEnvelope; }
+    uint8_t getPwmSource()          { return pwmSource; }
+    float getPwA()                  { return pwA; }
+    float getPwB()                  { return pwB; }
+    float getPwmAmtA()              { return pwmAmtA; }
+    float getPwmAmtB()              { return pwmAmtB; }
+    float getPwmRate()              { return pwmRate; }
+    uint8_t getOscFX()              { return oscFX; }
+    float getOscLevelA()            { return oscLevelA; }
+    float getOscLevelB()            { return oscLevelB; }
+    float getCutoff()               { return cutoff; }
+    float getResonance()            { return resonance; }
+    float getFilterMixer()          { return filterMixer; }
+    float getFilterEnvelope()       { return filterEnvelope; }
+    float getFilterAttack()         { return filterAttack; }
+    float getFilterDecay()          { return filterDecay; }
+    float getFilterSustain()        { return filterSustain; }
+    float getFilterRelease()        { return filterRelease; }
+    float getAmpAttack()            { return ampAttack; }
+    float getAmpDecay()             { return ampDecay; }
+    float getAmpSustain()           { return ampSustain; }
+    float getAmpRelease()           { return ampRelease; }
+    bool getFilterLfoRetrig()       { return filterLfoRetrig; }
+    float getFilterLfoRate()        { return filterLfoRate; }
+    float getFilterLfoAmt()         { return filterLfoAmt; }
+    uint32_t getFilterLfoWaveform() { return filterLfoWaveform; }
+    float getPinkNoiseLevel()       { return pinkLevel; }
+    float getWhiteNoiseLevel()      { return whiteLevel; }
+    bool getPitchLfoRetrig()        { return pitchLfoRetrig; }
+    uint32_t getPitchLfoWaveform()  { return pitchLfoWaveform; }
+    float getPitchLfoAmount()       { return pitchLfoAmount; }
+    float getPitchLfoRate()         { return pitchLfoRate; }
+    float getModWhAmount()          { return modWhAmount; }
+
+
+    inline void setPatchName(String name) {
+        this->patchName = name;
+    }
+
+    inline void setPatchIndex(uint32_t index) {
+        this->patchIndex = index;
+    }
+
+    void setWaveformA(uint32_t waveform) {
+        if (waveformA == waveform) return;
+        waveformA = waveform;
+
+        int temp = waveform;
+        if (waveform == WAVEFORM_PARABOLIC) {
+            VG_FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+        if (waveform == WAVEFORM_HARMONIC) {
+            VG_FOR_EACH_OSC(waveformMod_a.arbitraryWaveform(HARMONIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+
+        VG_FOR_EACH_OSC(waveformMod_a.begin(temp))
+    }
+
+    void setWaveformB(uint32_t waveform) {
+        if (waveformB == waveform) return;
+        waveformB = waveform;
+
+        int temp = waveform;
+        if (waveform == WAVEFORM_PARABOLIC) {
+            VG_FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+        if (waveform == WAVEFORM_HARMONIC) {
+            VG_FOR_EACH_OSC(waveformMod_b.arbitraryWaveform(PPG_WAVE, AWFREQ));
+            temp = WAVEFORM_ARBITRARY;
+        }
+
+        VG_FOR_EACH_OSC(waveformMod_b.begin(temp))
+    }
+
+    void setPwmRate(float value) {
+        pwmRate = value;
+
+        shared.pwmLfoA.frequency(pwmRate);
+        shared.pwmLfoB.frequency(pwmRate);
+
+        if (pwmRate == PWMRATE_PW_MODE) {
+            //Set to fixed PW mode
+            this->setPwmMixerALFO(0); //LFO Source off
+            this->setPwmMixerBLFO(0);
+            this->setPwmMixerAFEnv(0); //Filter Env Source off
+            this->setPwmMixerBFEnv(0);
+            this->setPwmMixerAPW(1); //Manually adjustable pulse width on
+            this->setPwmMixerBPW(1);
+        } else if (pwmRate == PWMRATE_SOURCE_FILTER_ENV) {
+            //Set to Filter Env Mod source
+            this->setPWMSource(PWMSOURCEFENV);
+            this->setPwmMixerAFEnv(this->getPwmAmtA());
+            this->setPwmMixerBFEnv(this->getPwmAmtB());
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+        } else {
+            this->setPWMSource(PWMSOURCELFO);
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+        }
+    }
+
+    void setPitchEnvelope(float value) {
+        pitchEnvelope = value;
+        VG_FOR_EACH_OSC(oscModMixer_a.gain(1, value))
+        VG_FOR_EACH_OSC(oscModMixer_b.gain(1, value))
+    }
+
+    void setPwmMixerALFO(float value) {
+        VG_FOR_EACH_OSC(pwMixer_a.gain(0, value));
+    }
+
+    void setPwmMixerBLFO(float value) {
+        VG_FOR_EACH_OSC(pwMixer_b.gain(0, value));
+    }
+
+    void setPwmMixerAPW(float value) {
+        VG_FOR_EACH_OSC(pwMixer_a.gain(1, value));
+    }
+
+    void setPwmMixerBPW(float value) {
+        VG_FOR_EACH_OSC(pwMixer_b.gain(1, value));
+    }
+
+    void setPwmMixerAFEnv(float value) {
+        VG_FOR_EACH_OSC(pwMixer_a.gain(2, value));
+    }
+
+    void setPwmMixerBFEnv(float value) {
+        VG_FOR_EACH_OSC(pwMixer_b.gain(2, value));
+    }
+
+    // MIDI-CC Only
+    void overridePwmAmount(float value) {
+        pwmAmtA = value;
+        pwmAmtB = value;
+        pwA = 0;
+        pwB = 0;
+        this->setPwmMixerALFO(value);
+        this->setPwmMixerBLFO(value);
+    }
+
+    void setPWA(float valuePwA, float valuePwmAmtA) {
+        pwA = valuePwA;
+        pwmAmtA = valuePwmAmtA;
+        if (pwmRate == PWMRATE_PW_MODE) {
+            //fixed PW is enabled
+            this->setPwmMixerALFO(0);
+            this->setPwmMixerBLFO(0);
+            this->setPwmMixerAFEnv(0);
+            this->setPwmMixerBFEnv(0);
+            this->setPwmMixerAPW(1);
+            this->setPwmMixerBPW(1);
+        } else {
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+            if (pwmSource == PWMSOURCELFO) {
+                //PW alters PWM LFO amount for waveform A
+                this->setPwmMixerALFO(pwmAmtA);
+            } else {
+                //PW alters PWM Filter Env amount for waveform A
+                this->setPwmMixerAFEnv(pwmAmtA);
+            }
+        }
+
+        //Prevent silence when pw = +/-1.0 on pulse
+        float pwA_Adj = pwA;
+        if (pwA > 0.98) pwA_Adj = 0.98f;
+        if (pwA < -0.98) pwA_Adj = -0.98f;
+        shared.pwa.amplitude(pwA_Adj);
+    }
+
+    void setPWB(float valuePwA, float valuePwmAmtA) {
+        pwB = valuePwA;
+        pwmAmtB = valuePwmAmtA;
+        if (pwmRate == PWMRATE_PW_MODE) {
+            //fixed PW is enabled
+            this->setPwmMixerALFO(0);
+            this->setPwmMixerBLFO(0);
+            this->setPwmMixerAFEnv(0);
+            this->setPwmMixerBFEnv(0);
+            this->setPwmMixerAPW(1);
+            this->setPwmMixerBPW(1);
+        } else {
+            this->setPwmMixerAPW(0);
+            this->setPwmMixerBPW(0);
+            if (pwmSource == PWMSOURCELFO) {
+                //PW alters PWM LFO amount for waveform B
+                this->setPwmMixerBLFO(pwmAmtB);
+            } else {
+                //PW alters PWM Filter Env amount for waveform B
+                this->setPwmMixerBFEnv(pwmAmtB);
+            }
+        }
+
+        //Prevent silence when pw = +/-1.0 on pulse
+        float pwB_Adj = pwB;
+        if (pwB > 0.98) pwB_Adj = 0.98f;
+        if (pwB < -0.98) pwB_Adj = -0.98f;
+        shared.pwb.amplitude(pwB_Adj);
+    }
+
+    void setPWMSource(uint8_t value) {
+        pwmSource = value;
+        if (value == PWMSOURCELFO) {
+            //Set filter mod to zero
+            this->setPwmMixerAFEnv(0);
+            this->setPwmMixerBFEnv(0);
+
+            //Set LFO mod
+            if (pwmRate > PWMRATE_SOURCE_FILTER_ENV) {
+                this->setPwmMixerALFO(pwmAmtA);//Set LFO mod
+                this->setPwmMixerBLFO(pwmAmtB);//Set LFO mod
+            }
+        } else {
+            this->setPwmMixerALFO(0);//Set LFO mod to zero
+            this->setPwmMixerBLFO(0);//Set LFO mod to zero
+            if (pwmRate > PWMRATE_SOURCE_FILTER_ENV) {
+                this->setPwmMixerAFEnv(pwmAmtA);//Set filter mod
+                this->setPwmMixerBFEnv(pwmAmtB);//Set filter mod
+            }
+        }
+    }
+
+    void setWaveformMixerLevel(int channel, float level) {
+        VG_FOR_EACH_OSC(waveformMixer_.gain(channel, level))
+    }
+
+    void setOscModMixerA(int channel, float level) {
+        VG_FOR_EACH_OSC(oscModMixer_a.gain(channel, level))
+    }
+
+    void setOscModMixerB(int channel, float level) {
+        VG_FOR_EACH_OSC(oscModMixer_b.gain(channel, level))
+    }
+
+    void setOscFXCombineMode(AudioEffectDigitalCombine::combineMode mode) {
+        VG_FOR_EACH_OSC(oscFX_.setCombineMode(mode))
+    }
+
+    void setOscLevelA(float value) {
+        oscLevelA = value;
+
+        switch (oscFX) {
+            case 1://XOR
+                setWaveformMixerLevel(0, oscLevelA);//Osc 1 (A)
+                setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//oscFX XOR level
+                break;
+            case 2://XMod
+                //osc A sounds with increasing osc B mod
+                if (oscLevelA == 1.0f && oscLevelB <= 1.0f) {
+                    setOscModMixerA(3, 1 - oscLevelB);//Feed from Osc 2 (B)
+                    setWaveformMixerLevel(0, ONE);//Osc 1 (A)
+                    setWaveformMixerLevel(1, 0);//Osc 2 (B)
+                }
+                break;
+            case 0://None
+                setOscModMixerA(3, 0);//Feed from Osc 2 (B)
+                setWaveformMixerLevel(0, oscLevelA);//Osc 1 (A)
+                setWaveformMixerLevel(3, 0);//XOR
+                break;
+        }
+    }
+
+    void setOscLevelB(float value) {
+        oscLevelB = value;
+
+        switch (oscFX) {
+            case 1://XOR
+                setWaveformMixerLevel(1, oscLevelB);//Osc 2 (B)
+                setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//oscFX XOR level
+                break;
+            case 2://XMod
+                //osc B sounds with increasing osc A mod
+                if (oscLevelB == 1.0f && oscLevelA < 1.0f) {
+                    setOscModMixerB(3, 1 - oscLevelA);//Feed from Osc 1 (A)
+                    setWaveformMixerLevel(0, 0);//Osc 1 (A)
+                    setWaveformMixerLevel(1, ONE);//Osc 2 (B)
+                }
+                break;
+            case 0://None
+                setOscModMixerB(3, 0);//Feed from Osc 1 (A)
+                setWaveformMixerLevel(1, oscLevelB);//Osc 2 (B)
+                setWaveformMixerLevel(3, 0);//XOR
+                break;
+        }
+    }
+
+    void setOscFX(uint8_t value) {
+        oscFX = value;
+
+        if (oscFX == 2) {
+            if (oscLevelA == 1.0f && oscLevelB <= 1.0f) {
+                setOscModMixerA(3, 1 - oscLevelB);//Feed from Osc 2 (B)
+                setWaveformMixerLevel(0, ONE);//Osc 1 (A)
+                setWaveformMixerLevel(1, 0);//Osc 2 (B)
+            } else {
+                setOscModMixerB(3, 1 - oscLevelA);//Feed from Osc 1 (A)
+                setWaveformMixerLevel(0, 0);//Osc 1 (A)
+                setWaveformMixerLevel(1, ONE);//Osc 2 (B)
+            }
+            //Set XOR type off
+            setOscFXCombineMode(AudioEffectDigitalCombine::OFF);
+            setWaveformMixerLevel(3, 0);//XOR
+        } else if (oscFX == 1) {
+            setOscModMixerA(3, 0);//XMod off
+            setOscModMixerB(3, 0);//XMod off
+            //XOR 'Ring Mod' type effect
+            setOscFXCombineMode(AudioEffectDigitalCombine::XOR);
+            setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//XOR
+        } else {
+            setOscModMixerA(3, 0);//XMod off
+            setOscModMixerB(3, 0);//XMod off
+            setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
+            setWaveformMixerLevel(3, 0);//XOR
+        }
+    }
+
+    void setCutoff(float value) {
+        this->cutoff = value;
+
+        VG_FOR_EACH_OSC(filter_.frequency(value))
+
+        float filterOctave = 0.0;
+        //Altering filterOctave to give more cutoff width for deeper bass, but sharper cuttoff at higher frequncies
+        if (value <= 2000) {
+            filterOctave = 4.0f + ((2000.0f - value) / 710.0f);//More bass
+        } else if (value > 2000 && value <= 3500) {
+            filterOctave = 3.0f + ((3500.0f - value) / 1500.0f);//Sharper cutoff
+        } else if (value > 3500 && value <= 7000) {
+            filterOctave = 2.0f + ((7000.0f - value) / 4000.0f);//Sharper cutoff
+        } else {
+            filterOctave = 1.0f + ((12000.0f - value) / 5100.0f);//Sharper cutoff
+        }
+
+        VG_FOR_EACH_OSC(filter_.octaveControl(filterOctave))
+    }
+
+    void setResonance(float value) {
+        resonance = value;
+        VG_FOR_EACH_OSC(filter_.resonance(value))
+    }
+
+    void setFilterMixer(float value) {
+        filterMixer = value;
+
+        float LP = 1.0f;
+        float BP = 0;
+        float HP = 0;
+
+        if (value == BANDPASS) {
+            //BP mode
+            LP = 0;
+            BP = 1.0f;
+            HP = 0;
+        } else {
+            //LP-HP mix mode - a notch filter
+            LP = 1.0f - value;
+            BP = 0;
+            HP = value;
+        }
+
+        VG_FOR_EACH_VOICE(
+            voices[i]->patch().filterMixer_.gain(0, LP);
+            voices[i]->patch().filterMixer_.gain(1, BP);
+            voices[i]->patch().filterMixer_.gain(2, HP);
+        )
+    }
+
+    void setFilterModMixer(int channel, float level) {
+        VG_FOR_EACH_OSC(filterModMixer_.gain(channel, level))
+    }
+
+    void setFilterEnvelope(float value) {
+        filterEnvelope = value;
+        this->setFilterModMixer(0, filterEnvelope);
+    }
+
+    void setFilterAttack(float value) {
+        filterAttack = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.attack(value))
+    }
+
+    void setFilterDecay(float value) {
+        filterDecay = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.decay(value))
+    }
+
+    void setFilterSustain(float value) {
+        filterSustain = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.sustain(value))
+    }
+
+    void setFilterRelease(float value) {
+        filterRelease = value;
+        VG_FOR_EACH_OSC(filterEnvelope_.release(value))
+    }
+
+    void setAmpAttack(float value) {
+        ampAttack = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.attack(value))
+    }
+
+    void setAmpDecay(float value) {
+        ampDecay = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.decay(value))
+    }
+
+    void setAmpSustain(float value) {
+        ampSustain = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.sustain(value))
+    }
+
+    void setAmpRelease(float value) {
+        ampRelease = value;
+        VG_FOR_EACH_OSC(ampEnvelope_.release(value))
+    }
+
+    void setKeytracking(float value) {
+        // TODO: Move this out of params to avoid setting it directly without updating the mixer.
+        _params.keytrackingAmount = value;
+        setFilterModMixer(2, value);
+    }
+
+    void setFilterLfoRetrig(bool value) {
+        filterLfoRetrig = value;
+        VG_FOR_EACH_OSC(filterLfo_.sync())
+    }
+
+    void setFilterLfoRate(float value) {
+        filterLfoRate = value;
+        VG_FOR_EACH_OSC(filterLfo_.frequency(value))
+    }
+
+    void setFilterLfoAmt(float value) {
+        filterLfoAmt = value;
+        VG_FOR_EACH_OSC(filterLfo_.amplitude(value))
+    }
+
+    void setFilterLfoWaveform(int waveform) {
+        if (filterLfoWaveform == waveform) return;
+        filterLfoWaveform = waveform;
+        VG_FOR_EACH_OSC(filterLfo_.begin(filterLfoWaveform))
+    }
+
+    void setPinkNoiseLevel(float value) {
+        pinkLevel = value;
+        float gain;
+        if (_params.unisonMode == 0) gain = 1.0;
+        else                         gain = UNISONNOISEMIXERLEVEL;
+        shared.noiseMixer.gain(0, pinkLevel * gain);
+    }
+
+    void setWhiteNoiseLevel(float value) {
+        whiteLevel = value;
+        float gain;
+        if (_params.unisonMode == 0) gain = 1.0;
+        else                         gain = UNISONNOISEMIXERLEVEL;
+        shared.noiseMixer.gain(1, whiteLevel * gain);
+    }
+
+    void setPitchLfoRetrig(bool value) {
+        pitchLfoRetrig = value;
+        shared.pitchLfo.sync();
+    }
+
+    void setPitchLfoWaveform(uint32_t waveform) {
+        if (pitchLfoWaveform == waveform) return;
+        pitchLfoWaveform = waveform;
+        shared.pitchLfo.begin(waveform);
+    }
+
+    void setPitchLfoAmount(float value) {
+        pitchLfoAmount = value;
+        shared.pitchLfo.amplitude(value + modWhAmount);
+    }
+
+    void setPitchLfoRate(float value) {
+        pitchLfoRate = value;
+        shared.pitchLfo.frequency(value);
+    }
+
+    void setModWhAmount(float value) {
+        modWhAmount = value;
+        shared.pitchLfo.amplitude(value + pitchLfoAmount);
+    }
+
+    inline void setMonophonic(uint8_t mode) {
+        this->monophonic = mode;
+    }
+
+    void setUnisonMode(uint8_t mode) {
+        if (mode == 0) allNotesOff();
+
+        this->_params.unisonMode = mode;
+        this->notesOn = 0;
+
+        // Update noise gain
+        setPinkNoiseLevel(pinkLevel);
+        setWhiteNoiseLevel(whiteLevel);
+    }
+
+    void setFilterLfoMidiClockSync(bool value) {
+        filterLfoMidiClockSync = value;
+    }
+
+    void setPitchLfoMidiClockSync(bool value) {
+        pitchLFOMidiClockSync = value;
+    }
+
+    inline uint8_t unisonNotes() {
+        return this->notesOn;
+    }
+
+    //
+    // Configure the group
+    //
+    VoiceParams& params() {
+        return _params;
+    }
+
+    //
+    // Modify the group
+    //
+
+    // Splits out num voices from the current group into a new group.
+    Voice* pop() {
+        if (voices.size() == 0) {
+            return nullptr;
+        }
+        Voice* result = voices.back();
+        voices.pop_back();
+        return result;
+    }
+
+    void add(Voice* v) {
+        voices.push_back(v);
+
+        // TODO: Below could be functions of the patch.
+
+        // In case this was allocated before, delete it.
+        delete v->patch().pitchMixerAConnection;
+        delete v->patch().pitchMixerBConnection;
+        delete v->patch().pwmLfoAConnection;
+        delete v->patch().pwmLfoBConnection;
+        delete v->patch().pwaConnection;
+        delete v->patch().pwbConnection;
+        delete v->patch().noiseMixerConnection;
+        delete v->patch().filterLfoConnection;
+
+        v->patch().pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_a, 0);
+        v->patch().pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_b, 0);
+        v->patch().pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, v->patch().pwMixer_a, 0);
+        v->patch().pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, v->patch().pwMixer_b, 0);
+        v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
+        v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
+        v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
+        v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
+    }
+
+    // Merges the other VoiceGroup into this one, making additional voices
+    // available to this group.
+    void merge(VoiceGroup other) {
+    }
+
+    //
+    // Use the group
+    //
+
+    void noteOn(uint8_t note, uint8_t velocity) {
+        if (this->monophonic) {
+            handleMonophonicNoteOn(note, velocity);
+            return;
+        }
+        noteOn(note, velocity, false);
+    }
+
+    void allNotesOn(uint8_t note, int velocity) {
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            voices[i]->noteOn(note, velocity, this->_params, notesOn);
+        }
+    }
+
+    void allNotesOff() {
+        this->top = 0;
+        this->notesOn = 0;
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            voices[i]->noteOff();
+        }
+    }
+
+    void updateVoices() {
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            voices[i]->updateVoice(this->_params, notesOn);
+        }
+    }
+
+    void noteOff(uint8_t note) {
+        if (this->monophonic) {
+            handleMonophonicNoteOff(note);
+            return;
+        }
+
+        if (this->notesOn > 0) this->notesOn --;
+
+        switch (this->_params.unisonMode) {
+            case 0:
+                noteOff(note, false);
+                break;
+            default:
+                noteOff(note, true);
+                break;
+        }
+    }
+
+    void pitchBend(float amount) {
+        shared.pitchBend.amplitude(amount);
+    }
+
+    void midiClockStart() {
+        midiClockSignal = true;
+        VG_FOR_EACH_OSC(filterLfo_.sync())
+    }
+
+    void midiClockStop() {
+        midiClockSignal = false;
+    }
+
+    void midiClock(float frequency) {
+        midiClockSignal = true;
+
+        if (filterLfoMidiClockSync) {
+            VG_FOR_EACH_OSC(filterLfo_.frequency(frequency))
+        }
+
+        if (pitchLFOMidiClockSync) {
+            shared.pitchLfo.frequency(frequency);
+        }
+    }
+
+    void closeEnvelopes() {
+        VG_FOR_EACH_VOICE(
+            voices[i]->patch().filterEnvelope_.close();
+            voices[i]->patch().ampEnvelope_.close();
+        )
+    }
+
+    // TODO: This helps during refactoring, maybe it will be removed later.
+    Voice* operator [](int i) const { return voices[i]; }
+
+
+    private:
+
+    void handleMonophonicNoteOn(uint8_t note, uint8_t velocity) {
+        this->noteStack[this->top].note = note;
+        this->noteStack[this->top].velocity = velocity;
+        this->top++;
+
+        if (monophonic) {
+            int newNoteIdx = -1;
+            switch(monophonic) {
+                case MONOPHONIC_LEGATO:
+                case MONOPHONIC_LAST:
+                    newNoteIdx = this->top - 1;
+                    break;
+                case MONOPHONIC_FIRST:
+                    break;
+                case MONOPHONIC_HIGHEST: {
+                    if (note > monoNote) {
+                        newNoteIdx = this->top - 1;
+                    }
+                    break;
+                }
+                case MONOPHONIC_LOWEST: {
+                    if (note < monoNote) {
+                        newNoteIdx = this->top - 1;
+                    }
+                    break;
+                }
+            }
+
+            if (newNoteIdx == -1 && this->top == 1) newNoteIdx = 0;
+
+            // New note does not take priority.
+            if (newNoteIdx == -1) return;
+
+            uint8_t t = this->top;
+            allNotesOff();
+            this->top = t;
+
+            this->monoNote = this->noteStack[newNoteIdx].note;
+            noteOn(this->noteStack[newNoteIdx].note, this->noteStack[newNoteIdx].velocity, false);
+
+        } else {
+            noteOn(note, velocity, false);
+        }
+    }
+
+    void removeFromStack(uint8_t note) {
+        bool shifting = false;
+        for (uint8_t i = 0; i < top && i < NO_OF_VOICES; i++) {
+            if (!shifting && this->noteStack[i].note == note) {
+                shifting = true;
+            }
+            if (shifting) {
+                this->noteStack[i] = this->noteStack[i+1];
+            }
+        }
+    }
+
+    void handleMonophonicNoteOff(uint8_t note) {
+
+        if (this->monophonic) {
+            // Remove turned-off note
+            removeFromStack(note);
+            bool activeNoteTurnedOff = 0 != noteOff(note, true);
+
+            this->top--;
+            // If last note is turned off, nothing to retrigger.
+            if (this->top < 1) {
+                this->top = 0;
+                return;
+            }
+
+            // No retriggering if this wasn't the active note.
+            if (!activeNoteTurnedOff) return;
+
+            int noteIndex = -1;
+            switch (this->monophonic)
+            {
+            case MONOPHONIC_LEGATO:
+                // No retriggering.
+                break;
+            case MONOPHONIC_LAST:
+                noteIndex = top - 1;
+                break;
+            case MONOPHONIC_FIRST:
+                noteIndex = 0;
+                break;
+            case MONOPHONIC_LOWEST:
+                noteIndex = 0;
+                for(uint8_t i = 0; i < top; i++) {
+                    if (this->noteStack[i].note < this->noteStack[noteIndex].note) {
+                        noteIndex = i;
+                    }
+                }
+                break;
+            case MONOPHONIC_HIGHEST:
+                noteIndex = 0;
+                for(uint8_t i = 0; i < top; i++) {
+                    if (this->noteStack[i].note > this->noteStack[noteIndex].note) {
+                        noteIndex = i;
+                    }
+                }
+                break;
+            default:
+                break;
+            }
+
+            if (noteIndex >= 0) {
+                this->monoNote = this->noteStack[noteIndex].note;
+                noteOn(this->noteStack[noteIndex].note, this->noteStack[noteIndex].velocity, true);
+            }
+            return;
+        }
+    }
+
+    // Get the oldest free voice, of none free get the oldest active voice.
+    Voice* getVoice() {
+        Voice* result = nullptr;
+
+        //NoteOn() - Get the oldest free voice, or oldest on voice if all are on. (recent voices may be still on release stage)
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            if (result == nullptr || !voices[i]->on() || result->on()) {
+                if (result == nullptr || voices[i]->timeOn() < result->timeOn()) {
+                    result = voices[i];
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // Turn off one or more notes, return the number of notes turned off.
+    int noteOff(uint8_t note, bool all) {
+        int num = 0;
+        //NoteOff() - Get voice number from note
+        for (uint8_t i = 0; i < voices.size(); i++) {
+            if (voices[i]->note() == note && voices[i]->on() == true) {
+                num++;
+                voices[i]->noteOff();
+                if (! all) {
+                    return 1;
+                }
+            }
+        }
+        return num;
+    }
+
+    void noteOn(uint8_t note, uint8_t velocity, bool monoRetrigger) {
+
+        if (filterLfoRetrig) {
+            VG_FOR_EACH_OSC(filterLfo_.sync());
+        }
+
+        switch (this->_params.unisonMode) {
+            case 0:
+                this->_params.mixerLevel = VOICEMIXERLEVEL;
+                this->getVoice()->noteOn(note, velocity, this->_params, notesOn);
+                break;
+            case 1:
+                //UNISON MODE
+                //1 Note : 0-11
+                //2 Notes: 0-5, 6-11
+                //3 Notes: 0-3, 4-7, 8-11
+                //4 Notes: 0-2, 3/7/8, 4-6, 9-11
+                //5 or more: extra notes are ignored and new voices used for 4 notes
+
+                //Retrigger voices
+                //      1 2 3 4 5 6 7 8 9 10 11 12
+                //    1 x x x x x x x x x x  x  x
+                //    2             x x x x  x  x
+                //    3         x x x x
+                //    4       x       x x
+                this->notesOn ++;
+                this->_params.mixerLevel = UNISONVOICEMIXERLEVEL;
+                switch(this->notesOn) {
+                    case 1:
+                        allNotesOn(note, velocity);
+                        break;
+                    case 2:
+                        voices[6]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[8]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[9]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[10]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[11]->noteOn(note, velocity, this->_params, notesOn);
+                        break;
+                    case 3:
+                        voices[4]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[5]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[6]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
+                        break;
+                    case 4:
+                        voices[3]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
+                        voices[8]->noteOn(note, velocity, this->_params, notesOn);
+                        break;
+                }
+                break;
+            case 2:
+                this->_params.mixerLevel = UNISONVOICEMIXERLEVEL;
+                allNotesOn(note, velocity);
+                break;
+        }
+        this->_params.prevNote = note;
+    }
+};
+
+#endif
