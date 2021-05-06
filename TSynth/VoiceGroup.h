@@ -170,8 +170,8 @@ class VoiceGroup {
         setFxMix(fxMix);
 
         shared.connectNoise(pink, white);
-        //shared.connectOutput(voiceMixer1L, voiceMixer1R, patchNum);
         shared.connectOutput(voiceMixer1L, voiceMixer1R, patchNum);
+        shared.connectEffect(effectMixerL, effectMixerR, 1);
         /*
         shared.pinkNoiseConnection = new AudioConnection(pink, 0, shared.noiseMixer, 0);
         shared.pinkNoiseConnection = new AudioConnection(white, 0, shared.noiseMixer, 1);

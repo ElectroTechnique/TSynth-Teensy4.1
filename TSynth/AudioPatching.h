@@ -26,14 +26,14 @@ struct VoiceShared {
     AudioMixer4 effectMixerL;
     AudioMixer4 effectMixerR;
 
-    AudioConnection          patchCord[10] = {
+    AudioConnection          patchCord[8] = {
         {pitchBend, 0, pitchMixer, 0},
         {pitchLfo, 0, pitchMixer, 1},
         {voiceMixer[0], 0, voiceMixerM, 0},
         {voiceMixer[1], 0, voiceMixerM, 1},
         {voiceMixer[2], 0, voiceMixerM, 2},
-        {voiceMixerM, 0, effectMixerL, 0},
-        {voiceMixerM, 0, effectMixerR, 0},
+        //{voiceMixerM, 0, effectMixerL, 0},
+        //{voiceMixerM, 0, effectMixerR, 0},
         {voiceMixerM, 0, ensemble, 0},
         {ensemble, 0, effectMixerL, 1},
         {ensemble, 0, effectMixerR, 1}
@@ -62,8 +62,17 @@ struct VoiceShared {
         delete mixerLConnection;
         delete mixerRConnection;
 
-        mixerLConnection = new AudioConnection(effectMixerL, 0, left, index);
-        mixerRConnection = new AudioConnection(effectMixerR, 0, right, index);
+        mixerLConnection = new AudioConnection(voiceMixerM, 0, left, index);
+        mixerRConnection = new AudioConnection(voiceMixerM, 0, right, index);
+        //mixerLConnection = new AudioConnection(effectMixerL, 0, left, index);
+        //mixerRConnection = new AudioConnection(effectMixerR, 0, right, index);
+    }
+
+    void connectEffect(AudioMixer4& left, AudioMixer4& right, uint8_t index) {
+        //new AudioConnection(effect, 0, left, index);
+        //new AudioConnection(voiceMixerM, 0, right, index);
+        new AudioConnection(effectMixerL, 0, left, index);
+        new AudioConnection(effectMixerR, 0, right, index);
     }
 };
 
@@ -199,6 +208,8 @@ AudioFilterStateVariable dcOffsetFilterL; //xy=2591,1804
 AudioFilterStateVariable dcOffsetFilterR; //xy=2591,1804
 AudioMixer4              volumeMixerL;    //xy=2774,1756
 AudioMixer4              volumeMixerR;    //xy=2774,1756
+AudioMixer4 effectMixerL;
+AudioMixer4 effectMixerR;
 
 Oscilloscope             scope;
 AudioOutputI2S           i2s;            //xy=3190,1737
@@ -221,10 +232,13 @@ AudioConnection          patchCord415(dcOffsetFilterL, 2, scope, 0);
 AudioConnection          patchCord416(dcOffsetFilterL, 2, peak, 0);
 
 // TODO: Move effect mixer into VoiceShared.
-AudioConnection          patchCord117(volumeMixerR, 0, usbAudio, 1);
-AudioConnection          patchCord118(volumeMixerR, 0, i2s, 1);
-AudioConnection          patchCord119(volumeMixerL, 0, i2s, 0);
-AudioConnection          patchCord120(volumeMixerL, 0, usbAudio, 0);
+AudioConnection          patchCord117(volumeMixerR, 0, effectMixerL, 0);
+AudioConnection          patchCord118(volumeMixerL, 0, effectMixerR, 0);
+
+AudioConnection          patchCord1117(effectMixerR, 0, usbAudio, 1);
+AudioConnection          patchCord1118(effectMixerR, 0, i2s, 1);
+AudioConnection          patchCord119(effectMixerL, 0, i2s, 0);
+AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
 
 #endif
