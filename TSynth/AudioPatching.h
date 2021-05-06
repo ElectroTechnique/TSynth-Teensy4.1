@@ -6,7 +6,7 @@
 
 // Make the visual audio design tool work by substituting the *TS locally changed classes by those it knows: 
 // but also ensure all redefined class names are undefined within this scope, if lingering defines exist, raise an error:
-#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated  || defined(AudioEffectEnvelope)
+#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated  || defined(AudioEffectEnvelope))
 # error "Either AudioSynthWaveform or AudioSynthWaveformModulated or AudioEffectEnvelope are already redefined!"
 #endif
 #define AudioSynthWaveform          AudioSynthWaveformTS
