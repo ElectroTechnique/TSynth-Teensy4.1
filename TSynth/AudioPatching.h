@@ -6,7 +6,7 @@
 
 // VoiceShared are all of the audio objects shared across a single patch.
 struct VoiceShared {
-    public:
+    friend class VoicePath;
 
     AudioSynthWaveformDc pitchBend;
     AudioSynthWaveformTS pitchLfo;
@@ -21,25 +21,72 @@ struct VoiceShared {
     // Defining this after the voice mixers has a dramatic negative effect... weird!
     AudioEffectEnsemble ensemble;
 
-    AudioMixer4 voiceMixer1;
-    AudioMixer4 voiceMixer2;
-    AudioMixer4 voiceMixer3;
+    AudioMixer4 voiceMixer[3];
     AudioMixer4 voiceMixerM;
+    AudioMixer4 effectMixerL;
+    AudioMixer4 effectMixerR;
 
-    AudioConnection          patchCord[6] = {
+    AudioConnection          patchCord[8] = {
         {pitchBend, 0, pitchMixer, 0},
         {pitchLfo, 0, pitchMixer, 1},
-        {voiceMixer1, 0, voiceMixerM, 0},
-        {voiceMixer2, 0, voiceMixerM, 1},
-        {voiceMixer3, 0, voiceMixerM, 2},
-        {voiceMixerM, 0, ensemble, 0}
+        {voiceMixer[0], 0, voiceMixerM, 0},
+        {voiceMixer[1], 0, voiceMixerM, 1},
+        {voiceMixer[2], 0, voiceMixerM, 2},
+        //{voiceMixerM, 0, effectMixerL, 0},
+        //{voiceMixerM, 0, effectMixerR, 0},
+        {voiceMixerM, 0, ensemble, 0},
+        {ensemble, 0, effectMixerL, 1},
+        {ensemble, 0, effectMixerR, 1}
     };
 
-    // These go to the global mixer for final output.
+    // Connect global pink/white noise generators to the group noise mixer.
     AudioConnection *pinkNoiseConnection;
     AudioConnection *whiteNoiseConnection;
-    AudioConnection *ensembleToMixerLConnection;
-    AudioConnection *ensembleToMixerRConnection;
+
+    // Connect the ensemble L/R output to the global mixers.
+    AudioConnection *mixerLConnection;
+    AudioConnection *mixerRConnection;
+
+    public:
+    VoiceShared() {
+    }
+
+    void connectNoise(AudioSynthNoisePink& pink, AudioSynthNoiseWhite& white) {
+        delete pinkNoiseConnection;
+        delete whiteNoiseConnection;
+        pinkNoiseConnection = new AudioConnection(pink, 0, noiseMixer, 0);
+        whiteNoiseConnection = new AudioConnection(white, 0, noiseMixer, 0);
+    }
+
+    void connectOutput(AudioMixer4& left, AudioMixer4& right, uint8_t index) {
+        delete mixerLConnection;
+        delete mixerRConnection;
+
+        mixerLConnection = new AudioConnection(voiceMixerM, 0, left, index);
+        mixerRConnection = new AudioConnection(voiceMixerM, 0, right, index);
+        //mixerLConnection = new AudioConnection(effectMixerL, 0, left, index);
+        //mixerRConnection = new AudioConnection(effectMixerR, 0, right, index);
+    }
+
+    void connectEffect(AudioMixer4& left, AudioMixer4& right, uint8_t index) {
+        //new AudioConnection(effect, 0, left, index);
+        //new AudioConnection(voiceMixerM, 0, right, index);
+        new AudioConnection(effectMixerL, 0, left, index);
+        new AudioConnection(effectMixerR, 0, right, index);
+    }
+};
+
+struct Mixer {
+    private:
+    AudioMixer4& mixer;
+    uint8_t index;
+
+    public:
+    Mixer(AudioMixer4& mixer_, uint8_t index_): mixer(mixer_), index(index_) {}
+
+    void gain(float value) {
+        mixer.gain(index, value);
+    }
 };
 
 // VoicePath are all the audio objects for a single voice.
@@ -111,7 +158,32 @@ class VoicePath {
     VoicePath(){
     }
 
-        
+    Mixer connectTo(VoiceShared& shared, uint8_t index) {
+        delete pitchMixerAConnection;
+        delete pitchMixerBConnection;
+        delete pwmLfoAConnection;
+        delete pwmLfoBConnection;
+        delete pwaConnection;
+        delete pwbConnection;
+        delete noiseMixerConnection;
+        delete filterLfoConnection;
+        delete ampConnection;
+
+        pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, oscModMixer_a, 0);
+        pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, oscModMixer_b, 0);
+        pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, pwMixer_a, 0);
+        pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, pwMixer_b, 0);
+        pwaConnection = new AudioConnection(shared.pwa, 0, pwMixer_a, 1);
+        pwbConnection = new AudioConnection(shared.pwb, 0, pwMixer_b, 1);
+        noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, waveformMixer_, 2);
+        filterLfoConnection = new AudioConnection(shared.filterLfo, 0, filterModMixer_, 1);
+
+        uint8_t voiceMixerIndex = 0;
+        uint8_t indexMod4 = index % 4;
+        if (index != 0) voiceMixerIndex = index / 4;
+        ampConnection = new AudioConnection(ampEnvelope_, 0, shared.voiceMixer[voiceMixerIndex], indexMod4);
+        return Mixer{shared.voiceMixer[voiceMixerIndex], indexMod4};
+    }
 };
 
 AudioOutputUSB           usbAudio;       //xy=3197,1821
@@ -119,6 +191,11 @@ AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
 AudioSynthNoisePink      pink;           //xy=1462
 AudioSynthNoiseWhite     white;          //xy=1460
 AudioAnalyzePeak         peak;           //xy=2756,1817
+
+// Dynamically create the desired number of voices + timbers
+VoiceShared voicesShared[2];
+VoicePath voices[12];
+
 AudioMixer4              voiceMixer1L;    //xy=2233,581
 AudioMixer4              voiceMixer2L;    //xy=2240,1791
 AudioMixer4              voiceMixer3L;    //xy=2237,2976
@@ -131,15 +208,11 @@ AudioFilterStateVariable dcOffsetFilterL; //xy=2591,1804
 AudioFilterStateVariable dcOffsetFilterR; //xy=2591,1804
 AudioMixer4              volumeMixerL;    //xy=2774,1756
 AudioMixer4              volumeMixerR;    //xy=2774,1756
+AudioMixer4 effectMixerL;
+AudioMixer4 effectMixerR;
 
 Oscilloscope             scope;
-AudioMixer4              effectMixerR;   //xy=2984,1823
-AudioMixer4              effectMixerL;   //xy=2985,1728
 AudioOutputI2S           i2s;            //xy=3190,1737
-
-// Dynamically create the desired number of voices + timbers
-VoiceShared voicesShared[2];
-VoicePath voices[12];
 
 // Final mixing and output
 AudioConnection          patchCord197(voiceMixer1L, 0, voiceMixerML, 0);
@@ -159,10 +232,11 @@ AudioConnection          patchCord415(dcOffsetFilterL, 2, scope, 0);
 AudioConnection          patchCord416(dcOffsetFilterL, 2, peak, 0);
 
 // TODO: Move effect mixer into VoiceShared.
-AudioConnection          patchCord115(volumeMixerL, 0, effectMixerL, 0);
-AudioConnection          patchCord116(volumeMixerR, 0, effectMixerR, 0);
-AudioConnection          patchCord117(effectMixerR, 0, usbAudio, 1);
-AudioConnection          patchCord118(effectMixerR, 0, i2s, 1);
+AudioConnection          patchCord117(volumeMixerR, 0, effectMixerL, 0);
+AudioConnection          patchCord118(volumeMixerL, 0, effectMixerR, 0);
+
+AudioConnection          patchCord1117(effectMixerR, 0, usbAudio, 1);
+AudioConnection          patchCord1118(effectMixerR, 0, i2s, 1);
 AudioConnection          patchCord119(effectMixerL, 0, i2s, 0);
 AudioConnection          patchCord120(effectMixerL, 0, usbAudio, 0);
 AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505

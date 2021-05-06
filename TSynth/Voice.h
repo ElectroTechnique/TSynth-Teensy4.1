@@ -23,8 +23,7 @@ struct VoiceParams {
 class Voice {
     private:
         VoicePath &_oscillator;
-        AudioMixer4 *mixer;
-        uint8_t mixer_index;
+        Mixer *mixer;
         long _timeOn;
         uint8_t _note;
         float _velocity;
@@ -43,9 +42,8 @@ class Voice {
             p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
         }
 
-        inline void  setMixer(AudioMixer4 *_mixer, uint8_t idx) {
+        inline void  setMixer(Mixer *_mixer) {
             mixer = _mixer;
-            mixer_index = idx;
         }
 
         inline uint8_t index() {
@@ -92,7 +90,7 @@ class Voice {
             VoicePath& osc = this->patch();
 
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
-            mixer->gain(mixer_index, VELOCITY[velocitySens][velocity] * params.mixerLevel);
+            mixer->gain(VELOCITY[velocitySens][velocity] * params.mixerLevel);
             osc.filterEnvelope_.noteOn();
             osc.ampEnvelope_.noteOn();
             if (params.glideSpeed > 0 && note != params.prevNote) {
