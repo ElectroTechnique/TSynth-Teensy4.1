@@ -31,9 +31,9 @@
 #define RELEASE_BIAS 256 // based on a 1.31 fixed point integer. This is the level below zero that is the release target and causes the output to go to zero earlier. Otherwise it can take a relatively long time.
 // Difference equation for exponential envelope.
 // y(n+1) = k1*y(n)+k2 using unsigned 1.31 fixed point format
-#define EXP_ITERATION(y,k1,k2) ((uint32_t)(((uint64_t)(y)*(k1))>>31)+(k2))
+#define EXP_ITERATION(y,k1,k2) ((uint32_t)(((uint64_t)(y)*(k1))>>31)+(uint32_t)(k2))
 // y(n+1)=k1*(y(n)-x)+x
-#define EXP_ITERATION2(y,k1,k2)      (uint32_t)(((uint64_t)(y)*(k1)+(uint64_t)k1*k2)>>32)
+//#define EXP_ITERATION2(y,k1,k2)      (uint32_t)(((uint64_t)(y)*(k1)+(uint64_t)k1*k2)>>32)
 //(uint32_t)((uint64_t)(y)*(k1)+(uint64_t)k2*(EXP_ENV_ONE-k1)>>32)
 
 // STATE_IDLE_NEXT is added for exponential envelope. Variables are set in STATE_IDLE and then
@@ -54,7 +54,7 @@ void AudioEffectEnvelopeTS::noteOn(void)
 {
   __disable_irq();
   // Include STATE_IDLE_NEXT
-  if (state == STATE_IDLE || state==STATE_IDLE_NEXT|| state == STATE_DELAY || release_forced_count == 0 || STATE_IDLE_NEXT) {
+  if (state == STATE_IDLE || state==STATE_IDLE_NEXT|| state == STATE_DELAY || release_forced_count == 0) {
     mult_hires = 0;
     count = delay_count;
     if (count > 0) {
@@ -76,8 +76,9 @@ void AudioEffectEnvelopeTS::noteOn(void)
 void AudioEffectEnvelopeTS::noteOff(void)
 {
   __disable_irq();
-  if (state != STATE_IDLE && state != STATE_FORCED && state!=STATE_IDLE_NEXT /*|| state!=STATE_RELEASE*/) {
-    // Technically noteOff() should not occur when in STATE_RELEASE but added cach for that so count does not get reloaded.
+
+  if ((state != STATE_IDLE) && (state != STATE_FORCED) && (state!=STATE_IDLE_NEXT) && (state!=STATE_RELEASE)) {
+    // Technically noteOff() should not occur when in STATE_RELEASE but added test for that so count does not get reloaded.
     state = STATE_RELEASE;
     count = release_count;
     inc_hires = (-mult_hires) / (int32_t)count;
@@ -197,7 +198,6 @@ void AudioEffectEnvelopeTS::update(void)
   }
   else  //Exponential ADSR Vince R. Pearson
   {
-    // Exponential envelope generator
     uint16_t i;
     while (p < end) 
     {
@@ -247,13 +247,18 @@ void AudioEffectEnvelopeTS::update(void)
             // Sustain is only needed to support isRelease(). This happens after delay_count is decremented to zero.
             // The point at which sustain begins after the start of decay is arbitrary on an exponential curve
             // Here it occurs after one time constant (delay_count*8) which is 63.2% down the decay curve.
-          case STATE_SUSTAIN: 
             ysum=EXP_ITERATION(ysum,decay_k,decay_target);
+            break;
+          case STATE_SUSTAIN: // Gets here from decay when delay count is zero. Used to flag when sustain begins.
+            ysum=EXP_ITERATION(ysum,decay_k,decay_target);
+            break;
+          case STATE_SUSTAIN_FAST_CHANGE: // Only gets here when sustain is changed while in decay or any sustain states.
+            ysum=EXP_ITERATION(ysum,FAST_SUSTAIN_K1,FAST_SUSTAIN_K2*sustain_target);
             break;
           case STATE_RELEASE:
             ysum=EXP_ITERATION(ysum,release_k,0);
-            // Subtract bias value to end release a bit sooner. Must check value for underflow since unsigned integers are used.
-            // This has more of an effect at the longest release times since it is a fixed value.
+            // Bias added to end release a bit sooner. Value must be checked for underflow since unsigned integers are used.
+            // This has affects the longest release settings the most since it is not scaled with the release time constant.
             if(ysum>RELEASE_BIAS) ysum-=RELEASE_BIAS; 
             if((ysum>>15)==0) // All of the useful bits are zero so no reason to stay in this state.
               state=STATE_IDLE;
@@ -305,6 +310,6 @@ bool AudioEffectEnvelopeTS::isActive()
 bool AudioEffectEnvelopeTS::isSustain()
 {
   uint8_t current_state = *(volatile uint8_t *)&state;
-  if (current_state == STATE_SUSTAIN) return true;
+  if (current_state == STATE_SUSTAIN || current_state==STATE_SUSTAIN_FAST_CHANGE) return true;
   return false;
 }

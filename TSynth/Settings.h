@@ -104,12 +104,12 @@ FLASHMEM void settingsFiltEnv(const char * value) {
   storeFiltEnv(envTypeFilt);
 }						
 
-FLASHMEM reloadAmpEnv()
+FLASHMEM void reloadAmpEnv()
 {
   VG_FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeFilt));
 }
 
-FLASHMEM reloadFiltEnv()
+FLASHMEM void reloadFiltEnv()
 {
   VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
 }

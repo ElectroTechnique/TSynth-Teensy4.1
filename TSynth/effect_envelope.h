@@ -37,6 +37,15 @@
 // EXP_0 has a linear attack.
 #define NUM_ENV_TYPES 18 // Linear, Exp -8 through Exp +8
 
+// Precalculate these filter constants
+// These are used to allow fast sustain control change with long decay values but provide some filtering against sudden changes.
+#define FAST_SUSTAIN_KF 0.999773268 // 100 ms
+//#define FAST_SUSTAIN_KF 0.999886627 // 200 ms
+//#define FAST_SUSTAIN_KF 0.999943312 // 400 ms
+//#define FAST_SUSTAIN_KF 0.999971655 // 800 ms
+#define FAST_SUSTAIN_K1 (uint32_t)(FAST_SUSTAIN_KF*EXP_ENV_ONE)
+#define FAST_SUSTAIN_K2 (1.0-FAST_SUSTAIN_KF)
+
 // The exponential difference equations are based on the impulse invariant method. 
 // The equation used for attack is k1 = exp(curveFactor*Ts/To) and k2=(k1-1)/((e^curveFactor)-1)
 // and ynew = k1*yold+k2 (normalized).
@@ -52,22 +61,22 @@
 class AudioEffectEnvelopeTS : public AudioStream
 {
 public:
-	  AudioEffectEnvelopeTS() : AudioStream(1, inputQueueArray) {
-		state = 0;
+    AudioEffectEnvelopeTS() : AudioStream(1, inputQueueArray) {
+    state = 0;
     env_type=-128; // Added for addition of exponential envelope. Default is linear. -8 through 8 are different amounts of positive and negative curvature.
-		delay(0.0f);  // default values...
-		attack(10.5f);
-		hold(2.5f);
-		decay(35.0f);
-		sustain(0.5f);
-		release(300.0f);
-		releaseNoteOn(5.0f);
-	}
-	void noteOn();
-	void noteOff();
-	FLASHMEM void delay(float milliseconds) {
-		delay_count = milliseconds2count(milliseconds); // Number of samples is 8 times this number for linear mode.
-	}
+    delay(0.0f);  // default values...
+    attack(10.5f);
+    hold(2.5f);
+    decay(35.0f);
+    sustain(0.5f);
+    release(300.0f);
+    releaseNoteOn(5.0f);
+  }
+  void noteOn();
+  void noteOff();
+  FLASHMEM void delay(float milliseconds) {
+    delay_count = milliseconds2count(milliseconds); // Number of samples is 8 times this number for linear mode.
+  }
 
  // Attack curve negative numbers generate negative curvature (like typical exp attack curves).
  // Positive numbers generate positive curvature (accelerating upward).
@@ -88,36 +97,41 @@ public:
   FLASHMEM int8_t getEnvType() { return env_type;};
 
  
-	FLASHMEM void attack(float milliseconds) {
-		attack_count = milliseconds2count(milliseconds);
-		updateExpAttack();
+  FLASHMEM void attack(float milliseconds) {
+    attack_count = milliseconds2count(milliseconds);
+    updateExpAttack();
     
-	}
-	FLASHMEM void hold(float milliseconds) {
-		hold_count = milliseconds2count(milliseconds);
-	}
-	FLASHMEM void decay(float milliseconds) {
-		decay_count = milliseconds2count(milliseconds);
-		if (decay_count == 0) decay_count = 1;
+  }
+  FLASHMEM void hold(float milliseconds) {
+    hold_count = milliseconds2count(milliseconds);
+  }
+  FLASHMEM void decay(float milliseconds) {
+    decay_count = milliseconds2count(milliseconds);
+    if (decay_count == 0) decay_count = 1;
     updateExpDecay();
-	}
-	FLASHMEM void sustain(float level) {
-		if (level < 0.0) level = 0;
-		else if (level > 1.0) level = 1.0;
-		sustain_mult = level * 1073741824.0;
+  }
+  FLASHMEM void sustain(float level) {
+    if (level < 0.0) level = 0;
+    else if (level > 1.0) level = 1.0;
+    sustain_mult = level * 1073741824.0;
     sustain_target=level*EXP_ENV_ONE; // max level is 0x80000000 for exp, 0x40000000 for lin.
     updateExpDecay(); // Change in sustain requires recalulation of decay target
-	}
-	FLASHMEM void release(float milliseconds) {
-		release_count = milliseconds2count(milliseconds);
-		if (release_count == 0) release_count = 1;
+    // Change of sustain level while in decay or regular sustain state forces state change so sustain changes occur more quickly.
+    __disable_irq();
+    if(state==STATE_DECAY || state==STATE_SUSTAIN)
+      state=STATE_SUSTAIN_FAST_CHANGE;
+    __enable_irq();
+  }
+  FLASHMEM void release(float milliseconds) {
+    release_count = milliseconds2count(milliseconds);
+    if (release_count == 0) release_count = 1;
     updateExpRelease();
-	}
+  }
   void releaseNoteOn(float milliseconds) {
-		release_forced_count = milliseconds2count(milliseconds);
-		if (release_count == 0) release_count = 1;
+    release_forced_count = milliseconds2count(milliseconds);
+    if (release_count == 0) release_count = 1;
     updateExpReleaseNoteOn();
-	}
+  }
  //ElectroTechnique 2020 - close the envelope to silence it
 void close(){
  __disable_irq();
@@ -127,18 +141,18 @@ void close(){
      ysum=0;
   __enable_irq();
 }
-	bool isActive();
-	bool isSustain();
-	using AudioStream::release;
-	virtual void update(void);
+  bool isActive();
+  bool isSustain();
+  using AudioStream::release;
+  virtual void update(void);
   void setEnvType(uint8_t type);
 private:
-	uint16_t milliseconds2count(float milliseconds) {
-		if (milliseconds < 0.0) milliseconds = 0.0;
-		uint32_t c = ((uint32_t)(milliseconds*SAMPLES_PER_MSEC)+7)>>3;
-		if (c > 65535) c = 65535; // allow up to 11.88 seconds
-		return c;
-	}
+  uint16_t milliseconds2count(float milliseconds) {
+    if (milliseconds < 0.0) milliseconds = 0.0;
+    uint32_t c = ((uint32_t)(milliseconds*SAMPLES_PER_MSEC)+7)>>3;
+    if (c > 65535) c = 65535; // allow up to 11.88 seconds
+    return c;
+  }
   FLASHMEM void updateExpDecay() // needed in case sustain changes.
   {
     double k;
@@ -179,22 +193,22 @@ private:
     release_forced_k=(uint32_t)(EXP_ENV_ONE*k);
   }
 
-	audio_block_t *inputQueueArray[1];
+  audio_block_t *inputQueueArray[1];
   static const uint8_t env_type_values[NUM_ENV_TYPES];
-	// state
-	uint8_t  state;      // idle, delay, attack, hold, decay, sustain, release, forced (now idle_next)
-	uint16_t count;      // how much time remains in this state, in 8 sample units
-	int32_t  mult_hires; // attenuation, 0=off, 0x40000000=unity gain
-	int32_t  inc_hires;  // amount to change mult_hires every 8 samples
+  // state
+  uint8_t  state;      // idle, delay, attack, hold, decay, sustain, release, forced (now idle_next)
+  uint16_t count;      // how much time remains in this state, in 8 sample units
+  int32_t  mult_hires; // attenuation, 0=off, 0x40000000=unity gain
+  int32_t  inc_hires;  // amount to change mult_hires every 8 samples
 
-	// settings
-	uint16_t delay_count;
-	uint16_t attack_count;
-	uint16_t hold_count;
-	uint16_t decay_count;
-	int32_t  sustain_mult;
-	uint16_t release_count;
-	uint16_t release_forced_count;
+  // settings
+  uint16_t delay_count;
+  uint16_t attack_count;
+  uint16_t hold_count;
+  uint16_t decay_count;
+  int32_t  sustain_mult;
+  uint16_t release_count;
+  uint16_t release_forced_count;
 
   // Exponential ADSR variables
   enum { // make this a private class enum set instead of using defines.
@@ -204,6 +218,7 @@ private:
     STATE_HOLD,
     STATE_DECAY,
     STATE_SUSTAIN,
+    STATE_SUSTAIN_FAST_CHANGE,
     STATE_RELEASE,
     STATE_FORCED,
     STATE_IDLE_NEXT,  // Not used for original linear envelope.
@@ -211,7 +226,7 @@ private:
   int8_t env_type; // Attack curve type. Limit to -8 to 8 integers for exp curve, -128 for linear.
   uint32_t exp_count;
   uint32_t ysum;
-  uint32_t exp_mult[8]; // Calculate multipliers 8 at a time.
+  //uint32_t exp_mult[8]; // Calculate multipliers 8 at a time.
   uint32_t attack_k;
   uint32_t attack_target;
   uint32_t decay_k;
