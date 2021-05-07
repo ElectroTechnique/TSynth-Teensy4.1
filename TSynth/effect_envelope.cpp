@@ -252,7 +252,9 @@ void AudioEffectEnvelopeTS::update(void)
             break;
           case STATE_RELEASE:
             ysum=EXP_ITERATION(ysum,release_k,0);
-            if(ysum>RELEASE_BIAS) ysum-=RELEASE_BIAS; // added to end release a bit sooner. Must check value for underflow since unsigned integers are used.
+            // Subtract bias value to end release a bit sooner. Must check value for underflow since unsigned integers are used.
+            // This has more of an effect at the longest release times since it is a fixed value.
+            if(ysum>RELEASE_BIAS) ysum-=RELEASE_BIAS; 
             if((ysum>>15)==0) // All of the useful bits are zero so no reason to stay in this state.
               state=STATE_IDLE;
             break;
