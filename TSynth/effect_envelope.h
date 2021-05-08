@@ -32,30 +32,33 @@
 #include "utility/dspinst.h"
 
 #define SAMPLES_PER_MSEC (AUDIO_SAMPLE_RATE_EXACT/1000.0)
-#define EXP_ENV_ONE ((uint32_t)0x80000000)
+#define EXP_ENV_ONE ((int32_t)0x40000000)
 // Envelope type. EXP_Nx are attacks with different amounts of negative curvature. EXP_Px have positive curvature.
 // EXP_0 has a linear attack.
 #define NUM_ENV_TYPES 18 // Linear, Exp -8 through Exp +8
 
-// Precalculate these filter constants
-// These are used to allow fast sustain control change with long decay values but provide some filtering against sudden changes.
+// Fast Sustain Time Constant for Exp Envelope
+// Normally changes in sustain level while in sustain are subject to the decay delay setting.
+// Here we sense a change in sustain level and kick the state machine into a state with a faster time constant.
+// This filter time constant is precalculated during compile.
+// Time constant = exp(-Ts/To).
 #define FAST_SUSTAIN_KF 0.999773268 // 100 ms
 //#define FAST_SUSTAIN_KF 0.999886627 // 200 ms
 //#define FAST_SUSTAIN_KF 0.999943312 // 400 ms
 //#define FAST_SUSTAIN_KF 0.999971655 // 800 ms
 #define FAST_SUSTAIN_K1 (uint32_t)(FAST_SUSTAIN_KF*EXP_ENV_ONE)
-#define FAST_SUSTAIN_K2 (1.0-FAST_SUSTAIN_KF)
 
 // The exponential difference equations are based on the impulse invariant method. 
 // The equation used for attack is k1 = exp(curveFactor*Ts/To) and k2=(k1-1)/((e^curveFactor)-1)
-// and ynew = k1*yold+k2 (normalized).
 // This allows different eponential curvatures (positive and negative) with the endpoints constrained
 // to start at 0 and end at 1 (normalized) in the specified time interval.
+// and ynew = k1*yold+k2 (normalized).
 // The funtion for the k2 term is a continous funtion of curveFactor through zero, but it is an indeterminate form at zero that
 // This causes problems with finite precision math when approaching zero from either side (like the sinc funtion sin(x)/x but worse).
-// It can be expressed as a continous function using a ratio of Taylor series but it is simpler to restrict the values to integers
+// It can be expressed as a continous function using a ratio of power series but it is simpler to restrict the values to integers
 // between -8 and 8 treating zero as a special case (linear ramp).
-
+//
+// The other stages use y(n+1)=k*(y(n)-target)+target where k=exp(-Ts/To)(normalized).
 
 
 class AudioEffectEnvelopeTS : public AudioStream
@@ -113,10 +116,8 @@ public:
   FLASHMEM void sustain(float level) {
     if (level < 0.0) level = 0;
     else if (level > 1.0) level = 1.0;
+    // Exponential generator uses same sustain variable.
     sustain_mult = level * 1073741824.0;
-    sustain_target=level*EXP_ENV_ONE; // max level is 0x80000000 for exp, 0x40000000 for lin.
-    updateExpDecay(); // Change in sustain requires recalulation of decay target
-    // Change of sustain level while in decay or regular sustain state forces state change so sustain changes occur more quickly.
     __disable_irq();
     if(state==STATE_DECAY || state==STATE_SUSTAIN)
       state=STATE_SUSTAIN_FAST_CHANGE;
@@ -158,7 +159,7 @@ private:
     double k;
     k=exp(-1.0L/(decay_count*4.0L));
     decay_k=(uint32_t)(EXP_ENV_ONE*k);
-    decay_target=(1.0L-k)*sustain_target;
+    //decay_target=(1.0L-k)*sustain_target;
   }
   
   FLASHMEM void updateExpAttack() // This is needed in case env type changes.
@@ -206,12 +207,12 @@ private:
   uint16_t attack_count;
   uint16_t hold_count;
   uint16_t decay_count;
-  int32_t  sustain_mult;
+  int32_t  sustain_mult; // Shared with exponential envelope generator.
   uint16_t release_count;
   uint16_t release_forced_count;
 
-  // Exponential ADSR variables
-  enum { // make this a private class enum set instead of using defines.
+
+  enum { // Kake this a private class enum set instead of using defines.
     STATE_IDLE,
     STATE_DELAY,
     STATE_ATTACK,
@@ -223,17 +224,15 @@ private:
     STATE_FORCED,
     STATE_IDLE_NEXT,  // Not used for original linear envelope.
     };
+ // Exponential ADSR variables
   int8_t env_type; // Attack curve type. Limit to -8 to 8 integers for exp curve, -128 for linear.
-  uint32_t exp_count;
-  uint32_t ysum;
-  //uint32_t exp_mult[8]; // Calculate multipliers 8 at a time.
-  uint32_t attack_k;
-  uint32_t attack_target;
-  uint32_t decay_k;
-  uint32_t decay_target;
-  uint32_t sustain_target;
-  uint32_t release_k;
-  uint32_t release_forced_k;
+  uint32_t exp_count; // same function as count in linear generator but for single samples, not groups of 8.
+  int32_t ysum;
+  int32_t attack_k;
+  int32_t attack_target;
+  int32_t decay_k;
+  int32_t release_k;
+  int32_t release_forced_k;
 };
 
 #undef SAMPLES_PER_MSEC
