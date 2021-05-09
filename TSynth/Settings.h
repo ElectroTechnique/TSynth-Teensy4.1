@@ -1,6 +1,6 @@
 #define SETTINGSOPTIONSNO 15//No of options
 #define SETTINGSVALUESNO 19//Maximum number of settings option values needed
-#include"VoiceGroup.h"
+#include "VoiceGroup.h"
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
 struct SettingsOption
@@ -23,6 +23,9 @@ void settingsPickupEnable(const char * value);
 void settingsBassEnhanceEnable(const char * value);
 void settingsScopeEnable(const char * value);
 void settingsVUEnable(const char * value);
+void settingsMonophonic(const char * value);
+void settingsAmpEnv(const char *value);
+void settingsFiltEnv(const char *value);
 void settingsHandler(const char * s, void (*f)(const char*));
 
 int currentIndexMIDICh();
@@ -37,14 +40,10 @@ int currentIndexPickupEnable();
 int currentIndexBassEnhanceEnable();
 int currentIndexScopeEnable();
 int currentIndexVUEnable();
-int getCurrentIndex(int (*f)());
-
-// Added for exponential/linear envelopes types.
+int currentIndexMonophonicMode();
 int currentIndexAmpEnv();
 int currentIndexFiltEnv();
-void settingsAmpEnv(const char *value);
-void settingsFiltEnv(const char *value);
-
+int getCurrentIndex(int (*f)());
 
 FLASHMEM int currentIndexAmpEnv() {
   if((envTypeAmp>=-8) && (envTypeAmp<=8))return envTypeAmp+9;
@@ -104,13 +103,13 @@ FLASHMEM void settingsFiltEnv(const char * value) {
   storeFiltEnv(envTypeFilt);
 }						
 
-FLASHMEM void reloadAmpEnv()
-{
+FLASHMEM void reloadAmpEnv(){
+  envTypeAmp = getAmpEnv();
   VG_FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeFilt));
 }
 
-FLASHMEM void reloadFiltEnv()
-{
+FLASHMEM void reloadFiltEnv(){
+  envTypeFilt = getFiltEnv();
   VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
 }
 
@@ -308,8 +307,8 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
   settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
   settingsOptions.push(SettingsOption{"Monophonic", {"Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0"}, settingsMonophonic, currentIndexMonophonicMode});
-  settingsOptions.push(SettingsOption{"Amp Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsAmpEnv, currentIndexAmpEnv});
-  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", NULL}, settingsFiltEnv, currentIndexFiltEnv});																												
+  settingsOptions.push(SettingsOption{"Amp Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsAmpEnv, currentIndexAmpEnv});
+  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsFiltEnv, currentIndexFiltEnv});																												
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
   settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
 }

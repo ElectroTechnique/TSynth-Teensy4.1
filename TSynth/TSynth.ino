@@ -230,6 +230,9 @@ FLASHMEM void setup() {
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
+  //Read Filter and Amp Envelope shapes
+  reloadFiltEnv();
+  reloadAmpEnv();
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
@@ -1640,5 +1643,5 @@ void loop() {
   checkMux();
   checkSwitches();
   checkEncoder();
-  CPUMonitor();
+  //CPUMonitor();
 }
