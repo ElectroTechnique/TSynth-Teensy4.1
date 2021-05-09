@@ -1,5 +1,6 @@
 #define SETTINGSOPTIONSNO 15//No of options
 #define SETTINGSVALUESNO 19//Maximum number of settings option values needed
+#include"VoiceGroup.h"
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
 
 struct SettingsOption
@@ -75,7 +76,7 @@ FLASHMEM void settingsAmpEnv(const char * value) {
   else if (strcmp(value, "Exp +7") == 0)  envTypeAmp = 7;
   else if (strcmp(value, "Exp +8") == 0)  envTypeAmp = 8;
   else envTypeAmp = -128;
-  FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeAmp));
+  VG_FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeAmp));
   storeAmpEnv(envTypeAmp);
 }
 
@@ -99,9 +100,19 @@ FLASHMEM void settingsFiltEnv(const char * value) {
   else if (strcmp(value, "Exp +7") == 0)  envTypeFilt = 7;
   else if (strcmp(value, "Exp +8") == 0)  envTypeFilt = 8;
   else envTypeFilt = -128;
-  FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
+  VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
   storeFiltEnv(envTypeFilt);
-}																	 
+}						
+
+FLASHMEM void reloadAmpEnv()
+{
+  VG_FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeFilt));
+}
+
+FLASHMEM void reloadFiltEnv()
+{
+  VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
+}
 
 FLASHMEM void settingsMIDICh(const char * value) {
   if (strcmp(value, "ALL") == 0) {
