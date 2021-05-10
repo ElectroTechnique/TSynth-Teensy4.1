@@ -299,16 +299,16 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"MIDI Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDICh, currentIndexMIDICh});
   settingsOptions.push(SettingsOption{"Key Tracking", {"None", "Half", "Full", "\0"}, settingsKeyTracking, currentIndexKeyTracking});
   settingsOptions.push(SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", "\0"}, settingsVelocitySens, currentIndexVelocitySens});
+  settingsOptions.push(SettingsOption{"Monophonic", {"Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0"}, settingsMonophonic, currentIndexMonophonicMode});
   settingsOptions.push(SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "\0"}, settingsPitchBend, currentIndexPitchBend});
   settingsOptions.push(SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "\0"}, settingsModWheelDepth, currentIndexModWheelDepth});
   settingsOptions.push(SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDIOutCh, currentIndexMIDIOutCh});
   settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", "\0"}, settingsMIDIThru, currentIndexMIDIThru});
-  settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
-  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
-  settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
-  settingsOptions.push(SettingsOption{"Monophonic", {"Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0"}, settingsMonophonic, currentIndexMonophonicMode});
   settingsOptions.push(SettingsOption{"Amp Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsAmpEnv, currentIndexAmpEnv});
-  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsFiltEnv, currentIndexFiltEnv});																												
+  settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsFiltEnv, currentIndexFiltEnv});
+  settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});																											
+  settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
   settingsOptions.push(SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
+  settingsOptions.push(SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
 }

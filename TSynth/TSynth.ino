@@ -36,6 +36,8 @@
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis / Vince R. Pearson - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    Will Winder - Major refactoring and monophonic mode
+    Vince Pearson - Exponential envelopes
     Github member fab672000 - General improvements to code
     Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
@@ -1086,7 +1088,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateFXAmt();
   updateFXMix();
   Serial.print(F("Set Patch: "));
-  Serial.println(patchName);
+  Serial.println(data[0]);
 }
 
 FLASHMEM String getCurrentPatchData() {
