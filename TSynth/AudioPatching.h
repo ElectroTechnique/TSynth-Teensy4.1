@@ -9,7 +9,7 @@
 
 // Oscillator configurations.
 struct Patch {
-    AudioEffectEnvelope filterEnvelope_;
+    AudioEffectEnvelopeTS filterEnvelope_;
 
     AudioMixer4 pwMixer_a;
     AudioMixer4 pwMixer_b;
@@ -35,7 +35,7 @@ struct Patch {
 
     AudioMixer4 filterMixer_;
 
-    AudioEffectEnvelope ampEnvelope_;
+    AudioEffectEnvelopeTS ampEnvelope_;
 
     AudioConnection connections[25] = {
         {keytracking_, 0, filterModMixer_, 2},
