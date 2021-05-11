@@ -113,7 +113,6 @@ FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
     voices.add(new Voice(global.Oscillators[i], i));
   }
-  monophonic = getMonophonic();
 
   setupDisplay();
   setUpSettings();
@@ -215,8 +214,6 @@ void myNoteOn(byte channel, byte note, byte velocity) {
   //Check for out of range notes
   if (note + voices.params().oscPitchA < 0 || note + voices.params().oscPitchA > 127 || note + voices.params().oscPitchB < 0 || note + voices.params().oscPitchB > 127)
     return;
-
-  voices.setMonophonic(monophonic);
 
   voices.noteOn(note, velocity);
 }
@@ -1056,6 +1053,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxMixPrevValue = fxMix;//PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
+  voices.setMonophonic(data[49].toInt());
   //  SPARE1 = data[49].toFloat();
   //  SPARE2 = data[50].toFloat();
   //  SPARE3 = data[51].toFloat();
@@ -1068,10 +1066,10 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 
 FLASHMEM String getCurrentPatchData() {
   auto p = voices.params();
-  return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(keytrackingAmount) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
+  return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(voices.getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(voices.getPitchLfoAmount(), 5) + "," + String(voices.getPitchLfoRate(), 5) + "," + String(voices.getPitchLfoWaveform()) + "," + String(int(voices.getPitchLfoRetrig())) + "," + String(int(voices.getPitchLfoMidiClockSync())) + "," + String(voices.getFilterLfoRate(), 5) + "," +
          voices.getFilterLfoRetrig() + "," + voices.getFilterLfoMidiClockSync() + "," + voices.getFilterLfoAmt() + "," + voices.getFilterLfoWaveform() + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(0.0f) + "," + String(0.0f) + "," + String(0.0f);
+         String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(voices.getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
