@@ -31,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster        ~62     96
+  600MHz Faster        60+     96
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -1081,9 +1081,8 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   voices.setMonophonic(data[49].toInt());
-  //  SPARE1 = data[49].toFloat();
-  //  SPARE2 = data[50].toFloat();
-  //  SPARE3 = data[51].toFloat();
+  //  SPARE1 = data[50].toFloat();
+  //  SPARE2 = data[51].toFloat();
 
   updateFXAmt();
   updateFXMix();

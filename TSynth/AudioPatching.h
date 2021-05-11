@@ -17,17 +17,8 @@
 AudioOutputUSB           usbAudio;       //xy=3197,1821
 AudioSynthWaveformDc     constant1Dc;    //xy=69,1781
 AudioSynthNoisePink      pink;           //xy=1462
-AudioSynthNoiseWhite     white;          //xy=1460
-												  
-													
-													
-													  
-													  
+AudioSynthNoiseWhite     white;          //xy=1460				  
 AudioAnalyzePeak         peak;           //xy=2756,1817
-													 
-														 
-													  
-													 
 AudioMixer4              voiceMixer1;    //xy=2233,581
 AudioMixer4              voiceMixer2;    //xy=2240,1791
 AudioMixer4              voiceMixer3;    //xy=2237,2976
@@ -362,60 +353,6 @@ AudioConnection          patchCord231(constant1Dc, filterEnvelope10);
 AudioConnection          patchCord232(constant1Dc, filterEnvelope11);
 AudioConnection          patchCord233(constant1Dc, filterEnvelope12);
 
-// These are now dynamic.
-															  
-// pwmLfoA_ -> pwMixer_a, 0
-															  
-															  
-// pwmLfoB_ -> pwMixer_b, 0
-// pwa_ -> pwMixer_a
-// pwb_ -> pwMixer_b
-// oscPitchMixer -> oscModMixer_a, 0
-// oscPitchMixer -> oscModMixer_b, 0
-																
-																
-																
-																
-																
-																
-																
-																
-																 
-																 
-																 
-																 
-																 
-																 
-
-
-														   
-														   
-														   
-														   
-														   
-														   
-														   
-														   
-															
-															
-															
-															
-															
-															
-															
-															
-															
-															
-															 
-															 
-															 
-															 
-															 
-															 
-
-																		
-																		 
-
 AudioConnection          patchCord21(pitchLfo1, 0, oscPitchMixer1, 1);
 AudioConnection          patchCord23(pitchLfo2, 0, oscPitchMixer2, 1);
 AudioConnection          patchCord485(pitchLfo3, 0, oscPitchMixer3, 1);
@@ -453,22 +390,7 @@ AudioConnection          patchCord265(keytracking8, 0, filterModMixer8, 2);
 AudioConnection          patchCord266(keytracking9, 0, filterModMixer9, 2);
 AudioConnection          patchCord267(keytracking10, 0, filterModMixer10, 2);
 AudioConnection          patchCord268(keytracking11, 0, filterModMixer11, 2);
-AudioConnection          patchCord269(keytracking12, 0, filterModMixer12, 2);
-
-
-																	   
-																	   
-																	   
-																	   
-																		
-																		
-																		
-																		
-																		
-																		 
-																		 
-																		 
-
+AudioConnection          patchCord269(keytracking12, 0, filterModMixer12, 2);																 
 
 AudioConnection          patchCord36(pwMixer1a, 0, waveformMod1a, 1);
 AudioConnection          patchCord37(pwMixer1b, 0, waveformMod1b, 1);
@@ -494,32 +416,6 @@ AudioConnection          patchCord284(pwMixer11a, 0, waveformMod11a, 1);
 AudioConnection          patchCord285(pwMixer11b, 0, waveformMod11b, 1);
 AudioConnection          patchCord286(pwMixer12a, 0, waveformMod12a, 1);
 AudioConnection          patchCord287(pwMixer12b, 0, waveformMod12b, 1);
-
-																			 
-																			 
-																			 
-																			 
-																			 
-																			 
-																			 
-																			 
-																			  
-																			  
-																			  
-																			  
-																			  
-																			  
-																			  
-																			  
-																			  
-																			  
-																			   
-																			   
-																			   
-																			   
-																			   
-																			   
-
 
 AudioConnection          patchCord52(waveformMod1b, 0, waveformMixer1, 1);
 AudioConnection          patchCord53(waveformMod1b, 0, oscFX1, 1);
@@ -570,7 +466,6 @@ AudioConnection          patchCord321(waveformMod12a, 0, oscFX12, 0);
 AudioConnection          patchCord322(waveformMod12b, 0, waveformMixer12, 1);
 AudioConnection          patchCord323(waveformMod12b, 0, oscFX12, 1);
 
-
 AudioConnection          patchCord68(filterEnvelope4, 0, filterModMixer4, 0);
 AudioConnection          patchCord69(filterEnvelope4, 0, pwMixer4a, 2);
 AudioConnection          patchCord70(filterEnvelope4, 0, pwMixer4b, 2);
@@ -608,7 +503,6 @@ AudioConnection          patchCord338(filterEnvelope11, 0, pwMixer11b, 2);
 AudioConnection          patchCord339(filterEnvelope12, 0, filterModMixer12, 0);
 AudioConnection          patchCord340(filterEnvelope12, 0, pwMixer12a, 2);
 AudioConnection          patchCord341(filterEnvelope12, 0, pwMixer12b, 2);
-
 
 AudioConnection          patchCord80(oscFX1, 0, waveformMixer1, 3);
 AudioConnection          patchCord81(oscFX2, 0, waveformMixer2, 3);
@@ -686,7 +580,6 @@ AudioConnection          patchCord375(filter11, 2, filterMixer11, 2);
 AudioConnection          patchCord376(filter12, 0, filterMixer12, 0);
 AudioConnection          patchCord377(filter12, 1, filterMixer12, 1);
 AudioConnection          patchCord378(filter12, 2, filterMixer12, 2);
-
 
 AudioConnection          patchCord104(filterMixer2, ampEnvelope2);
 AudioConnection          patchCord105(filterMixer3, ampEnvelope3);

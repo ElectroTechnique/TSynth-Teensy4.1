@@ -36,7 +36,6 @@ FLASHMEM int getMIDIChannel() {
   return midiChannel;
 }
 
-
 FLASHMEM void storeMidiChannel(byte channel){
   EEPROM.update(EEPROM_MIDI_CH, channel);
 }
