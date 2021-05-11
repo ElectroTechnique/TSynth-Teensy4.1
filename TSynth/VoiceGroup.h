@@ -86,7 +86,7 @@ class VoiceGroup {
     uint8_t top = 0;
 
     public:
-    VoiceGroup(PatchShared& shared_):
+    VoiceGroup(PatchShared& shared_): 
             patchName(""),
             patchIndex(0),
             shared(shared_),
@@ -768,7 +768,7 @@ class VoiceGroup {
         }
 
         if (this->notesOn > 0) this->notesOn --;
-
+        
         switch (this->_params.unisonMode) {
             case 0:
                 noteOff(note, false);
@@ -922,7 +922,7 @@ class VoiceGroup {
             default:
                 break;
             }
-
+            
             if (noteIndex >= 0) {
                 this->monoNote = this->noteStack[noteIndex].note;
                 noteOn(this->noteStack[noteIndex].note, this->noteStack[noteIndex].velocity, true);
@@ -949,7 +949,7 @@ class VoiceGroup {
 
     // Turn off one or more notes, return the number of notes turned off.
     int noteOff(uint8_t note, bool all) {
-        int num = 0;
+        int num = 0;    
         //NoteOff() - Get voice number from note
         for (uint8_t i = 0; i < voices.size(); i++) {
             if (voices[i]->note() == note && voices[i]->on() == true) {

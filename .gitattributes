@@ -1,6 +1,0 @@
-* text=crlf
-
-*.c text
-*.cpp text
-*.h text
-*.ino text
