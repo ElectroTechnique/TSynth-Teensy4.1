@@ -6,6 +6,19 @@
 #include "AudioPatching.h"
 #include "Constants.h"
 
+class Mixer {
+    private:
+    AudioMixer4& mixer;
+    uint8_t index;
+
+    public:
+    Mixer(AudioMixer4& mixer_, uint8_t index_): mixer(mixer_), index(index_) {}
+
+    void gain(float value) {
+        mixer.gain(index, value);
+    }
+};
+
 // TODO: Store / update these in the VoiceGroup instead of re-initializing for each noteOn.
 struct VoiceParams {
     float keytrackingAmount;
@@ -27,6 +40,7 @@ class Voice {
         float _velocity;
         bool _voiceOn;
         uint8_t _idx;
+        Mixer* mixer = nullptr;
 
     public:
         Voice(Patch& p, uint8_t i): _oscillator(p), _timeOn(-1), _note(0), _velocity(0), _voiceOn(false), _idx(i) {
@@ -38,6 +52,11 @@ class Voice {
             //Arbitary waveform needs initializing to something
             p.waveformMod_a.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
             p.waveformMod_b.arbitraryWaveform(PARABOLIC_WAVE, AWFREQ);
+        }
+
+        inline void setMixer(Mixer* mixer_) {
+            delete mixer;
+            mixer = mixer_;
         }
 
         inline uint8_t index() {
@@ -84,7 +103,8 @@ class Voice {
             Patch& osc = this->patch();
 
             osc.keytracking_.amplitude(note * DIV127 * params.keytrackingAmount);
-            osc.voiceMixer_.gain(this->_idx % 4, VELOCITY[velocitySens][velocity] * params.mixerLevel);
+            //osc.voiceMixer_.gain(this->_idx % 4, VELOCITY[velocitySens][velocity] * params.mixerLevel);
+            mixer->gain(VELOCITY[velocitySens][velocity] * params.mixerLevel);
             osc.filterEnvelope_.noteOn();
             osc.ampEnvelope_.noteOn();
             if (params.glideSpeed > 0 && note != params.prevNote) {
