@@ -15,7 +15,6 @@
 
 FLASHMEM void storeAmpEnv(byte type){
   EEPROM.update(EEPROM_AMP_ENV, type);
-  Serial.println(type);
 }
 
 FLASHMEM void storeFiltEnv(byte type){
