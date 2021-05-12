@@ -79,7 +79,9 @@
 
 uint32_t state = PARAMETER;
 
-VoiceGroup voices{SharedAudio[0]};
+// Initialize the audio configuration.
+Global global{VOICEMIXERLEVEL};
+VoiceGroup voices{global.SharedAudio[0]};
 
 #include "ST7735Display.h"
 
@@ -111,7 +113,7 @@ long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
-    voices.add(new Voice(Oscillators[i], i));
+    voices.add(new Voice(global.Oscillators[i], i));
   }
 
   setupDisplay();
@@ -119,14 +121,14 @@ FLASHMEM void setup() {
   setupHardware();
 
   AudioMemory(97);
-  sgtl5000_1.enable();
-  sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
-  sgtl5000_1.dacVolumeRamp();
-  sgtl5000_1.muteHeadphone();
-  sgtl5000_1.muteLineout();
-  sgtl5000_1.audioPostProcessorEnable();
-  sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
-  sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
+  global.sgtl5000_1.enable();
+  global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
+  global.sgtl5000_1.dacVolumeRamp();
+  global.sgtl5000_1.muteHeadphone();
+  global.sgtl5000_1.muteLineout();
+  global.sgtl5000_1.audioPostProcessorEnable();
+  global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
+  global.sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
 
   cardStatus = SD.begin(BUILTIN_SDCARD);
   if (cardStatus) {
@@ -185,31 +187,7 @@ FLASHMEM void setup() {
   MIDI.setHandleStop(myMIDIClockStop);
   Serial.println(F("MIDI In DIN Listening"));
 
-  constant1Dc.amplitude(ONE);
-
-  voiceMixerM.gain(0, 0.25f);
-  voiceMixerM.gain(1, 0.25f);
-  voiceMixerM.gain(2, 0.25f);
-  voiceMixerM.gain(3, 0.25f);
-
-  pink.amplitude(ONE);
-  white.amplitude(ONE);
-
-  voiceMixerM.gain(0, VOICEMIXERLEVEL);
-  voiceMixerM.gain(1, VOICEMIXERLEVEL);
-  voiceMixerM.gain(2, VOICEMIXERLEVEL);
-  voiceMixerM.gain(3, VOICEMIXERLEVEL);
-
-  //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
-  dcOffsetFilter.octaveControl(1.0f);
-  dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
-
-  volumeMixer.gain(0, 1.0f);
-  volumeMixer.gain(1, 0);
-  volumeMixer.gain(2, 0);
-  volumeMixer.gain(3, 0);
-
-  ensemble.lfoRate(fxAmt);
+  global.ensemble.lfoRate(fxAmt);
 
   volumePrevious = RE_READ; //Force volume control to be read and set to current
 
@@ -227,7 +205,7 @@ FLASHMEM void setup() {
   //Read Pick-up enable from EEPROM - experimental feature
   pickUp = getPickupEnable();
   //Read bass enhance enable from EEPROM
-  if (getBassEnhanceEnable()) sgtl5000_1.enhanceBassEnable();
+  if (getBassEnhanceEnable()) global.sgtl5000_1.enhanceBassEnable();
   //Read oscilloscope enable from EEPROM
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
@@ -357,7 +335,7 @@ FLASHMEM void updateUnison(uint8_t unison) {
 }
 
 FLASHMEM void updateVolume(float vol) {
-  sgtl5000_1.volume(vol * SGTL_MAXVOLUME);
+  global.sgtl5000_1.volume(vol * SGTL_MAXVOLUME);
   showCurrentParameterPage("Volume", vol);
 }
 
@@ -697,15 +675,15 @@ FLASHMEM void updateOscFX(uint8_t value) {
 }
 
 FLASHMEM void updateFXAmt() {
-  ensemble.lfoRate(fxAmt);
+  global.ensemble.lfoRate(fxAmt);
   showCurrentParameterPage("Effect Amt", String(fxAmt) + " Hz");
 }
 
 FLASHMEM void updateFXMix() {
-  effectMixerL.gain(0, 1.0f - fxMix); //Dry
-  effectMixerL.gain(1, fxMix);       //Wet
-  effectMixerR.gain(0, 1.0f - fxMix); //Dry
-  effectMixerR.gain(1, fxMix);       //Wet
+  global.effectMixerL.gain(0, 1.0f - fxMix); //Dry
+  global.effectMixerL.gain(1, fxMix);       //Wet
+  global.effectMixerR.gain(0, 1.0f - fxMix); //Dry
+  global.effectMixerR.gain(1, fxMix);       //Wet
   showCurrentParameterPage("Effect Mix", String(fxMix));
 }
 
@@ -1255,8 +1233,8 @@ void checkMux() {
     if (!firstPatchLoaded) {
       recallPatch(patchNo); //Load first patch after all controls read
       firstPatchLoaded = true;
-      sgtl5000_1.unmuteHeadphone();
-      sgtl5000_1.unmuteLineout();
+      global.sgtl5000_1.unmuteHeadphone();
+      global.sgtl5000_1.unmuteLineout();
     }
   }
   digitalWriteFast(MUX_0, muxInput & B0001);

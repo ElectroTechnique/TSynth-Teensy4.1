@@ -78,10 +78,10 @@ FLASHMEM void renderBootUpPage()
 }
 
 FLASHMEM void renderPeak() {
-  if (vuMeter && peak.available()) {
+  if (vuMeter && global.peak.available()) {
     uint16_t len = 0;
     if (peakCount > 1) {
-      len = (int)(peak.read() * 75.0f);
+      len = (int)(global.peak.read() * 75.0f);
       prevLen = len;
       peakCount = 0;
     } else {
@@ -441,7 +441,7 @@ FLASHMEM void showSettingsPage(const char *  option, const char * value, int set
 }
 
 FLASHMEM void enableScope(boolean enable) {
-  enable ? scope.ScreenSetup(&tft) : scope.ScreenSetup(NULL);
+  enable ? global.scope.ScreenSetup(&tft) : global.scope.ScreenSetup(NULL);
 }
 
 void displayThread() {
