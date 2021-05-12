@@ -31,11 +31,13 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster        ~62     96
+  600MHz Faster        60+     96
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis / Vince R. Pearson - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
+    Will Winder - Major refactoring and monophonic mode
+    Vince Pearson - Exponential envelopes
     Github member fab672000 - General improvements to code
     Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
@@ -208,6 +210,9 @@ FLASHMEM void setup() {
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
+  //Read Filter and Amp Envelope shapes
+  reloadFiltEnv();
+  reloadAmpEnv();
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
@@ -1054,14 +1059,13 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   voices.setMonophonic(data[49].toInt());
-  //  SPARE1 = data[49].toFloat();
-  //  SPARE2 = data[50].toFloat();
-  //  SPARE3 = data[51].toFloat();
+  //  SPARE1 = data[50].toFloat();
+  //  SPARE2 = data[51].toFloat();
 
   updateFXAmt();
   updateFXMix();
   Serial.print(F("Set Patch: "));
-  Serial.println(patchName);
+  Serial.println(data[0]);
 }
 
 FLASHMEM String getCurrentPatchData() {
@@ -1618,5 +1622,5 @@ void loop() {
   checkMux();
   checkSwitches();
   checkEncoder();
-  CPUMonitor();
+  //CPUMonitor();
 }
