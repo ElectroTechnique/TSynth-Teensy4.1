@@ -64,8 +64,8 @@ struct Patch {
         {glide_, 0, oscModMixer_a, 2},
         {glide_, 0, oscModMixer_b, 2},
         // X Mod
-        {waveformMod_a, 0, oscModMixer_a, 3},
-        {waveformMod_b, 0, oscModMixer_b, 3}
+        {waveformMod_a, 0, oscModMixer_b, 3},
+        {waveformMod_b, 0, oscModMixer_a, 3}
     };
 
     // When added to a voice group, connect PWA/PWB.
