@@ -590,23 +590,23 @@ class VoiceGroup {
 
     void setFilterLfoRetrig(bool value) {
         filterLfoRetrig = value;
-        VG_FOR_EACH_OSC(filterLfo_.sync())
+        shared.filterLfo.sync();
     }
 
     void setFilterLfoRate(float value) {
         filterLfoRate = value;
-        VG_FOR_EACH_OSC(filterLfo_.frequency(value))
+        shared.filterLfo.frequency(value);
     }
 
     void setFilterLfoAmt(float value) {
         filterLfoAmt = value;
-        VG_FOR_EACH_OSC(filterLfo_.amplitude(value))
+        shared.filterLfo.amplitude(value);
     }
 
     void setFilterLfoWaveform(int waveform) {
         if (filterLfoWaveform == waveform) return;
         filterLfoWaveform = waveform;
-        VG_FOR_EACH_OSC(filterLfo_.begin(filterLfoWaveform))
+        shared.filterLfo.begin(filterLfoWaveform);
     }
 
     void setPinkNoiseLevel(float value) {
@@ -796,7 +796,7 @@ class VoiceGroup {
 
     void midiClockStart() {
         midiClockSignal = true;
-        VG_FOR_EACH_OSC(filterLfo_.sync())
+        shared.filterLfo.sync();
     }
 
     void midiClockStop() {
@@ -807,7 +807,7 @@ class VoiceGroup {
         midiClockSignal = true;
 
         if (filterLfoMidiClockSync) {
-            VG_FOR_EACH_OSC(filterLfo_.frequency(frequency))
+            shared.filterLfo.frequency(frequency);
         }
 
         if (pitchLFOMidiClockSync) {
@@ -977,7 +977,7 @@ class VoiceGroup {
     void noteOn(uint8_t note, uint8_t velocity, bool monoRetrigger) {
 
         if (filterLfoRetrig) {
-            VG_FOR_EACH_OSC(filterLfo_.sync());
+            shared.filterLfo.sync();
         }
 
         switch (this->_params.unisonMode) {
