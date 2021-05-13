@@ -21,7 +21,6 @@ struct Patch {
     AudioMixer4 oscModMixer_a;
     AudioMixer4 oscModMixer_b;
 
-    AudioSynthWaveformTS filterLfo_;
     AudioSynthWaveformModulatedTS waveformMod_a;
     AudioSynthWaveformModulatedTS waveformMod_b;
 
