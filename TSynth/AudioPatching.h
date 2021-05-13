@@ -7,6 +7,62 @@
 //waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM  --> volumeMixer
 //WAVEFORMLEVEL        oscA/BLevel             VELOCITY    VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL    volume
 
+class Mixer {
+    private:
+    AudioMixer4& mixer;
+    uint8_t index;
+
+    public:
+    Mixer(AudioMixer4& mixer_, uint8_t index_): mixer(mixer_), index(index_) {}
+
+    void gain(float value) {
+        mixer.gain(index, value);
+    }
+};
+
+struct PatchShared {
+    AudioSynthWaveformDc pitchBend;
+    AudioSynthWaveformTS pitchLfo;
+    AudioMixer4 pitchMixer;
+    AudioSynthWaveformTS pwmLfoA;
+    AudioSynthWaveformTS pwmLfoB;
+    AudioSynthWaveformTS filterLfo;
+    AudioSynthWaveformDc pwa;
+    AudioSynthWaveformDc pwb;
+    AudioMixer4 noiseMixer;
+
+    AudioMixer4 voiceMixer[3];
+    AudioMixer4 voiceMixerM;
+
+    AudioEffectEnsemble ensemble;
+
+    AudioConnection connections[5] = {
+        {pitchBend, 0, pitchMixer, 0},
+        {pitchLfo, 0, pitchMixer, 1},
+        {voiceMixer[0], 0, voiceMixerM, 0},
+        {voiceMixer[1], 0, voiceMixerM, 1},
+        {voiceMixer[2], 0, voiceMixerM, 2}
+    };
+
+    private:
+    AudioConnection *pinkNoiseConnection = nullptr;
+    AudioConnection *whiteNoiseConnection = nullptr;
+    AudioConnection *outputConnection = nullptr;
+
+    public:
+    void connectNoise(AudioSynthNoisePink& pink, AudioSynthNoiseWhite& white) {
+        delete pinkNoiseConnection;
+        delete whiteNoiseConnection;
+        pinkNoiseConnection = new AudioConnection(pink, 0, noiseMixer, 0);
+        whiteNoiseConnection = new AudioConnection(white, 0, noiseMixer, 0);
+    }
+
+    void connectOutput(AudioMixer4& out, uint8_t index) {
+        delete outputConnection;
+        outputConnection = new AudioConnection(voiceMixerM, 0, out, index);
+    }
+};
+
 // Oscillator configurations.
 struct Patch {
     AudioEffectEnvelopeTS filterEnvelope_;
@@ -68,41 +124,46 @@ struct Patch {
         {waveformMod_b, 0, oscModMixer_b, 3}
     };
 
+    private:
     // When added to a voice group, connect PWA/PWB.
-    AudioConnection *pitchMixerAConnection;
-    AudioConnection *pitchMixerBConnection;
-    AudioConnection *pwmLfoAConnection;
-    AudioConnection *pwmLfoBConnection;
-    AudioConnection *filterLfoConnection;
-    AudioConnection *pwaConnection;
-    AudioConnection *pwbConnection;
-    AudioConnection *noiseMixerConnection;
-    AudioConnection *ampConnection;
-};
+    AudioConnection *pitchMixerAConnection = nullptr;
+    AudioConnection *pitchMixerBConnection = nullptr;
+    AudioConnection *pwmLfoAConnection = nullptr;
+    AudioConnection *pwmLfoBConnection = nullptr;
+    AudioConnection *filterLfoConnection = nullptr;
+    AudioConnection *pwaConnection = nullptr;
+    AudioConnection *pwbConnection = nullptr;
+    AudioConnection *noiseMixerConnection = nullptr;
+    AudioConnection *ampConnection = nullptr;
 
-struct PatchShared {
-    AudioSynthWaveformDc pitchBend;
-    AudioSynthWaveformTS pitchLfo;
-    AudioMixer4 pitchMixer;
-    AudioSynthWaveformTS pwmLfoA;
-    AudioSynthWaveformTS pwmLfoB;
-    AudioSynthWaveformTS filterLfo;
-    AudioSynthWaveformDc pwa;
-    AudioSynthWaveformDc pwb;
-    AudioMixer4 noiseMixer;
+    public:
+    // Connect the shared audio objects to the per-voice audio objects.
+    Mixer* connectTo(PatchShared& shared, uint8_t index) {
+        delete pitchMixerAConnection;
+        delete pitchMixerBConnection;
+        delete pwmLfoAConnection;
+        delete pwmLfoBConnection;
+        delete filterLfoConnection;
+        delete pwaConnection;
+        delete pwbConnection;
+        delete noiseMixerConnection;
+        delete ampConnection;
 
-    AudioMixer4 voiceMixer[3];
-    AudioMixer4 voiceMixerM;
+        pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, oscModMixer_a, 0);
+        pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, oscModMixer_b, 0);
+        pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, pwMixer_a, 0);
+        pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, pwMixer_b, 0);
+        filterLfoConnection = new AudioConnection(shared.filterLfo, 0, filterModMixer_, 1);
+        pwaConnection = new AudioConnection(shared.pwa, 0, pwMixer_a, 1);
+        pwbConnection = new AudioConnection(shared.pwb, 0, pwMixer_b, 1);
+        noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, waveformMixer_, 2);
 
-    AudioEffectEnsemble ensemble;
-
-    AudioConnection connections[5] = {
-        {pitchBend, 0, pitchMixer, 0},
-        {pitchLfo, 0, pitchMixer, 1},
-        {voiceMixer[0], 0, voiceMixerM, 0},
-        {voiceMixer[1], 0, voiceMixerM, 1},
-        {voiceMixer[2], 0, voiceMixerM, 2}
-    };
+        uint8_t voiceMixerIndex = 0;
+        uint8_t indexMod4 = index % 4;
+        if (index != 0) voiceMixerIndex = index / 4;
+        ampConnection = new AudioConnection(ampEnvelope_, 0, shared.voiceMixer[voiceMixerIndex], indexMod4);
+        return new Mixer{shared.voiceMixer[voiceMixerIndex], indexMod4};
+    }
 };
 
 const uint8_t MAX_NO_TIMBER = 2;
@@ -134,14 +195,13 @@ struct Global {
         for (int i = 0; i < MAX_NO_VOICE; i++) {
             connections.push_back(new AudioConnection{constant1Dc, Oscillators[i].filterEnvelope_});
         }
+
         for (int i = 0; i < MAX_NO_TIMBER; i++) {
-            connections.push_back(new AudioConnection{pink, 0, SharedAudio[i].noiseMixer, 0});
-            connections.push_back(new AudioConnection{white, 0, SharedAudio[i].noiseMixer, 1});
+            SharedAudio[i].connectNoise(pink, white);
 
             uint8_t mixerIdx = 0;
             if (i > 0) mixerIdx = i / 12;
-            uint8_t chanIdx = i % 4;
-            connections.push_back(new AudioConnection{SharedAudio[i].voiceMixerM, 0, voiceMixer[mixerIdx], chanIdx});
+            SharedAudio[i].connectOutput(voiceMixer[mixerIdx], i % 4);
         }
 
         connections.push_back(new AudioConnection{voiceMixer[0], 0, voiceMixerM, 0});

@@ -700,39 +700,9 @@ class VoiceGroup {
     }
 
     void add(Voice* v) {
-        voices.push_back(v);
-
-        // TODO: Below could be functions of the patch.
-
-        // In case this was allocated before, delete it.
-        delete v->patch().pitchMixerAConnection;
-        delete v->patch().pitchMixerBConnection;
-        delete v->patch().pwmLfoAConnection;
-        delete v->patch().pwmLfoBConnection;
-        delete v->patch().pwaConnection;
-        delete v->patch().pwbConnection;
-        delete v->patch().noiseMixerConnection;
-        delete v->patch().filterLfoConnection;
-        delete v->patch().ampConnection;
-
-        v->patch().pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_a, 0);
-        v->patch().pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_b, 0);
-        v->patch().pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, v->patch().pwMixer_a, 0);
-        v->patch().pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, v->patch().pwMixer_b, 0);
-        v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
-        v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
-        v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
-        v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
-
-
-        uint8_t index = voices.size() - 1;
-        uint8_t voiceMixerIndex = 0;
-        uint8_t indexMod4 = index % 4;
-        if (index != 0) voiceMixerIndex = index / 4;
-        Mixer* m = new Mixer(shared.voiceMixer[voiceMixerIndex], indexMod4);
-
-        v->patch().ampConnection = new AudioConnection(v->patch().ampEnvelope_, 0, shared.voiceMixer[voiceMixerIndex], indexMod4);
+        Mixer* m = v->patch().connectTo(shared, voices.size());
         v->setMixer(m);
+        voices.push_back(v);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices
