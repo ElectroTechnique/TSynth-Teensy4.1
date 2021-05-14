@@ -6,19 +6,6 @@
 #include "AudioPatching.h"
 #include "Constants.h"
 
-class Mixer {
-    private:
-    AudioMixer4& mixer;
-    uint8_t index;
-
-    public:
-    Mixer(AudioMixer4& mixer_, uint8_t index_): mixer(mixer_), index(index_) {}
-
-    void gain(float value) {
-        mixer.gain(index, value);
-    }
-};
-
 // TODO: Store / update these in the VoiceGroup instead of re-initializing for each noteOn.
 struct VoiceParams {
     float keytrackingAmount;
