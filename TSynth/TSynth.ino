@@ -187,7 +187,8 @@ FLASHMEM void setup() {
   MIDI.setHandleStop(myMIDIClockStop);
   Serial.println(F("MIDI In DIN Listening"));
 
-  global.ensemble.lfoRate(fxAmt);
+  //global.ensemble.lfoRate(fxAmt);
+  global.SharedAudio[0].ensemble.lfoRate(fxAmt);
 
   volumePrevious = RE_READ; //Force volume control to be read and set to current
 
@@ -675,15 +676,28 @@ FLASHMEM void updateOscFX(uint8_t value) {
 }
 
 FLASHMEM void updateFXAmt() {
-  global.ensemble.lfoRate(fxAmt);
+  //global.ensemble.lfoRate(fxAmt);
+  global.SharedAudio[0].ensemble.lfoRate(fxAmt);
   showCurrentParameterPage("Effect Amt", String(fxAmt) + " Hz");
 }
 
 FLASHMEM void updateFXMix() {
-  global.effectMixerL.gain(0, 1.0f - fxMix); //Dry
-  global.effectMixerL.gain(1, fxMix);       //Wet
-  global.effectMixerR.gain(0, 1.0f - fxMix); //Dry
-  global.effectMixerR.gain(1, fxMix);       //Wet
+  global.SharedAudio[0].effectMixerL.gain(0, 1.0f - fxMix); //Dry
+  global.SharedAudio[0].effectMixerL.gain(1, fxMix);       //Wet
+  global.SharedAudio[0].effectMixerR.gain(0, 1.0f - fxMix); //Dry
+  global.SharedAudio[0].effectMixerR.gain(1, fxMix);       //Wet
+  /*
+  global.effectMixerL[0].gain(0, 1.0f - fxMix); //Dry
+  global.effectMixerL[0].gain(1, fxMix);       //Wet
+  global.effectMixerR[0].gain(0, 1.0f - fxMix); //Dry
+  global.effectMixerR[0].gain(1, fxMix);       //Wet
+  */
+  /*
+  global.effectMixerLM.gain(0, 1.0f - fxMix); //Dry
+  global.effectMixerLM.gain(1, fxMix);       //Wet
+  global.effectMixerRM.gain(0, 1.0f - fxMix); //Dry
+  global.effectMixerRM.gain(1, fxMix);       //Wet
+  */
   showCurrentParameterPage("Effect Mix", String(fxMix));
 }
 

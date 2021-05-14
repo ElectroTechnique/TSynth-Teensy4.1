@@ -35,21 +35,34 @@ struct PatchShared {
     AudioMixer4 voiceMixerM;
 
     AudioEffectEnsemble ensemble;
+    AudioFilterStateVariable dcOffsetFilter;
+    AudioMixer4 volumeMixer;
+    AudioMixer4 effectMixerL;
+    AudioMixer4 effectMixerR;
 
-    AudioConnection connections[5] = {
+    AudioConnection connections[12] = {
         {pitchBend, 0, pitchMixer, 0},
         {pitchLfo, 0, pitchMixer, 1},
         {voiceMixer[0], 0, voiceMixerM, 0},
         {voiceMixer[1], 0, voiceMixerM, 1},
-        {voiceMixer[2], 0, voiceMixerM, 2}
+        {voiceMixer[2], 0, voiceMixerM, 2},
+        {voiceMixerM, 0, dcOffsetFilter, 0},
+        {dcOffsetFilter, 2, volumeMixer, 0},
+        {volumeMixer, 0, ensemble, 0},
+        {ensemble, 0, effectMixerL, 1},
+        {ensemble, 1, effectMixerR, 1},
+        {volumeMixer, 0, effectMixerL, 0},
+        {volumeMixer, 0, effectMixerR, 0},
     };
 
     private:
     AudioConnection *pinkNoiseConnection = nullptr;
     AudioConnection *whiteNoiseConnection = nullptr;
-    AudioConnection *outputConnection = nullptr;
+    AudioConnection *outputLConnection = nullptr;
+    AudioConnection *outputRConnection = nullptr;
 
     public:
+    
     void connectNoise(AudioSynthNoisePink& pink, AudioSynthNoiseWhite& white) {
         delete pinkNoiseConnection;
         delete whiteNoiseConnection;
@@ -57,9 +70,11 @@ struct PatchShared {
         whiteNoiseConnection = new AudioConnection(white, 0, noiseMixer, 1);
     }
 
-    void connectOutput(AudioMixer4& out, uint8_t index) {
-        delete outputConnection;
-        outputConnection = new AudioConnection(voiceMixerM, 0, out, index);
+    void connectOutput(AudioMixer4& left, AudioMixer4& right, uint8_t index) {
+        delete outputLConnection;
+        delete outputRConnection;
+        outputLConnection = new AudioConnection(effectMixerL, 0, left, index);
+        outputRConnection = new AudioConnection(effectMixerR, 0, right, index);
     }
 };
 
@@ -175,22 +190,33 @@ struct Global {
     AudioSynthNoisePink      pink;
     AudioSynthNoiseWhite     white;
     AudioAnalyzePeak         peak;
-    AudioMixer4              voiceMixer[3];
-    AudioMixer4              voiceMixerM;
-    AudioFilterStateVariable dcOffsetFilter;
-    AudioMixer4              volumeMixer;
-    AudioEffectEnsemble      ensemble;
     Oscilloscope             scope;
-    AudioMixer4              effectMixerR;
-    AudioMixer4              effectMixerL;
+    AudioMixer4              effectMixerR[3];
+    AudioMixer4              effectMixerRM;
+    AudioMixer4              effectMixerL[3];
+    AudioMixer4              effectMixerLM;
     AudioOutputI2S           i2s;
 
     PatchShared SharedAudio[MAX_NO_TIMBER];
     Patch Oscillators[MAX_NO_VOICE];
 
-    AudioControlSGTL5000     sgtl5000_1;     //xy=2353,505
+    AudioControlSGTL5000     sgtl5000_1;
+
+    AudioConnection connectionsArray[10] = {
+        {effectMixerL[0], 0, effectMixerLM, 0},
+        {effectMixerL[1], 0, effectMixerLM, 1},
+        {effectMixerL[2], 0, effectMixerLM, 2},
+        {effectMixerR[0], 0, effectMixerRM, 0},
+        {effectMixerR[1], 0, effectMixerRM, 1},
+        {effectMixerR[2], 0, effectMixerRM, 2},
+        {effectMixerRM, 0, usbAudio, 1},
+        {effectMixerRM, 0, i2s, 1},
+        {effectMixerLM, 0, i2s, 0},
+        {effectMixerLM, 0, usbAudio, 0}
+    };
 
     std::vector<AudioConnection*> connections;
+
     Global(float mixerLevel) {
         for (int i = 0; i < MAX_NO_VOICE; i++) {
             connections.push_back(new AudioConnection{constant1Dc, Oscillators[i].filterEnvelope_});
@@ -201,49 +227,36 @@ struct Global {
 
             uint8_t mixerIdx = 0;
             if (i > 0) mixerIdx = i / 12;
-            SharedAudio[i].connectOutput(voiceMixer[mixerIdx], i % 4);
-        }
+            SharedAudio[i].connectOutput(effectMixerL[mixerIdx], effectMixerR[mixerIdx], i % 4);
 
-        connections.push_back(new AudioConnection{voiceMixer[0], 0, voiceMixerM, 0});
-        connections.push_back(new AudioConnection{voiceMixer[1], 0, voiceMixerM, 1});
-        connections.push_back(new AudioConnection{voiceMixer[2], 0, voiceMixerM, 2});
-        connections.push_back(new AudioConnection{voiceMixerM, 0, dcOffsetFilter, 0});
-        connections.push_back(new AudioConnection{dcOffsetFilter, 2, volumeMixer, 0});
-        connections.push_back(new AudioConnection{volumeMixer, 0, ensemble, 0});
-        connections.push_back(new AudioConnection{dcOffsetFilter, 2, scope, 0});
-        connections.push_back(new AudioConnection{dcOffsetFilter, 2, peak, 0});
-        connections.push_back(new AudioConnection{ensemble, 0, effectMixerL, 1});
-        connections.push_back(new AudioConnection{ensemble, 1, effectMixerR, 1});
-        connections.push_back(new AudioConnection{volumeMixer, 0, effectMixerL, 0});
-        connections.push_back(new AudioConnection{volumeMixer, 0, effectMixerR, 0});
-        connections.push_back(new AudioConnection{effectMixerR, 0, usbAudio, 1});
-        connections.push_back(new AudioConnection{effectMixerR, 0, i2s, 1});
-        connections.push_back(new AudioConnection{effectMixerL, 0, i2s, 0});
-        connections.push_back(new AudioConnection{effectMixerL, 0, usbAudio, 0});
+            SharedAudio[i].voiceMixerM.gain(0, mixerLevel);
+            SharedAudio[i].voiceMixerM.gain(1, mixerLevel);
+            SharedAudio[i].voiceMixerM.gain(2, mixerLevel);
+            SharedAudio[i].voiceMixerM.gain(3, mixerLevel);
+
+            SharedAudio[i].volumeMixer.gain(0, 1.0f);
+            SharedAudio[i].volumeMixer.gain(1, 0);
+            SharedAudio[i].volumeMixer.gain(2, 0);
+            SharedAudio[i].volumeMixer.gain(3, 0);
+            
+            //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
+            SharedAudio[i].dcOffsetFilter.octaveControl(1.0f);
+            SharedAudio[i].dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
+        }
 
         constant1Dc.amplitude(1.0);
 
-        voiceMixerM.gain(0, 0.25f);
-        voiceMixerM.gain(1, 0.25f);
-        voiceMixerM.gain(2, 0.25f);
-        voiceMixerM.gain(3, 0.25f);
+        effectMixerLM.gain(0, mixerLevel);
+        effectMixerLM.gain(1, mixerLevel);
+        effectMixerLM.gain(2, mixerLevel);
+        effectMixerLM.gain(3, mixerLevel);
+        effectMixerRM.gain(0, mixerLevel);
+        effectMixerRM.gain(1, mixerLevel);
+        effectMixerRM.gain(2, mixerLevel);
+        effectMixerRM.gain(3, mixerLevel);
 
         pink.amplitude(1.0);
         white.amplitude(1.0);
-
-        voiceMixerM.gain(0, mixerLevel);
-        voiceMixerM.gain(1, mixerLevel);
-        voiceMixerM.gain(2, mixerLevel);
-        voiceMixerM.gain(3, mixerLevel);
-
-        //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
-        dcOffsetFilter.octaveControl(1.0f);
-        dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
-
-        volumeMixer.gain(0, 1.0f);
-        volumeMixer.gain(1, 0);
-        volumeMixer.gain(2, 0);
-        volumeMixer.gain(3, 0);
     }
 };
 
