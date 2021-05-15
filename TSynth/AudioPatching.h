@@ -54,7 +54,7 @@ struct PatchShared {
         delete pinkNoiseConnection;
         delete whiteNoiseConnection;
         pinkNoiseConnection = new AudioConnection(pink, 0, noiseMixer, 0);
-        whiteNoiseConnection = new AudioConnection(white, 0, noiseMixer, 0);
+        whiteNoiseConnection = new AudioConnection(white, 0, noiseMixer, 1);
     }
 
     void connectOutput(AudioMixer4& out, uint8_t index) {
