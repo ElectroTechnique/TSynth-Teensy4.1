@@ -246,14 +246,14 @@ struct Global {
 
         constant1Dc.amplitude(1.0);
 
-        effectMixerLM.gain(0, mixerLevel);
-        effectMixerLM.gain(1, mixerLevel);
-        effectMixerLM.gain(2, mixerLevel);
-        effectMixerLM.gain(3, mixerLevel);
-        effectMixerRM.gain(0, mixerLevel);
-        effectMixerRM.gain(1, mixerLevel);
-        effectMixerRM.gain(2, mixerLevel);
-        effectMixerRM.gain(3, mixerLevel);
+        effectMixerLM.gain(0, 1.0f);
+        effectMixerLM.gain(1, 1.0f);
+        effectMixerLM.gain(2, 1.0f);
+        effectMixerLM.gain(3, 1.0f);
+        effectMixerRM.gain(0, 1.0f);
+        effectMixerRM.gain(1, 1.0f);
+        effectMixerRM.gain(2, 1.0f);
+        effectMixerRM.gain(3, 1.0f);
 
         pink.amplitude(1.0);
         white.amplitude(1.0);
