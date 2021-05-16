@@ -6,7 +6,9 @@ byte midiOutCh = 0;//(EEPROM)
 midi::Thru::Mode MIDIThru = midi::Thru::Off;//(EEPROM)
 String patchName = INITPATCHNAME;
 boolean encCW = true;//This is to set the encoder to increment when turned CW - Settings Option
-			   	 			 
+boolean vuMeter = false;
+
+// Global patch modifiers
 float lfoSyncFreq = 1.0f;
 float midiClkTimeInterval = 0.0f;
 float lfoTempoValue = 1.0f;
@@ -14,8 +16,9 @@ int pitchBendRange = 12;
 float modWheelDepth = 0.2f;
 String oscLFOTimeDivStr = "";//For display
 int velocitySens = 0;//Default off - settings option
-
-boolean vuMeter = false;
+// Exponential envelopes
+int8_t envTypeAmp=-128; // Linear
+int8_t envTypeFilt=-128; // Linear
 
 //Pick-up - Experimental feature
 //Control will only start changing when the Knob/MIDI control reaches the current parameter value
@@ -32,7 +35,3 @@ float filterLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
 float filterLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxAmtPrevValue = 0.0f;//Need to set these when patch loaded
 float fxMixPrevValue = 0.0f;//Need to set these when patch loaded
-
-// Exponential envelopes
-int8_t envTypeAmp=-128; // Linear
-int8_t envTypeFilt=-128; // Linear
