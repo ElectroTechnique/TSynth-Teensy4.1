@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.15
+  ElectroTechnique TSynth - Firmware Rev 2.20
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
