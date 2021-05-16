@@ -187,8 +187,6 @@ FLASHMEM void setup() {
   MIDI.setHandleStop(myMIDIClockStop);
   Serial.println(F("MIDI In DIN Listening"));
 
-  global.ensemble.lfoRate(fxAmt);
-
   volumePrevious = RE_READ; //Force volume control to be read and set to current
 
   //Read Pitch Bend Range from EEPROM
@@ -674,17 +672,14 @@ FLASHMEM void updateOscFX(uint8_t value) {
   }
 }
 
-FLASHMEM void updateFXAmt() {
-  global.ensemble.lfoRate(fxAmt);
-  showCurrentParameterPage("Effect Amt", String(fxAmt) + " Hz");
+FLASHMEM void updateEffectAmt(float value) {
+  voices.setEffectAmount(value);
+  showCurrentParameterPage("Effect Amt", String(value) + " Hz");
 }
 
-FLASHMEM void updateFXMix() {
-  global.effectMixerL.gain(0, 1.0f - fxMix); //Dry
-  global.effectMixerL.gain(1, fxMix);       //Wet
-  global.effectMixerR.gain(0, 1.0f - fxMix); //Dry
-  global.effectMixerR.gain(1, fxMix);       //Wet
-  showCurrentParameterPage("Effect Mix", String(fxMix));
+FLASHMEM void updateEffectMix(float value) {
+  voices.setEffectMix(value);
+  showCurrentParameterPage("Effect Mix", String(value));
 }
 
 FLASHMEM void updatePatch(String name, uint32_t index) {
@@ -927,17 +922,15 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCfxamt:
       //Pick up
       if (!pickUpActive && pickUp && (fxAmtPrevValue <  ENSEMBLE_LFO[value - TOLERANCE] || fxAmtPrevValue >  ENSEMBLE_LFO[value + TOLERANCE])) return; //PICK-UP
-      fxAmt = ENSEMBLE_LFO[value];
-      updateFXAmt();
-      fxAmtPrevValue = fxAmt;//PICK-UP
+      updateEffectAmt(ENSEMBLE_LFO[value]);
+      fxAmtPrevValue = ENSEMBLE_LFO[value];//PICK-UP
       break;
 
     case CCfxmix:
       //Pick up
       if (!pickUpActive && pickUp && (fxMixPrevValue <  LINEAR[value - TOLERANCE] || fxMixPrevValue >  LINEAR[value + TOLERANCE])) return; //PICK-UP
-      fxMix = LINEAR[value];
-      updateFXMix();
-      fxMixPrevValue = fxMix;//PICK-UP
+      updateEffectMix(LINEAR[value]);
+      fxMixPrevValue = LINEAR[value];//PICK-UP
       break;
 
     case CCallnotesoff:
@@ -1052,18 +1045,16 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateDecay(data[41].toFloat());
   updateSustain(data[42].toFloat());
   updateRelease(data[43].toFloat());
-  fxAmt = data[44].toFloat();
-  fxAmtPrevValue = fxAmt;//PICK-UP
-  fxMix = data[45].toFloat();
-  fxMixPrevValue = fxMix;//PICK-UP
+  updateEffectAmt(data[44].toFloat());
+  fxAmtPrevValue = data[44].toFloat();//PICK-UP
+  updateEffectMix(data[45].toFloat());
+  fxMixPrevValue = data[45].toFloat();//PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   voices.setMonophonic(data[49].toInt());
   //  SPARE1 = data[50].toFloat();
   //  SPARE2 = data[51].toFloat();
 
-  updateFXAmt();
-  updateFXMix();
   Serial.print(F("Set Patch: "));
   Serial.println(data[0]);
 }
@@ -1073,7 +1064,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(voices.getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(voices.getPitchLfoAmount(), 5) + "," + String(voices.getPitchLfoRate(), 5) + "," + String(voices.getPitchLfoWaveform()) + "," + String(int(voices.getPitchLfoRetrig())) + "," + String(int(voices.getPitchLfoMidiClockSync())) + "," + String(voices.getFilterLfoRate(), 5) + "," +
          voices.getFilterLfoRetrig() + "," + voices.getFilterLfoMidiClockSync() + "," + voices.getFilterLfoAmt() + "," + voices.getFilterLfoWaveform() + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(voices.getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
+         String(voices.getEffectAmount()) + "," + String(voices.getEffectMix()) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(voices.getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
