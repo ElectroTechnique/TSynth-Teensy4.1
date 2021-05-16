@@ -75,6 +75,8 @@ class VoiceGroup {
     float pitchLfoAmount;
     float pitchLfoRate;
     float modWhAmount;
+    float effectAmount;
+    float effectMix;
 
 
     struct noteStackData {
@@ -129,7 +131,9 @@ class VoiceGroup {
             pitchLfoRetrig(false),
             pitchLfoAmount(0),
             pitchLfoRate(4.0),
-            modWhAmount(0.0)
+            modWhAmount(0.0),
+            effectAmount(1.0),
+            effectMix(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -150,6 +154,9 @@ class VoiceGroup {
         shared.pwmLfoB.amplitude(ONE);
         shared.pwmLfoB.begin(PWMWAVEFORM);
         shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
+
+        setEffectAmount(effectAmount);
+        setEffectMix(effectMix);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -194,6 +201,8 @@ class VoiceGroup {
     float getPitchLfoAmount()       { return pitchLfoAmount; }
     float getPitchLfoRate()         { return pitchLfoRate; }
     float getModWhAmount()          { return modWhAmount; }
+    float getEffectAmount()         { return effectAmount; }
+    float getEffectMix()            { return effectMix; }
 
 
     inline void setPatchName(String name) {
@@ -649,6 +658,19 @@ class VoiceGroup {
     void setModWhAmount(float value) {
         modWhAmount = value;
         shared.pitchLfo.amplitude(value + pitchLfoAmount);
+    }
+
+    void setEffectAmount(float value) {
+        effectAmount = value;
+        shared.ensemble.lfoRate(effectAmount);
+    }
+
+    void setEffectMix(float value) {
+        effectMix = value;
+        shared.effectMixerL.gain(0, 1.0f - effectMix); //Dry
+        shared.effectMixerL.gain(1, effectMix);        //Wet
+        shared.effectMixerR.gain(0, 1.0f - effectMix); //Dry
+        shared.effectMixerR.gain(1, effectMix);        //Wet
     }
 
     inline void setMonophonic(uint8_t mode) {

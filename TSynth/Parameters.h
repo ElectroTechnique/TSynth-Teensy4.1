@@ -13,10 +13,6 @@ float lfoTempoValue = 1.0f;
 int pitchBendRange = 12;
 float modWheelDepth = 0.2f;
 String oscLFOTimeDivStr = "";//For display
-
-float fxAmt = 1.0f;
-float fxMix = 0.0f;
-
 int velocitySens = 0;//Default off - settings option
 
 boolean vuMeter = false;
