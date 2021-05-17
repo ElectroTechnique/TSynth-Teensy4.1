@@ -1,4 +1,4 @@
-#define SETTINGSOPTIONSNO 15//No of options
+#define SETTINGSOPTIONSNO 16//No of options
 #define SETTINGSVALUESNO 19//Maximum number of settings option values needed
 #include "VoiceGroup.h"
 uint32_t settingsValueIndex = 0;//currently selected settings option value index
