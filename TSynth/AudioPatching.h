@@ -85,7 +85,7 @@ struct Patch {
     AudioMixer4 pwMixer_a;
     AudioMixer4 pwMixer_b;
 
-    AudioSynthWaveformDc glide_;
+    AudioSynthWaveformDcTS glide_;
 
     AudioSynthWaveformDc keytracking_;
 
