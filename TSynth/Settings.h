@@ -26,6 +26,7 @@ void settingsVUEnable(const char * value);
 void settingsMonophonic(const char * value);
 void settingsAmpEnv(const char *value);
 void settingsFiltEnv(const char *value);
+void settingsGlideShape(const char *value);
 void settingsHandler(const char * s, void (*f)(const char*));
 
 int currentIndexMIDICh();
@@ -43,7 +44,21 @@ int currentIndexVUEnable();
 int currentIndexMonophonicMode();
 int currentIndexAmpEnv();
 int currentIndexFiltEnv();
+int currentIndexGlideShape();
 int getCurrentIndex(int (*f)());
+
+FLASHMEM int currentIndexGlideShape() {
+  return glideShape;
+}
+
+FLASHMEM void settingsGlideShape(const char * value) {
+  if (strcmp(value, "Lin") == 0) glideShape = 0;
+  else if (strcmp(value, "Exp") == 0) glideShape = 1;
+  else glideShape = 1;
+  VG_FOR_EACH_OSC(glide_.setMode(glideShape));
+  storeAmpEnv(glideShape);  
+  Serial.println(glideShape);
+}
 
 FLASHMEM int currentIndexAmpEnv() {
   if((envTypeAmp>=-8) && (envTypeAmp<=8))return envTypeAmp+9;
@@ -102,6 +117,11 @@ FLASHMEM void settingsFiltEnv(const char * value) {
   VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
   storeFiltEnv(envTypeFilt);
 }						
+
+FLASHMEM void reloadGlideShape(){
+  glideShape = getGlideShape();
+  VG_FOR_EACH_OSC(glide_.setMode(glideShape));
+}
 
 FLASHMEM void reloadAmpEnv(){
   envTypeAmp = getAmpEnv();
@@ -306,6 +326,7 @@ FLASHMEM void setUpSettings() {
   settingsOptions.push(SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", "\0"}, settingsMIDIThru, currentIndexMIDIThru});
   settingsOptions.push(SettingsOption{"Amp Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsAmpEnv, currentIndexAmpEnv});
   settingsOptions.push(SettingsOption{"Fil Env", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsFiltEnv, currentIndexFiltEnv});
+  settingsOptions.push(SettingsOption{"Glide Shape", {"Lin", "Exp", "\0"}, settingsGlideShape, currentIndexGlideShape});
   settingsOptions.push(SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});																											
   settingsOptions.push(SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
   settingsOptions.push(SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});

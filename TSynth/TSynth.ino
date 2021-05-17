@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.20
+  ElectroTechnique TSynth - Firmware Rev 2.21
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -235,6 +235,7 @@ FLASHMEM void setup() {
   //Read Filter and Amp Envelope shapes
   reloadFiltEnv();
   reloadAmpEnv();
+  reloadGlideShape();
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {

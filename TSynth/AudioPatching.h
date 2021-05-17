@@ -6,12 +6,13 @@
 
 // Make the visual audio design tool work by substituting the *TS locally changed classes by those it knows: 
 // but also ensure all redefined class names are undefined within this scope, if lingering defines exist, raise an error:
-#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated)  || defined(AudioEffectEnvelope)
-# error "Either AudioSynthWaveform or AudioSynthWaveformModulated or AudioEffectEnvelope are already redefined!"
+#if defined(AudioSynthWaveform) || defined(AudioSynthWaveformModulated)  || defined(AudioEffectEnvelope) || defined(AudioSynthWaveformDc)
+# error "Either AudioSynthWaveform or AudioSynthWaveformModulated or AudioEffectEnvelope or AudioSynthWaveformDc are already redefined!"
 #endif
 #define AudioSynthWaveform          AudioSynthWaveformTS
 #define AudioSynthWaveformModulated AudioSynthWaveformModulatedTS
 #define AudioEffectEnvelope AudioEffectEnvelopeTS												 
+#define AudioSynthWaveformDc AudioSynthWaveformDcTS			
 
 // GUItool: begin automatically generated code
 AudioOutputUSB           usbAudio;       //xy=3197,1821

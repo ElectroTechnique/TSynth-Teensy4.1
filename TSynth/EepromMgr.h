@@ -12,6 +12,12 @@
 #define EEPROM_MIDI_THRU 9
 #define EEPROM_AMP_ENV 10
 #define EEPROM_FILT_ENV 11
+#define EEPROM_GLIDE_SHAPE 12
+
+FLASHMEM void storeGlideShape(byte type){
+  EEPROM.update(EEPROM_GLIDE_SHAPE, type);
+  Serial.println(type);
+}
 
 FLASHMEM void storeAmpEnv(byte type){
   EEPROM.update(EEPROM_AMP_ENV, type);
@@ -20,6 +26,10 @@ FLASHMEM void storeAmpEnv(byte type){
 
 FLASHMEM void storeFiltEnv(byte type){
   EEPROM.update(EEPROM_FILT_ENV, type);
+}
+
+FLASHMEM int8_t getGlideShape() {
+  return  (int8_t)EEPROM.read(EEPROM_GLIDE_SHAPE);
 }
 
 FLASHMEM int8_t getAmpEnv() {
