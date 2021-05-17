@@ -206,10 +206,10 @@ FLASHMEM void renderCurrentParameterPage() {
           renderVarTriangle(currentFloatValue);
           break;
         case FILTER_ENV:
-          renderEnv(voices.getFilterAttack() * 0.0001f, voices.getFilterDecay() * 0.0001f, voices.getFilterSustain(), voices.getFilterRelease() * 0.0001f);
+          renderEnv(groupvec[activeGroupIndex]->getFilterAttack() * 0.0001f, groupvec[activeGroupIndex]->getFilterDecay() * 0.0001f, groupvec[activeGroupIndex]->getFilterSustain(), groupvec[activeGroupIndex]->getFilterRelease() * 0.0001f);
           break;
         case AMP_ENV:
-          renderEnv(voices.getAmpAttack() * 0.0001f, voices.getAmpDecay() * 0.0001f, voices.getAmpSustain(), voices.getAmpRelease() * 0.0001f);
+          renderEnv(groupvec[activeGroupIndex]->getAmpAttack() * 0.0001f, groupvec[activeGroupIndex]->getAmpDecay() * 0.0001f, groupvec[activeGroupIndex]->getAmpSustain(), groupvec[activeGroupIndex]->getAmpRelease() * 0.0001f);
           break;
       }
       break;

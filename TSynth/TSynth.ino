@@ -82,7 +82,9 @@ uint32_t state = PARAMETER;
 
 // Initialize the audio configuration.
 Global global{VOICEMIXERLEVEL};
-VoiceGroup voices{global.SharedAudio[0]};
+VoiceGroup voices1{global.SharedAudio[0]};
+VoiceGroup voices2{global.SharedAudio[1]};
+uint8_t activeGroupIndex;
 std::vector<VoiceGroup*> groupvec;
 
 #include "ST7735Display.h"
@@ -114,11 +116,16 @@ int voiceToReturn = -1; //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup() {
-  for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
+  for (uint8_t i = 0; i < NO_OF_VOICES / 2; i++) {
     Voice* v = new Voice(global.Oscillators[i], i);
-    voices.add(v);
+    voices1.add(v);
   }
-  groupvec.push_back(&voices);
+  for (uint8_t i = NO_OF_VOICES / 2; i < NO_OF_VOICES; i++) {
+    Voice* v = new Voice(global.Oscillators[i], i);
+    voices2.add(v);
+  }
+  groupvec.push_back(&voices1);
+  groupvec.push_back(&voices2);
 
   setupDisplay();
   setUpSettings();
@@ -218,15 +225,21 @@ FLASHMEM void setup() {
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
+  if (channel != 1) {
+    activeGroupIndex = 0;
+  } else {
+    activeGroupIndex = 1;
+  }
+
   //Check for out of range notes
-  if (note + voices.params().oscPitchA < 0 || note + voices.params().oscPitchA > 127 || note + voices.params().oscPitchB < 0 || note + voices.params().oscPitchB > 127)
+  if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
-  voices.noteOn(note, velocity);
+  groupvec[activeGroupIndex]->noteOn(note, velocity);
 }
 
 void myNoteOff(byte channel, byte note, byte velocity) {
-  voices.noteOff(note);
+  groupvec[activeGroupIndex]->noteOff(note);
 }
 
 int getLFOWaveform(int value) {
@@ -319,7 +332,7 @@ FLASHMEM int getWaveformB(int value) {
 }
 
 FLASHMEM void updateUnison(uint8_t unison) {
-  voices.setUnisonMode(unison);
+  groupvec[activeGroupIndex]->setUnisonMode(unison);
 
   if (unison == 0) {
     showCurrentParameterPage("Unison", "Off");
@@ -342,38 +355,38 @@ FLASHMEM void updateVolume(float vol) {
 }
 
 FLASHMEM void updateGlide(float glideSpeed) {
-  voices.params().glideSpeed = glideSpeed;
+  groupvec[activeGroupIndex]->params().glideSpeed = glideSpeed;
   showCurrentParameterPage("Glide", milliToString(glideSpeed * GLIDEFACTOR));
 }
 
 FLASHMEM void updateWaveformA(uint32_t waveform) {
-  voices.setWaveformA(waveform);
+  groupvec[activeGroupIndex]->setWaveformA(waveform);
   showCurrentParameterPage("1. Waveform", getWaveformStr(waveform));
 }
 
 FLASHMEM void updateWaveformB(uint32_t waveform) {
-  voices.setWaveformB(waveform);
+  groupvec[activeGroupIndex]->setWaveformB(waveform);
   showCurrentParameterPage("2. Waveform", getWaveformStr(waveform));
 }
 
 FLASHMEM void updatePitchA(int pitch) {
-  voices.params().oscPitchA = pitch;
-  voices.updateVoices();
+  groupvec[activeGroupIndex]->params().oscPitchA = pitch;
+  groupvec[activeGroupIndex]->updateVoices();
   showCurrentParameterPage("1. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
 }
 
 FLASHMEM void updatePitchB(int pitch) {
-  voices.params().oscPitchB = pitch;
-  voices.updateVoices();
+  groupvec[activeGroupIndex]->params().oscPitchB = pitch;
+  groupvec[activeGroupIndex]->updateVoices();
   showCurrentParameterPage("2. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
 }
 
 FLASHMEM void updateDetune(float detune, uint32_t chordDetune) {
-  voices.params().detune = detune;
-  voices.params().chordDetune = chordDetune;
-  voices.updateVoices();
+  groupvec[activeGroupIndex]->params().detune = detune;
+  groupvec[activeGroupIndex]->params().chordDetune = chordDetune;
+  groupvec[activeGroupIndex]->updateVoices();
 
-  if (voices.params().unisonMode == 2) {
+  if (groupvec[activeGroupIndex]->params().unisonMode == 2) {
     showCurrentParameterPage("Chord", CDT_STR[chordDetune]);
   } else {
     showCurrentParameterPage("Detune", String((1 - detune) * 100) + " %");
@@ -381,7 +394,7 @@ FLASHMEM void updateDetune(float detune, uint32_t chordDetune) {
 }
 
 FLASHMEM void updatePWMSource(uint8_t source) {
-  voices.setPWMSource(source);
+  groupvec[activeGroupIndex]->setPWMSource(source);
 
   if (source == PWMSOURCELFO) {
     showCurrentParameterPage("PWM Source", "LFO"); //Only shown when updated via MIDI
@@ -391,7 +404,7 @@ FLASHMEM void updatePWMSource(uint8_t source) {
 }
 
 FLASHMEM void updatePWMRate(float value) {
-  voices.setPwmRate(value);
+  groupvec[activeGroupIndex]->setPwmRate(value);
 
   if (value == PWMRATE_PW_MODE) {
     //Set to fixed PW mode
@@ -406,84 +419,84 @@ FLASHMEM void updatePWMRate(float value) {
 
 FLASHMEM void updatePWMAmount(float value) {
   //MIDI only - sets both osc PWM
-  voices.overridePwmAmount(value);
+  groupvec[activeGroupIndex]->overridePwmAmount(value);
   showCurrentParameterPage("PWM Amt", String(value) + " : " + String(value));
 }
 
 FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA) {
-  voices.setPWA(valuePwA, valuePwmAmtA);
+  groupvec[activeGroupIndex]->setPWA(valuePwA, valuePwmAmtA);
 
-  if (voices.getPwmRate() == PWMRATE_PW_MODE) {
-    if (voices.getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE) {
-      showCurrentParameterPage("1. PW Amt", voices.getPwA(), VAR_TRI);
+  if (groupvec[activeGroupIndex]->getPwmRate() == PWMRATE_PW_MODE) {
+    if (groupvec[activeGroupIndex]->getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE) {
+      showCurrentParameterPage("1. PW Amt", groupvec[activeGroupIndex]->getPwA(), VAR_TRI);
     } else {
-      showCurrentParameterPage("1. PW Amt", voices.getPwA(), PULSE);
+      showCurrentParameterPage("1. PW Amt", groupvec[activeGroupIndex]->getPwA(), PULSE);
     }
   } else {
-    if (voices.getPwmSource() == PWMSOURCELFO) {
+    if (groupvec[activeGroupIndex]->getPwmSource() == PWMSOURCELFO) {
       //PW alters PWM LFO amount for waveform A
-      showCurrentParameterPage("1. PWM Amt", "LFO " + String(voices.getPwmAmtA()));
+      showCurrentParameterPage("1. PWM Amt", "LFO " + String(groupvec[activeGroupIndex]->getPwmAmtA()));
     } else {
       //PW alters PWM Filter Env amount for waveform A
-      showCurrentParameterPage("1. PWM Amt", "F. Env " + String(voices.getPwmAmtA()));
+      showCurrentParameterPage("1. PWM Amt", "F. Env " + String(groupvec[activeGroupIndex]->getPwmAmtA()));
     }
   }
 }
 
 FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB) {
-  voices.setPWB(valuePwB, valuePwmAmtB);
+  groupvec[activeGroupIndex]->setPWB(valuePwB, valuePwmAmtB);
 
-  if (voices.getPwmRate() == PWMRATE_PW_MODE)  {
-    if (voices.getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE) {
-      showCurrentParameterPage("2. PW Amt", voices.getPwB(), VAR_TRI);
+  if (groupvec[activeGroupIndex]->getPwmRate() == PWMRATE_PW_MODE)  {
+    if (groupvec[activeGroupIndex]->getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE) {
+      showCurrentParameterPage("2. PW Amt", groupvec[activeGroupIndex]->getPwB(), VAR_TRI);
     } else {
-      showCurrentParameterPage("2. PW Amt", voices.getPwB(), PULSE);
+      showCurrentParameterPage("2. PW Amt", groupvec[activeGroupIndex]->getPwB(), PULSE);
     }
   } else {
-    if (voices.getPwmSource() == PWMSOURCELFO) {
+    if (groupvec[activeGroupIndex]->getPwmSource() == PWMSOURCELFO) {
       //PW alters PWM LFO amount for waveform B
-      showCurrentParameterPage("2. PWM Amt", "LFO " + String(voices.getPwmAmtB()));
+      showCurrentParameterPage("2. PWM Amt", "LFO " + String(groupvec[activeGroupIndex]->getPwmAmtB()));
     } else {
       //PW alters PWM Filter Env amount for waveform B
-      showCurrentParameterPage("2. PWM Amt", "F. Env " + String(voices.getPwmAmtB()));
+      showCurrentParameterPage("2. PWM Amt", "F. Env " + String(groupvec[activeGroupIndex]->getPwmAmtB()));
     }
   }
 }
 
 FLASHMEM void updateOscLevelA(float value) {
-  voices.setOscLevelA(value);
+  groupvec[activeGroupIndex]->setOscLevelA(value);
 
-  switch (voices.getOscFX()) {
+  switch (groupvec[activeGroupIndex]->getOscFX()) {
     case 1://XOR
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
       break;
     case 2://XMod
       //osc A sounds with increasing osc B mod
-      if (voices.getOscLevelA() == 1.0f && voices.getOscLevelB() <= 1.0f) {
-        showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - voices.getOscLevelB()));
+      if (groupvec[activeGroupIndex]->getOscLevelA() == 1.0f && groupvec[activeGroupIndex]->getOscLevelB() <= 1.0f) {
+        showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - groupvec[activeGroupIndex]->getOscLevelB()));
       }
       break;
     case 0://None
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
       break;
   }
 }
 
 FLASHMEM void updateOscLevelB(float value) {
-  voices.setOscLevelB(value);
+  groupvec[activeGroupIndex]->setOscLevelB(value);
 
-  switch (voices.getOscFX()) {
+  switch (groupvec[activeGroupIndex]->getOscFX()) {
     case 1://XOR
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
       break;
     case 2://XMod
       //osc B sounds with increasing osc A mod
-      if (voices.getOscLevelB() == 1.0f && voices.getOscLevelA() < 1.0f) {
-        showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - voices.getOscLevelA()));
+      if (groupvec[activeGroupIndex]->getOscLevelB() == 1.0f && groupvec[activeGroupIndex]->getOscLevelA() < 1.0f) {
+        showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - groupvec[activeGroupIndex]->getOscLevelA()));
       }
       break;
     case 0://None
-      showCurrentParameterPage("Osc Mix 1:2", "   " + String(voices.getOscLevelA()) + " : " + String(voices.getOscLevelB()));
+      showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
       break;
   }
 }
@@ -497,8 +510,8 @@ FLASHMEM void updateNoiseLevel(float value) {
     white = abs(value);
   }
 
-  voices.setPinkNoiseLevel(pink);
-  voices.setWhiteNoiseLevel(white);
+  groupvec[activeGroupIndex]->setPinkNoiseLevel(pink);
+  groupvec[activeGroupIndex]->setWhiteNoiseLevel(white);
 
   if (value > 0) {
     showCurrentParameterPage("Noise Level", "Pink " + String(value));
@@ -510,17 +523,17 @@ FLASHMEM void updateNoiseLevel(float value) {
 }
 
 FLASHMEM void updateFilterFreq(float value) {
-  voices.setCutoff(value);
+  groupvec[activeGroupIndex]->setCutoff(value);
   showCurrentParameterPage("Cutoff", String(int(value)) + " Hz");
 }
 
 FLASHMEM void updateFilterRes(float value) {
-  voices.setResonance(value);
+  groupvec[activeGroupIndex]->setResonance(value);
   showCurrentParameterPage("Resonance", value);
 }
 
 FLASHMEM void updateFilterMixer(float value) {
-  voices.setFilterMixer(value);
+  groupvec[activeGroupIndex]->setFilterMixer(value);
 
   String filterStr;
   if (value == BANDPASS) {
@@ -542,48 +555,48 @@ FLASHMEM void updateFilterMixer(float value) {
 }
 
 FLASHMEM void updateFilterEnv(float value) {
-  voices.setFilterEnvelope(value);
+  groupvec[activeGroupIndex]->setFilterEnvelope(value);
   showCurrentParameterPage("Filter Env.", String(value));
 }
 
 FLASHMEM void updatePitchEnv(float value) {
-  voices.setPitchEnvelope(value);
+  groupvec[activeGroupIndex]->setPitchEnvelope(value);
   showCurrentParameterPage("Pitch Env Amt", String(value));
 }
 
 FLASHMEM void updateKeyTracking(float value) {
-  voices.setKeytracking(value);
+  groupvec[activeGroupIndex]->setKeytracking(value);
   showCurrentParameterPage("Key Tracking", String(value));
 }
 
 FLASHMEM void updatePitchLFOAmt(float value) {
-  voices.setPitchLfoAmount(value);
+  groupvec[activeGroupIndex]->setPitchLfoAmount(value);
   char buf[10];
   showCurrentParameterPage("LFO Amount", dtostrf(value, 4, 3, buf));
 }
 
 FLASHMEM void updateModWheel(float value) {
-  voices.setModWhAmount(value);
+  groupvec[activeGroupIndex]->setModWhAmount(value);
 }
 
 FLASHMEM void updatePitchLFORate(float value) {
-  voices.setPitchLfoRate(value);
+  groupvec[activeGroupIndex]->setPitchLfoRate(value);
   showCurrentParameterPage("LFO Rate", String(value) + " Hz");
 }
 
 FLASHMEM void updatePitchLFOWaveform(uint32_t waveform) {
-  voices.setPitchLfoWaveform(waveform);
+  groupvec[activeGroupIndex]->setPitchLfoWaveform(waveform);
   showCurrentParameterPage("Pitch LFO", getWaveformStr(waveform));
 }
 
 //MIDI CC only
 FLASHMEM void updatePitchLFOMidiClkSync(bool value) {
-  voices.setPitchLfoMidiClockSync(value);
+  groupvec[activeGroupIndex]->setPitchLfoMidiClockSync(value);
   showCurrentParameterPage("P. LFO Sync", value ? "On" : "Off");
 }
 
 FLASHMEM void updateFilterLfoRate(float value, String timeDivStr) {
-  voices.setFilterLfoRate(value);
+  groupvec[activeGroupIndex]->setFilterLfoRate(value);
 
   if (timeDivStr.length() > 0) {
     showCurrentParameterPage("LFO Time Div", timeDivStr);
@@ -593,74 +606,74 @@ FLASHMEM void updateFilterLfoRate(float value, String timeDivStr) {
 }
 
 FLASHMEM void updateFilterLfoAmt(float value) {
-  voices.setFilterLfoAmt(value);
+  groupvec[activeGroupIndex]->setFilterLfoAmt(value);
   showCurrentParameterPage("F. LFO Amt", String(value));
 }
 
 FLASHMEM void updateFilterLFOWaveform(uint32_t waveform) {
-  voices.setFilterLfoWaveform(waveform);
+  groupvec[activeGroupIndex]->setFilterLfoWaveform(waveform);
   showCurrentParameterPage("Filter LFO", getWaveformStr(waveform));
 }
 
 FLASHMEM void updatePitchLFORetrig(bool value) {
-  voices.setPitchLfoRetrig(value);
+  groupvec[activeGroupIndex]->setPitchLfoRetrig(value);
   showCurrentParameterPage("P. LFO Retrig", value ? "On" : "Off");
 }
 
 FLASHMEM void updateFilterLFORetrig(bool value) {
-  voices.setFilterLfoRetrig(value);
-  showCurrentParameterPage("F. LFO Retrig", voices.getFilterLfoRetrig() ? "On" : "Off");
-  digitalWriteFast(RETRIG_LED, voices.getFilterLfoRetrig() ? HIGH : LOW);  // LED
+  groupvec[activeGroupIndex]->setFilterLfoRetrig(value);
+  showCurrentParameterPage("F. LFO Retrig", groupvec[activeGroupIndex]->getFilterLfoRetrig() ? "On" : "Off");
+  digitalWriteFast(RETRIG_LED, groupvec[activeGroupIndex]->getFilterLfoRetrig() ? HIGH : LOW);  // LED
 }
 
 FLASHMEM void updateFilterLFOMidiClkSync(bool value) {
-  voices.setFilterLfoMidiClockSync(value);
+  groupvec[activeGroupIndex]->setFilterLfoMidiClockSync(value);
   showCurrentParameterPage("Tempo Sync", value ? "On" : "Off");
   digitalWriteFast(TEMPO_LED, value ? HIGH : LOW);  // LED
 }
 
 FLASHMEM void updateFilterAttack(float value) {
-  voices.setFilterAttack(value);
+  groupvec[activeGroupIndex]->setFilterAttack(value);
   showCurrentParameterPage("Filter Attack", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterDecay(float value) {
-  voices.setFilterDecay(value);
+  groupvec[activeGroupIndex]->setFilterDecay(value);
   showCurrentParameterPage("Filter Decay", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterSustain(float value) {
-  voices.setFilterSustain(value);
+  groupvec[activeGroupIndex]->setFilterSustain(value);
   showCurrentParameterPage("Filter Sustain", String(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterRelease(float value) {
-  voices.setFilterRelease(value);
+  groupvec[activeGroupIndex]->setFilterRelease(value);
   showCurrentParameterPage("Filter Release", milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateAttack(float value) {
-  voices.setAmpAttack(value);
+  groupvec[activeGroupIndex]->setAmpAttack(value);
   showCurrentParameterPage("Attack", milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateDecay(float value) {
-  voices.setAmpDecay(value);
+  groupvec[activeGroupIndex]->setAmpDecay(value);
   showCurrentParameterPage("Decay", milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateSustain(float value) {
-  voices.setAmpSustain(value);
+  groupvec[activeGroupIndex]->setAmpSustain(value);
   showCurrentParameterPage("Sustain", String(value), AMP_ENV);
 }
 
 FLASHMEM void updateRelease(float value) {
-  voices.setAmpRelease(value);
+  groupvec[activeGroupIndex]->setAmpRelease(value);
   showCurrentParameterPage("Release", milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateOscFX(uint8_t value) {
-  voices.setOscFX(value);
+  groupvec[activeGroupIndex]->setOscFX(value);
   if (value == 2) {
     showCurrentParameterPage("Osc FX", "On - X Mod");
     analogWriteFrequency(OSC_FX_LED, 1);
@@ -677,24 +690,24 @@ FLASHMEM void updateOscFX(uint8_t value) {
 }
 
 FLASHMEM void updateEffectAmt(float value) {
-  voices.setEffectAmount(value);
+  groupvec[activeGroupIndex]->setEffectAmount(value);
   showCurrentParameterPage("Effect Amt", String(value) + " Hz");
 }
 
 FLASHMEM void updateEffectMix(float value) {
-  voices.setEffectMix(value);
+  groupvec[activeGroupIndex]->setEffectMix(value);
   showCurrentParameterPage("Effect Mix", String(value));
 }
 
 FLASHMEM void updatePatch(String name, uint32_t index) {
-  voices.setPatchName(name);
-  voices.setPatchIndex(index);
+  groupvec[activeGroupIndex]->setPatchName(name);
+  groupvec[activeGroupIndex]->setPatchIndex(index);
   showPatchPage(String(index), name);
 }
 
 void myPitchBend(byte channel, int bend) {
   // 0.5 to give 1oct max - spread of mod is 2oct
-  voices.pitchBend(bend * 0.5f * pitchBendRange * DIV12 * DIV8192);
+  groupvec[activeGroupIndex]->pitchBend(bend * 0.5f * pitchBendRange * DIV12 * DIV8192);
 }
 
 void myControlChange(byte channel, byte control, byte value) {
@@ -821,7 +834,7 @@ void myControlChange(byte channel, byte control, byte value) {
        if (!pickUpActive && pickUp && (oscLfoRatePrevValue <  LFOMAXRATE * POWER[value - TOLERANCE] || oscLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE])) return; //PICK-UP
       
       float rate = 0.0;
-      if (voices.getPitchLfoMidiClockSync()) {
+      if (groupvec[activeGroupIndex]->getPitchLfoMidiClockSync()) {
         // TODO: MIDI Tempo stuff remains global?
         lfoTempoValue = LFOTEMPO[value];
          oscLFOTimeDivStr = LFOTEMPOSTR[value];
@@ -853,7 +866,7 @@ void myControlChange(byte channel, byte control, byte value) {
 
       float rate;
       String timeDivStr = "";
-      if (voices.getFilterLfoMidiClockSync()) {
+      if (groupvec[activeGroupIndex]->getFilterLfoMidiClockSync()) {
         lfoTempoValue = LFOTEMPO[value];
         rate = lfoSyncFreq * LFOTEMPO[value];
         timeDivStr = LFOTEMPOSTR[value];
@@ -938,7 +951,7 @@ void myControlChange(byte channel, byte control, byte value) {
       break;
 
     case CCallnotesoff:
-      voices.allNotesOff();
+      groupvec[activeGroupIndex]->allNotesOff();
       break;
   }
 }
@@ -959,8 +972,8 @@ FLASHMEM void myMIDIClockStart() {
   //part of a track, such as in a DAW, the DAW must have same
   //rhythmic quantisation as Tempo Div.
 
-  // TODO: Apply to all voices. Maybe check channel?
-  voices.midiClockStart();
+  // TODO: Apply to all groupvec[activeVoiceIndex]-> Maybe check channel?
+  groupvec[activeGroupIndex]->midiClockStart();
 }
 
 FLASHMEM void myMIDIClockStop() {
@@ -977,7 +990,7 @@ FLASHMEM void myMIDIClock() {
     midiClkTimeInterval = (timeNow - previousMillis);
     lfoSyncFreq = 1000.0f / midiClkTimeInterval;
     previousMillis = timeNow;
-    voices.midiClock(lfoSyncFreq * lfoTempoValue);
+    groupvec[activeGroupIndex]->midiClock(lfoSyncFreq * lfoTempoValue);
     count = 0;
   }
 
@@ -985,8 +998,8 @@ FLASHMEM void myMIDIClock() {
 }
 
 FLASHMEM void recallPatch(int patchNo) {
-  voices.allNotesOff();
-  voices.closeEnvelopes();
+  groupvec[activeGroupIndex]->allNotesOff();
+  groupvec[activeGroupIndex]->closeEnvelopes();
   File patchFile = SD.open(String(patchNo).c_str());
   if (!patchFile) {
     Serial.println(F("File not found"));
@@ -1055,7 +1068,7 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   fxMixPrevValue = data[45].toFloat();//PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
-  voices.setMonophonic(data[49].toInt());
+  groupvec[activeGroupIndex]->setMonophonic(data[49].toInt());
   //  SPARE1 = data[50].toFloat();
   //  SPARE2 = data[51].toFloat();
 
@@ -1064,11 +1077,11 @@ FLASHMEM void setCurrentPatchData(String data[]) {
 }
 
 FLASHMEM String getCurrentPatchData() {
-  auto p = voices.params();
-  return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(voices.getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
-         String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(voices.getPitchLfoAmount(), 5) + "," + String(voices.getPitchLfoRate(), 5) + "," + String(voices.getPitchLfoWaveform()) + "," + String(int(voices.getPitchLfoRetrig())) + "," + String(int(voices.getPitchLfoMidiClockSync())) + "," + String(voices.getFilterLfoRate(), 5) + "," +
-         voices.getFilterLfoRetrig() + "," + voices.getFilterLfoMidiClockSync() + "," + voices.getFilterLfoAmt() + "," + voices.getFilterLfoWaveform() + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
-         String(voices.getEffectAmount()) + "," + String(voices.getEffectMix()) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(voices.getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
+  auto p = groupvec[activeGroupIndex]->params();
+  return patchName + "," + String(groupvec[activeGroupIndex]->getOscLevelA()) + "," + String(groupvec[activeGroupIndex]->getOscLevelB()) + "," + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(groupvec[activeGroupIndex]->getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(groupvec[activeGroupIndex]->getWaveformA()) + "," + String(groupvec[activeGroupIndex]->getWaveformB()) + "," +
+         String(groupvec[activeGroupIndex]->getPwmSource()) + "," + String(groupvec[activeGroupIndex]->getPwmAmtA()) + "," + String(groupvec[activeGroupIndex]->getPwmAmtB()) + "," + String(groupvec[activeGroupIndex]->getPwmRate()) + "," + String(groupvec[activeGroupIndex]->getPwA()) + "," + String(groupvec[activeGroupIndex]->getPwB()) + "," + String(groupvec[activeGroupIndex]->getResonance()) + "," + String(groupvec[activeGroupIndex]->getCutoff()) + "," + String(groupvec[activeGroupIndex]->getFilterMixer()) + "," + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + "," + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + "," + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + "," + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + "," + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + "," + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + "," + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + "," +
+         groupvec[activeGroupIndex]->getFilterLfoRetrig() + "," + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + "," + groupvec[activeGroupIndex]->getFilterLfoAmt() + "," + groupvec[activeGroupIndex]->getFilterLfoWaveform() + "," + groupvec[activeGroupIndex]->getFilterAttack() + "," + groupvec[activeGroupIndex]->getFilterDecay() + "," + groupvec[activeGroupIndex]->getFilterSustain() + "," + groupvec[activeGroupIndex]->getFilterRelease() + "," + groupvec[activeGroupIndex]->getAmpAttack() + "," + groupvec[activeGroupIndex]->getAmpDecay() + "," + groupvec[activeGroupIndex]->getAmpSustain() + "," + groupvec[activeGroupIndex]->getAmpRelease() + "," +
+         String(groupvec[activeGroupIndex]->getEffectAmount()) + "," + String(groupvec[activeGroupIndex]->getEffectMix()) + "," + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(groupvec[activeGroupIndex]->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
@@ -1257,7 +1270,7 @@ void checkSwitches() {
     unison2 = true;           //Hack
   } else  if (unisonSwitch.fallingEdge()) {
     if (!unison2) {
-      uint8_t next = voices.params().unisonMode > 0 ? 0 : 1;
+      uint8_t next = groupvec[activeGroupIndex]->params().unisonMode > 0 ? 0 : 1;
       midiCCOut(CCunison, next);
       myControlChange(midiChannel, CCunison, next);
     } else {
@@ -1274,7 +1287,7 @@ void checkSwitches() {
     oscFXMode = true;//Hack
   } else if (oscFXSwitch.fallingEdge()) {
     if (!oscFXMode) {
-      uint8_t value = voices.getOscFX() > 0 ? 0 : 1;
+      uint8_t value = groupvec[activeGroupIndex]->getOscFX() > 0 ? 0 : 1;
       midiCCOut(CCoscfx, value);
       myControlChange(midiChannel, CCoscfx, value);
     } else {
@@ -1284,14 +1297,14 @@ void checkSwitches() {
 
   filterLFORetrigSwitch.update();
   if (filterLFORetrigSwitch.fallingEdge()) {
-    bool value = !voices.getFilterLfoRetrig();
+    bool value = !groupvec[activeGroupIndex]->getFilterLfoRetrig();
     midiCCOut(CCfilterlforetrig, value);
     myControlChange(midiChannel, CCfilterlforetrig, value);
   }
 
   tempoSwitch.update();
   if (tempoSwitch.fallingEdge()) {
-    bool value = !voices.getFilterLfoMidiClockSync();
+    bool value = !groupvec[activeGroupIndex]->getFilterLfoMidiClockSync();
     midiCCOut(CCfilterLFOMidiClkSync, value);
     myControlChange(midiChannel, CCfilterLFOMidiClkSync, value);
   }
@@ -1382,8 +1395,8 @@ void checkSwitches() {
   backButton.update();
   if (backButton.read() == LOW && backButton.duration() > HOLD_DURATION) {
     //If Back button held, Panic - all notes off
-    voices.allNotesOff();
-    voices.closeEnvelopes();
+    groupvec[activeGroupIndex]->allNotesOff();
+    groupvec[activeGroupIndex]->closeEnvelopes();
     backButton.write(HIGH); //Come out of this state
     panic = true;           //Hack
   }

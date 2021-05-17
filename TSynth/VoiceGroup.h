@@ -1032,8 +1032,10 @@ class VoiceGroup {
                 uint8_t max = this->voices.size() / unisonNotesOn;
                 for (uint8_t i = 0; i < voices.size(); i++) {
                     if (!voices[i]->on() || tally[voices[i]->noteId()] > max) {
-                        // underflow here when starting first unison note, but it still works.
-                        tally[voices[i]->noteId()]--;
+                        // Decrement tally when stealing a voice.
+                        if (voices[i]->on()) {
+                            tally[voices[i]->noteId()]--;
+                        }
                         voices[i]->noteOn(note, velocity, this->_params, unisonNotesOn, id);
                     }
                 }
