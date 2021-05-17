@@ -56,8 +56,7 @@ FLASHMEM void settingsGlideShape(const char * value) {
   else if (strcmp(value, "Exp") == 0) glideShape = 1;
   else glideShape = 1;
   VG_FOR_EACH_OSC(glide_.setMode(glideShape));
-  storeAmpEnv(glideShape);  
-  Serial.println(glideShape);
+  storeGlideShape(glideShape); 
 }
 
 FLASHMEM int currentIndexAmpEnv() {
