@@ -42,7 +42,9 @@ boolean MIDIClkSignal = false;
 uint32_t peakCount = 0;
 uint16_t prevLen = 0;
 
-uint32_t colour[NO_OF_VOICES] = {ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE, ST7735_BLUE};
+uint8_t fillColour[NO_OF_VOICES] = {0,0,0,0,0,0,0,0,0,0,0,0};
+uint8_t borderColour[NO_OF_VOICES] = {0,0,0,0,0,0,0,0,0,0,0,0};
+uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
 
 unsigned long timer = 0;
 
@@ -111,87 +113,30 @@ FLASHMEM void renderCurrentPatchPage() {
   }
   renderPeak();
 
-  //    1 2 3 4 5 6 7 8 9 10 11 12
-  //    1 B B B B B B B B B B B B
-  //    2 B B B B B B Y Y Y Y Y Y
-  //    3 B B B B O O O O Y Y Y Y
-  //    4 B B B R O O O R R Y Y Y
-
-  uint8_t notesOn = voices.unisonNotes();
-  uint8_t unison = voices.params().unisonMode;
-  //V4
-  if (voices[3]->on() && unison && notesOn == 4) {
-    colour[3] = ST77XX_DARKRED;
-  } else if (voices[3]->on() && unison && notesOn > 1 && colour[3] != ST77XX_DARKRED) {
-    colour[3] = ST7735_BLUE;
-  } else if (!voices[3]->on()) {
-    colour[3] = ST7735_BLUE;
+  // Select colours based on voice state.
+  uint8_t i = 0;
+  for (uint8_t group = 0; group < groupvec.size(); group++) {
+    for (uint8_t voice = 0; voice  < groupvec[group]->size(); voice++) {
+      borderColour[i] = group + 1;
+      if ((*groupvec[group])[voice]->on()) fillColour[i] = (*groupvec[group])[voice]->noteId() + 1;
+      else fillColour[i] = 0;
+      i++;
+    }
   }
 
-  //V5-6
-  if (voices[4]->on() && unison && notesOn > 2) {
-    colour[4] = ST77XX_ORANGE;
-    colour[5] = ST77XX_ORANGE;
-  } else if (!voices[4]->on()) {
-    colour[4] = ST7735_BLUE;
-    colour[5] = ST7735_BLUE;
-  }
-
-  //V7
-  if (voices[6]->on() && unison && notesOn > 2) {
-    colour[6] = ST77XX_ORANGE;
-  } else if (voices[6]->on() && unison && notesOn == 2 && colour[6] != ST77XX_ORANGE) {
-    colour[6] = ST7735_YELLOW;
-  } else if (!voices[6]->on()) {
-    colour[6] = ST7735_BLUE;
-  }
-
-  //V8
-  if (voices[7]->on() && unison && notesOn == 4) {
-    colour[7] = ST77XX_DARKRED;
-  } else if (voices[7]->on() && unison && notesOn == 3 && colour[7] != ST77XX_DARKRED) {
-    colour[7] = ST77XX_ORANGE;
-  } else if (voices[7]->on() && unison && notesOn == 2 && colour[7] != ST77XX_DARKRED && colour[7] != ST77XX_ORANGE) {
-    colour[7] = ST7735_YELLOW;
-  } else if (!voices[7]->on()) {
-    colour[7] = ST7735_BLUE;
-  }
-
-  //V9
-  if (voices[8]->on() && unison && notesOn == 4) {
-    colour[8] = ST77XX_DARKRED;
-  } else if (voices[8]->on() && unison && (notesOn == 2 || notesOn == 3) && colour[8] != ST77XX_DARKRED) {
-    colour[8] = ST7735_YELLOW;
-  } else if (!voices[8]->on()) {
-    colour[8] = ST7735_BLUE;
-  }
-
-  //V10-12
-  if (voices[9]->on() && unison && notesOn > 1) {
-    colour[9] = ST7735_YELLOW;
-    colour[10] = ST7735_YELLOW;
-    colour[11] = ST7735_YELLOW;
-  } else if (!voices[9]->on()) {
-    colour[9] = ST7735_BLUE;
-    colour[10] = ST7735_BLUE;
-    colour[11] = ST7735_BLUE;
-  }
-
-  if (voices[ 0]->on())   tft.fillRect(117, 27, 8, 8, ST7735_BLUE); else tft.drawRect(117, 27, 8, 8, ST7735_BLUE);
-  if (voices[ 1]->on())   tft.fillRect(127, 27, 8, 8, ST7735_BLUE); else tft.drawRect(127, 27, 8, 8, ST7735_BLUE);
-  if (voices[ 2]->on())   tft.fillRect(137, 27, 8, 8, ST7735_BLUE); else tft.drawRect(137, 27, 8, 8, ST7735_BLUE);
-
-  if (voices[ 3]->on())   tft.fillRect(147, 27, 8, 8, colour[3]); else tft.drawRect(147, 27, 8, 8, ST7735_BLUE);
-  if (voices[ 4]->on())   tft.fillRect(117, 37, 8, 8, colour[4]); else tft.drawRect(117, 37, 8, 8, ST7735_BLUE);
-  if (voices[ 5]->on())   tft.fillRect(127, 37, 8, 8, colour[5]); else tft.drawRect(127, 37, 8, 8, ST7735_BLUE);
-
-  if (voices[ 6]->on())   tft.fillRect(137, 37, 8, 8, colour[6]); else tft.drawRect(137, 37, 8, 8, ST7735_BLUE);
-  if (voices[ 7]->on())   tft.fillRect(147, 37, 8, 8, colour[7]); else tft.drawRect(147, 37, 8, 8, ST7735_BLUE);
-  if (voices[ 8]->on())   tft.fillRect(117, 47, 8, 8, colour[8]); else tft.drawRect(117, 47, 8, 8, ST7735_BLUE);
-
-  if (voices[ 9]->on())   tft.fillRect(127, 47, 8, 8, colour[9]); else tft.drawRect(127, 47, 8, 8, ST7735_BLUE);
-  if (voices[10]->on())   tft.fillRect(137, 47, 8, 8, colour[10]); else tft.drawRect(137, 47, 8, 8, ST7735_BLUE);
-  if (voices[11]->on())   tft.fillRect(147, 47, 8, 8, colour[11]); else tft.drawRect(147, 47, 8, 8, ST7735_BLUE);
+  // Always draw border to indicate timbre.
+  tft.fillRect(117, 27, 8, 8, colourPriority[fillColour[0]]);  tft.drawRect(117, 27, 8, 8, colourPriority[borderColour[0]]);
+  tft.fillRect(127, 27, 8, 8, colourPriority[fillColour[1]]);  tft.drawRect(127, 27, 8, 8, colourPriority[borderColour[1]]);
+  tft.fillRect(137, 27, 8, 8, colourPriority[fillColour[2]]);  tft.drawRect(137, 27, 8, 8, colourPriority[borderColour[2]]);
+  tft.fillRect(147, 27, 8, 8, colourPriority[fillColour[3]]);  tft.drawRect(147, 27, 8, 8, colourPriority[borderColour[3]]);
+  tft.fillRect(117, 37, 8, 8, colourPriority[fillColour[4]]);  tft.drawRect(117, 37, 8, 8, colourPriority[borderColour[4]]);
+  tft.fillRect(127, 37, 8, 8, colourPriority[fillColour[5]]);  tft.drawRect(127, 37, 8, 8, colourPriority[borderColour[5]]);
+  tft.fillRect(137, 37, 8, 8, colourPriority[fillColour[6]]);  tft.drawRect(137, 37, 8, 8, colourPriority[borderColour[6]]);
+  tft.fillRect(147, 37, 8, 8, colourPriority[fillColour[7]]);  tft.drawRect(147, 37, 8, 8, colourPriority[borderColour[7]]);
+  tft.fillRect(117, 47, 8, 8, colourPriority[fillColour[8]]);  tft.drawRect(117, 47, 8, 8, colourPriority[borderColour[8]]);
+  tft.fillRect(127, 47, 8, 8, colourPriority[fillColour[9]]);  tft.drawRect(127, 47, 8, 8, colourPriority[borderColour[9]]);
+  tft.fillRect(137, 47, 8, 8, colourPriority[fillColour[10]]); tft.drawRect(137, 47, 8, 8, colourPriority[borderColour[10]]);
+  tft.fillRect(147, 47, 8, 8, colourPriority[fillColour[11]]); tft.drawRect(147, 47, 8, 8, colourPriority[borderColour[11]]);
 
   tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans12pt7b);

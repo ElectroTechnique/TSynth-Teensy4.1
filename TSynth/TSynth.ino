@@ -44,6 +44,7 @@
   Additional libraries:
     Agileware CircularBuffer, Adafruit_GFX (available in Arduino libraries manager)
 */
+#include <vector>
 #include "Audio.h" //Using local version to override Teensyduino version
 #include <Wire.h>
 #include <SPI.h>
@@ -82,6 +83,7 @@ uint32_t state = PARAMETER;
 // Initialize the audio configuration.
 Global global{VOICEMIXERLEVEL};
 VoiceGroup voices{global.SharedAudio[0]};
+std::vector<VoiceGroup*> groupvec;
 
 #include "ST7735Display.h"
 
@@ -113,8 +115,10 @@ long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
-    voices.add(new Voice(global.Oscillators[i], i));
+    Voice* v = new Voice(global.Oscillators[i], i);
+    voices.add(v);
   }
+  groupvec.push_back(&voices);
 
   setupDisplay();
   setUpSettings();
