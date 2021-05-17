@@ -44,6 +44,7 @@
   Additional libraries:
     Agileware CircularBuffer, Adafruit_GFX (available in Arduino libraries manager)
 */
+#include <vector>
 #include "Audio.h" //Using local version to override Teensyduino version
 #include <Wire.h>
 #include <SPI.h>
@@ -79,7 +80,10 @@
 
 uint32_t state = PARAMETER;
 
-VoiceGroup voices{SharedAudio[0]};
+// Initialize the audio configuration.
+Global global{VOICEMIXERLEVEL};
+VoiceGroup voices{global.SharedAudio[0]};
+std::vector<VoiceGroup*> groupvec;
 
 #include "ST7735Display.h"
 
@@ -111,22 +115,24 @@ long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup() {
   for (uint8_t i = 0; i < NO_OF_VOICES; i++) {
-    voices.add(new Voice(Oscillators[i], i));
+    Voice* v = new Voice(global.Oscillators[i], i);
+    voices.add(v);
   }
+  groupvec.push_back(&voices);
 
   setupDisplay();
   setUpSettings();
   setupHardware();
 
-  AudioMemory(97);
-  sgtl5000_1.enable();
-  sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
-  sgtl5000_1.dacVolumeRamp();
-  sgtl5000_1.muteHeadphone();
-  sgtl5000_1.muteLineout();
-  sgtl5000_1.audioPostProcessorEnable();
-  sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
-  sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
+  AudioMemory(58);
+  global.sgtl5000_1.enable();
+  global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
+  global.sgtl5000_1.dacVolumeRamp();
+  global.sgtl5000_1.muteHeadphone();
+  global.sgtl5000_1.muteLineout();
+  global.sgtl5000_1.audioPostProcessorEnable();
+  global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4);//Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
+  global.sgtl5000_1.enhanceBassDisable();//Turned on from EEPROM
 
   cardStatus = SD.begin(BUILTIN_SDCARD);
   if (cardStatus) {
@@ -185,32 +191,6 @@ FLASHMEM void setup() {
   MIDI.setHandleStop(myMIDIClockStop);
   Serial.println(F("MIDI In DIN Listening"));
 
-  constant1Dc.amplitude(ONE);
-
-  voiceMixerM.gain(0, 0.25f);
-  voiceMixerM.gain(1, 0.25f);
-  voiceMixerM.gain(2, 0.25f);
-  voiceMixerM.gain(3, 0.25f);
-
-  pink.amplitude(ONE);
-  white.amplitude(ONE);
-
-  voiceMixerM.gain(0, VOICEMIXERLEVEL);
-  voiceMixerM.gain(1, VOICEMIXERLEVEL);
-  voiceMixerM.gain(2, VOICEMIXERLEVEL);
-  voiceMixerM.gain(3, VOICEMIXERLEVEL);
-
-  //This removes dc offset (mostly from unison pulse waves) before the ensemble effect
-  dcOffsetFilter.octaveControl(1.0f);
-  dcOffsetFilter.frequency(12.0f);//Lower values will give clicks on note on/off
-
-  volumeMixer.gain(0, 1.0f);
-  volumeMixer.gain(1, 0);
-  volumeMixer.gain(2, 0);
-  volumeMixer.gain(3, 0);
-
-  ensemble.lfoRate(fxAmt);
-
   volumePrevious = RE_READ; //Force volume control to be read and set to current
 
   //Read Pitch Bend Range from EEPROM
@@ -227,7 +207,7 @@ FLASHMEM void setup() {
   //Read Pick-up enable from EEPROM - experimental feature
   pickUp = getPickupEnable();
   //Read bass enhance enable from EEPROM
-  if (getBassEnhanceEnable()) sgtl5000_1.enhanceBassEnable();
+  if (getBassEnhanceEnable()) global.sgtl5000_1.enhanceBassEnable();
   //Read oscilloscope enable from EEPROM
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
@@ -358,7 +338,7 @@ FLASHMEM void updateUnison(uint8_t unison) {
 }
 
 FLASHMEM void updateVolume(float vol) {
-  sgtl5000_1.volume(vol * SGTL_MAXVOLUME);
+  global.sgtl5000_1.volume(vol * SGTL_MAXVOLUME);
   showCurrentParameterPage("Volume", vol);
 }
 
@@ -697,17 +677,14 @@ FLASHMEM void updateOscFX(uint8_t value) {
   }
 }
 
-FLASHMEM void updateFXAmt() {
-  ensemble.lfoRate(fxAmt);
-  showCurrentParameterPage("Effect Amt", String(fxAmt) + " Hz");
+FLASHMEM void updateEffectAmt(float value) {
+  voices.setEffectAmount(value);
+  showCurrentParameterPage("Effect Amt", String(value) + " Hz");
 }
 
-FLASHMEM void updateFXMix() {
-  effectMixerL.gain(0, 1.0f - fxMix); //Dry
-  effectMixerL.gain(1, fxMix);       //Wet
-  effectMixerR.gain(0, 1.0f - fxMix); //Dry
-  effectMixerR.gain(1, fxMix);       //Wet
-  showCurrentParameterPage("Effect Mix", String(fxMix));
+FLASHMEM void updateEffectMix(float value) {
+  voices.setEffectMix(value);
+  showCurrentParameterPage("Effect Mix", String(value));
 }
 
 FLASHMEM void updatePatch(String name, uint32_t index) {
@@ -950,17 +927,15 @@ void myControlChange(byte channel, byte control, byte value) {
     case CCfxamt:
       //Pick up
       if (!pickUpActive && pickUp && (fxAmtPrevValue <  ENSEMBLE_LFO[value - TOLERANCE] || fxAmtPrevValue >  ENSEMBLE_LFO[value + TOLERANCE])) return; //PICK-UP
-      fxAmt = ENSEMBLE_LFO[value];
-      updateFXAmt();
-      fxAmtPrevValue = fxAmt;//PICK-UP
+      updateEffectAmt(ENSEMBLE_LFO[value]);
+      fxAmtPrevValue = ENSEMBLE_LFO[value];//PICK-UP
       break;
 
     case CCfxmix:
       //Pick up
       if (!pickUpActive && pickUp && (fxMixPrevValue <  LINEAR[value - TOLERANCE] || fxMixPrevValue >  LINEAR[value + TOLERANCE])) return; //PICK-UP
-      fxMix = LINEAR[value];
-      updateFXMix();
-      fxMixPrevValue = fxMix;//PICK-UP
+      updateEffectMix(LINEAR[value]);
+      fxMixPrevValue = LINEAR[value];//PICK-UP
       break;
 
     case CCallnotesoff:
@@ -1075,18 +1050,16 @@ FLASHMEM void setCurrentPatchData(String data[]) {
   updateDecay(data[41].toFloat());
   updateSustain(data[42].toFloat());
   updateRelease(data[43].toFloat());
-  fxAmt = data[44].toFloat();
-  fxAmtPrevValue = fxAmt;//PICK-UP
-  fxMix = data[45].toFloat();
-  fxMixPrevValue = fxMix;//PICK-UP
+  updateEffectAmt(data[44].toFloat());
+  fxAmtPrevValue = data[44].toFloat();//PICK-UP
+  updateEffectMix(data[45].toFloat());
+  fxMixPrevValue = data[45].toFloat();//PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   voices.setMonophonic(data[49].toInt());
   //  SPARE1 = data[50].toFloat();
   //  SPARE2 = data[51].toFloat();
 
-  updateFXAmt();
-  updateFXMix();
   Serial.print(F("Set Patch: "));
   Serial.println(data[0]);
 }
@@ -1096,7 +1069,7 @@ FLASHMEM String getCurrentPatchData() {
   return patchName + "," + String(voices.getOscLevelA()) + "," + String(voices.getOscLevelB()) + "," + String(voices.getPinkNoiseLevel() - voices.getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(voices.getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(voices.getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(voices.getWaveformA()) + "," + String(voices.getWaveformB()) + "," +
          String(voices.getPwmSource()) + "," + String(voices.getPwmAmtA()) + "," + String(voices.getPwmAmtB()) + "," + String(voices.getPwmRate()) + "," + String(voices.getPwA()) + "," + String(voices.getPwB()) + "," + String(voices.getResonance()) + "," + String(voices.getCutoff()) + "," + String(voices.getFilterMixer()) + "," + String(voices.getFilterEnvelope()) + "," + String(voices.getPitchLfoAmount(), 5) + "," + String(voices.getPitchLfoRate(), 5) + "," + String(voices.getPitchLfoWaveform()) + "," + String(int(voices.getPitchLfoRetrig())) + "," + String(int(voices.getPitchLfoMidiClockSync())) + "," + String(voices.getFilterLfoRate(), 5) + "," +
          voices.getFilterLfoRetrig() + "," + voices.getFilterLfoMidiClockSync() + "," + voices.getFilterLfoAmt() + "," + voices.getFilterLfoWaveform() + "," + voices.getFilterAttack() + "," + voices.getFilterDecay() + "," + voices.getFilterSustain() + "," + voices.getFilterRelease() + "," + voices.getAmpAttack() + "," + voices.getAmpDecay() + "," + voices.getAmpSustain() + "," + voices.getAmpRelease() + "," +
-         String(fxAmt) + "," + String(fxMix) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(voices.getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
+         String(voices.getEffectAmount()) + "," + String(voices.getEffectMix()) + "," + String(voices.getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(voices.getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
 }
 
 void checkMux() {
@@ -1256,8 +1229,8 @@ void checkMux() {
     if (!firstPatchLoaded) {
       recallPatch(patchNo); //Load first patch after all controls read
       firstPatchLoaded = true;
-      sgtl5000_1.unmuteHeadphone();
-      sgtl5000_1.unmuteLineout();
+      global.sgtl5000_1.unmuteHeadphone();
+      global.sgtl5000_1.unmuteLineout();
     }
   }
   digitalWriteFast(MUX_0, muxInput & B0001);

@@ -203,10 +203,10 @@ FLASHMEM void settingsPickupEnable(const char * value) {
 
 FLASHMEM void settingsBassEnhanceEnable(const char * value) {
   if (strcmp(value, "Off") == 0) {
-    sgtl5000_1.enhanceBassDisable();
+    global.sgtl5000_1.enhanceBassDisable();
     storeBassEnhanceEnable(0);
   } else {
-    sgtl5000_1.enhanceBassEnable();
+    global.sgtl5000_1.enhanceBassEnable();
     storeBassEnhanceEnable(1);
   }
 }
