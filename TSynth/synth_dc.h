@@ -149,7 +149,7 @@ public:
   {
     // For now the mode should only change when the state is zero so set it to pending.
     // Changing mode from GLIDE_EXP to GLIDE_LIN may mess up the calculations.
-    if(modePending!= GLIDE_EXP) 
+    if(mode != GLIDE_EXP) 
       this->modePending=GLIDE_LIN; //default to linear for all other values.
     else this->modePending=GLIDE_EXP; // may have to wait until next state==0 for this to be set.
   }
