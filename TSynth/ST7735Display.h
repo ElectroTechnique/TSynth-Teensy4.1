@@ -42,8 +42,6 @@ boolean MIDIClkSignal = false;
 uint32_t peakCount = 0;
 uint16_t prevLen = 0;
 
-uint8_t fillColour[NO_OF_VOICES] = {0,0,0,0,0,0,0,0,0,0,0,0};
-uint8_t borderColour[NO_OF_VOICES] = {0,0,0,0,0,0,0,0,0,0,0,0};
 uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
 
 unsigned long timer = 0;
@@ -113,6 +111,9 @@ FLASHMEM void renderCurrentPatchPage() {
   }
   renderPeak();
 
+  
+  uint8_t fillColour[global.maxVoices()] = {};
+  uint8_t borderColour[global.maxVoices()] = {};
   // Select colours based on voice state.
   uint8_t i = 0;
   for (uint8_t group = 0; group < groupvec.size(); group++) {
@@ -124,19 +125,26 @@ FLASHMEM void renderCurrentPatchPage() {
     }
   }
 
-  // Always draw border to indicate timbre.
-  tft.fillRect(117, 27, 8, 8, colourPriority[fillColour[0]]);  tft.drawRect(117, 27, 8, 8, colourPriority[borderColour[0]]);
-  tft.fillRect(127, 27, 8, 8, colourPriority[fillColour[1]]);  tft.drawRect(127, 27, 8, 8, colourPriority[borderColour[1]]);
-  tft.fillRect(137, 27, 8, 8, colourPriority[fillColour[2]]);  tft.drawRect(137, 27, 8, 8, colourPriority[borderColour[2]]);
-  tft.fillRect(147, 27, 8, 8, colourPriority[fillColour[3]]);  tft.drawRect(147, 27, 8, 8, colourPriority[borderColour[3]]);
-  tft.fillRect(117, 37, 8, 8, colourPriority[fillColour[4]]);  tft.drawRect(117, 37, 8, 8, colourPriority[borderColour[4]]);
-  tft.fillRect(127, 37, 8, 8, colourPriority[fillColour[5]]);  tft.drawRect(127, 37, 8, 8, colourPriority[borderColour[5]]);
-  tft.fillRect(137, 37, 8, 8, colourPriority[fillColour[6]]);  tft.drawRect(137, 37, 8, 8, colourPriority[borderColour[6]]);
-  tft.fillRect(147, 37, 8, 8, colourPriority[fillColour[7]]);  tft.drawRect(147, 37, 8, 8, colourPriority[borderColour[7]]);
-  tft.fillRect(117, 47, 8, 8, colourPriority[fillColour[8]]);  tft.drawRect(117, 47, 8, 8, colourPriority[borderColour[8]]);
-  tft.fillRect(127, 47, 8, 8, colourPriority[fillColour[9]]);  tft.drawRect(127, 47, 8, 8, colourPriority[borderColour[9]]);
-  tft.fillRect(137, 47, 8, 8, colourPriority[fillColour[10]]); tft.drawRect(137, 47, 8, 8, colourPriority[borderColour[10]]);
-  tft.fillRect(147, 47, 8, 8, colourPriority[fillColour[11]]); tft.drawRect(147, 47, 8, 8, colourPriority[borderColour[11]]);
+  // Draw rectangles to represent each voice.
+  uint8_t max_rows = 3;
+  uint8_t x_step = 10;
+  uint8_t y_step = 10;
+  uint8_t x_end = 147;
+  uint8_t x_start = x_end - (x_step * ceil(global.maxVoices() / float(max_rows))) + x_step;
+  uint8_t y_start = 27;
+  uint8_t y_end = 47;
+  uint8_t idx = 0;
+  for (uint8_t y = y_start; y <= y_end; y += y_step) {
+    for (uint8_t x = x_start; x <= x_end; x += x_step) {
+      // Always draw border to indicate timbre.
+      tft.fillRect(x, y, 8, 8, colourPriority[fillColour[idx]]);
+      tft.drawRect(x, y, 8, 8, colourPriority[borderColour[idx]]);
+      idx++;
+      if (idx >= global.maxVoices()) {
+        break;
+      }
+    }
+  }
 
   tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans12pt7b);
@@ -206,10 +214,10 @@ FLASHMEM void renderCurrentParameterPage() {
           renderVarTriangle(currentFloatValue);
           break;
         case FILTER_ENV:
-          renderEnv(voices.getFilterAttack() * 0.0001f, voices.getFilterDecay() * 0.0001f, voices.getFilterSustain(), voices.getFilterRelease() * 0.0001f);
+          renderEnv(groupvec[activeGroupIndex]->getFilterAttack() * 0.0001f, groupvec[activeGroupIndex]->getFilterDecay() * 0.0001f, groupvec[activeGroupIndex]->getFilterSustain(), groupvec[activeGroupIndex]->getFilterRelease() * 0.0001f);
           break;
         case AMP_ENV:
-          renderEnv(voices.getAmpAttack() * 0.0001f, voices.getAmpDecay() * 0.0001f, voices.getAmpSustain(), voices.getAmpRelease() * 0.0001f);
+          renderEnv(groupvec[activeGroupIndex]->getAmpAttack() * 0.0001f, groupvec[activeGroupIndex]->getAmpDecay() * 0.0001f, groupvec[activeGroupIndex]->getAmpSustain(), groupvec[activeGroupIndex]->getAmpRelease() * 0.0001f);
           break;
       }
       break;

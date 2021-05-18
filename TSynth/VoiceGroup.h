@@ -85,7 +85,9 @@ class VoiceGroup {
         uint8_t velocity;
     };
 
-    noteStackData noteStack[NO_OF_VOICES];
+    // Used to remember active mono notes.
+    const static uint8_t maxMonoNote = 10;
+    noteStackData noteStack[maxMonoNote];
     uint8_t top = 0;
 
     public:
@@ -871,7 +873,7 @@ class VoiceGroup {
 
     void removeFromStack(uint8_t note) {
         bool shifting = false;
-        for (uint8_t i = 0; i < top && i < NO_OF_VOICES; i++) {
+        for (uint8_t i = 0; i < top && i < maxMonoNote; i++) {
             if (!shifting && this->noteStack[i].note == note) {
                 shifting = true;
             }

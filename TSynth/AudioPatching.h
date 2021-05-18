@@ -181,10 +181,12 @@ struct Patch {
     }
 };
 
-const uint8_t MAX_NO_TIMBER = 2;
-const uint8_t MAX_NO_VOICE = 12;
-
 struct Global {
+    private:
+    static const uint8_t MAX_NO_TIMBER = 2;
+    static const uint8_t MAX_NO_VOICE = 12;
+
+    public:
     AudioOutputUSB           usbAudio;
     AudioSynthWaveformDc     constant1Dc;
     AudioSynthNoisePink      pink;
@@ -258,6 +260,13 @@ struct Global {
         pink.amplitude(1.0);
         white.amplitude(1.0);
     }
+
+    inline int maxVoices() { return MAX_NO_VOICE; }
+    inline int maxTimbre() { return MAX_NO_TIMBER; }
+
+    // Limited to 12 because we have 3 mixers funnelling into 1 mixer.
+    inline int maxVoicesPerGroup() { return 12; }
+    inline int maxTimbres() { return 12; }
 };
 
 #endif
