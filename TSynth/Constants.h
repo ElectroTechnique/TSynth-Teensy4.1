@@ -31,6 +31,7 @@ const static float PWMRATE_PW_MODE = -10.0;
 const static float PWMRATE_SOURCE_FILTER_ENV = -5.0;
 const static float PWMRATE[128] = { PWMRATE_PW_MODE, PWMRATE_PW_MODE, PWMRATE_SOURCE_FILTER_ENV, PWMRATE_SOURCE_FILTER_ENV, PWMRATE_SOURCE_FILTER_ENV, PWMRATE_SOURCE_FILTER_ENV, PWMRATE_SOURCE_FILTER_ENV, 0.02f, 0.03f, 0.05f, 0.062f, 0.075f, 0.089f, 0.105f, 0.122f, 0.14f, 0.16f, 0.18f, 0.2f, 0.22f, 0.25f, 0.27f, 0.3f, 0.33f, 0.36f, 0.39f, 0.42f, 0.45f, 0.49f, 0.52f, 0.56f, 0.6f, 0.63f, 0.68f, 0.72f, 0.76f, 0.8f, 0.85f, 0.9f, 0.94f, 0.99f, 1.04f, 1.09f, 1.15f, 1.2f, 1.26f, 1.31f, 1.37f, 1.43f, 1.49f, 1.55f, 1.61f, 1.68f, 1.74f, 1.81f, 1.88f, 1.94f, 2.01f, 2.09f, 2.16f, 2.23f, 2.31f, 2.38f, 2.46f, 2.54f, 2.62f, 2.7f, 2.78f, 2.87f, 2.95f, 3.04f, 3.13f, 3.21f, 3.3f, 3.4f, 3.49f, 3.58f, 3.68f, 3.77f, 3.87f, 3.97f, 4.07f, 4.17f, 4.27f, 4.37f, 4.48f, 4.59f, 4.69f, 4.8f, 4.91f, 5.02f, 5.13f, 5.25f, 5.36f, 5.48f, 5.6f, 5.71f, 5.83f, 5.95f, 6.08f, 6.2f, 6.32f, 6.45f, 6.58f, 6.71f, 6.84f, 6.97f, 7.1f, 7.23f, 7.37f, 7.5f, 7.64f, 7.78f, 7.92f, 8.06f, 8.2f, 8.34f, 8.49f, 8.63f, 8.78f, 8.93f, 9.08f, 9.23f, 9.38f, 9.53f, 9.69f, 9.84f, 10.0f};
 const static float PITCHLFOOCTAVERANGE = 2.0f;//2 Oct range
+const static uint32_t NO_OF_VOICES = 12;
 const static uint32_t MINUNISONVOICES = 3;
 #define RE_READ -99
 #define PWMWAVEFORM WAVEFORM_SINE
