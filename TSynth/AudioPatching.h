@@ -21,14 +21,14 @@ class Mixer {
 };
 
 struct PatchShared {
-    AudioSynthWaveformDc pitchBend;
+    AudioSynthWaveformDcTS pitchBend;
     AudioSynthWaveformTS pitchLfo;
     AudioMixer4 pitchMixer;
     AudioSynthWaveformTS pwmLfoA;
     AudioSynthWaveformTS pwmLfoB;
     AudioSynthWaveformTS filterLfo;
-    AudioSynthWaveformDc pwa;
-    AudioSynthWaveformDc pwb;
+    AudioSynthWaveformDcTS pwa;
+    AudioSynthWaveformDcTS pwb;
     AudioMixer4 noiseMixer;
 
     AudioMixer4 voiceMixer[3];
@@ -85,9 +85,9 @@ struct Patch {
     AudioMixer4 pwMixer_a;
     AudioMixer4 pwMixer_b;
 
-    AudioSynthWaveformDc glide_;
+    AudioSynthWaveformDcTS glide_;
 
-    AudioSynthWaveformDc keytracking_;
+    AudioSynthWaveformDcTS keytracking_;
 
     AudioMixer4 oscModMixer_a;
     AudioMixer4 oscModMixer_b;
@@ -188,7 +188,7 @@ struct Global {
 
     public:
     AudioOutputUSB           usbAudio;
-    AudioSynthWaveformDc     constant1Dc;
+    AudioSynthWaveformDcTS     constant1Dc;
     AudioSynthNoisePink      pink;
     AudioSynthNoiseWhite     white;
     AudioAnalyzePeak         peak;
