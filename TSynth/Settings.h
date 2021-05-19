@@ -89,9 +89,7 @@ FLASHMEM void settingsAmpEnv(const char * value) {
   else if (strcmp(value, "Exp +7") == 0)  envTypeAmp = 7;
   else if (strcmp(value, "Exp +8") == 0)  envTypeAmp = 8;
   else envTypeAmp = -128;
-  for (uint8_t i = 0; i < global.maxVoices(); i++) {
-    global.Oscillators[i].ampEnvelope_.setEnvType(envTypeAmp);
-  }
+  VG_FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeAmp));
   storeAmpEnv(envTypeAmp);
 }
 
@@ -115,9 +113,7 @@ FLASHMEM void settingsFiltEnv(const char * value) {
   else if (strcmp(value, "Exp +7") == 0)  envTypeFilt = 7;
   else if (strcmp(value, "Exp +8") == 0)  envTypeFilt = 8;
   else envTypeFilt = -128;
-  for (uint8_t i = 0; i < global.maxVoices(); i++) {
-    global.Oscillators[i].filterEnvelope_.setEnvType(envTypeFilt);
-  }
+  VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
   storeFiltEnv(envTypeFilt);
 }						
 
@@ -128,16 +124,12 @@ FLASHMEM void reloadGlideShape(){
 
 FLASHMEM void reloadAmpEnv(){
   envTypeAmp = getAmpEnv();
-  for (uint8_t i = 0; i < global.maxVoices(); i++) {
-    global.Oscillators[i].ampEnvelope_.setEnvType(envTypeAmp);
-  }
+  VG_FOR_EACH_OSC(ampEnvelope_.setEnvType(envTypeFilt));
 }
 
 FLASHMEM void reloadFiltEnv(){
   envTypeFilt = getFiltEnv();
-  for (uint8_t i = 0; i < global.maxVoices(); i++) {
-    global.Oscillators[i].filterEnvelope_.setEnvType(envTypeFilt);
-  }
+  VG_FOR_EACH_OSC(filterEnvelope_.setEnvType(envTypeFilt));
 }
 
 FLASHMEM void settingsMIDICh(const char * value) {
@@ -227,7 +219,7 @@ FLASHMEM void settingsMonophonic(const char * value) {
   if (strcmp(value, "Highest") == 0) monophonic = MONOPHONIC_HIGHEST;
   if (strcmp(value, "Lowest") == 0)  monophonic = MONOPHONIC_LOWEST;
   if (strcmp(value, "Legato") == 0)  monophonic = MONOPHONIC_LEGATO;
-  groupvec[activeGroupIndex]->setMonophonic(monophonic);
+  voices.setMonophonic(monophonic);
 }
 
 FLASHMEM void settingsScopeEnable(const char * value) {
@@ -264,9 +256,9 @@ FLASHMEM int currentIndexVelocitySens() {
 }
 
 FLASHMEM int currentIndexKeyTracking() {
-  if (groupvec[activeGroupIndex]->getKeytrackingAmount() == 0.0f) return 0;
-  if (groupvec[activeGroupIndex]->getKeytrackingAmount() == 0.5f) return 1;
-  if (groupvec[activeGroupIndex]->getKeytrackingAmount() == 1.0f) return 2;
+  if (voices.getKeytrackingAmount() == 0.0f) return 0;
+  if (voices.getKeytrackingAmount() == 0.5f) return 1;
+  if (voices.getKeytrackingAmount() == 1.0f) return 2;
   return 0;
 }
 
@@ -303,7 +295,7 @@ FLASHMEM int currentIndexBassEnhanceEnable() {
 }
 
 FLASHMEM int currentIndexMonophonicMode() {
-  return groupvec[activeGroupIndex]->getMonophonicMode();
+  return voices.getMonophonicMode();
 }
 
 FLASHMEM int currentIndexScopeEnable() {
