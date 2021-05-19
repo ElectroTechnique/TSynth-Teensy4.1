@@ -31,14 +31,14 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster        60+     96
+  600MHz Faster        80+     58
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis / Vince R. Pearson - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
-    Will Winder - Major refactoring and monophonic mode
-    Vince Pearson - Exponential envelopes
-    Github member fab672000 - General improvements to code
+    Will Winder - Major refactoring, multi-timbrality and monophonic mode
+    Vince R. Pearson - Exponential envelopes & glide
+    Github members fab672000 & CDW2000 - General improvements to code
     Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
   Additional libraries:
@@ -124,7 +124,7 @@ FLASHMEM void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(58);
+  AudioMemory(60);
   global.sgtl5000_1.enable();
   global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   global.sgtl5000_1.dacVolumeRamp();
@@ -1249,38 +1249,18 @@ void checkVolumePot() {
 }
 
 void checkSwitches() {
-  unisonSwitch.update();
-  if (unisonSwitch.read() == LOW && unisonSwitch.duration() > HOLD_DURATION) {
-    //If unison held, switch to unison 2
-    midiCCOut(CCunison, 2);
-    myControlChange(midiChannel, CCunison, 2);
-    unisonSwitch.write(HIGH); //Come out of this state
-    unison2 = true;           //Hack
-  } else  if (unisonSwitch.fallingEdge()) {
-    if (!unison2) {
-      uint8_t next = voices.params().unisonMode > 0 ? 0 : 1;
-      midiCCOut(CCunison, next);
-      myControlChange(midiChannel, CCunison, next);
-    } else {
-      unison2 = false;
-    }
+    unisonSwitch.update();
+  if (unisonSwitch.fallingEdge()) {
+    //Cycle through each option
+    midiCCOut(CCunison, voices.params().unisonMode == 2 ? 0 : voices.params().unisonMode+1);
+    myControlChange(midiChannel, CCunison, voices.params().unisonMode == 2 ? 0 : voices.params().unisonMode+1);
   }
 
   oscFXSwitch.update();
-  if (oscFXSwitch.read() == LOW && oscFXSwitch.duration() > HOLD_DURATION) {
-    //If oscFX held, switch to oscFX 2
-    midiCCOut(CCoscfx, 2);
-    myControlChange(midiChannel, CCoscfx, 2);
-    oscFXSwitch.write(HIGH); //Come out of this state
-    oscFXMode = true;//Hack
-  } else if (oscFXSwitch.fallingEdge()) {
-    if (!oscFXMode) {
-      uint8_t value = voices.getOscFX() > 0 ? 0 : 1;
-      midiCCOut(CCoscfx, value);
-      myControlChange(midiChannel, CCoscfx, value);
-    } else {
-      oscFXMode = false;
-    }
+  if (oscFXSwitch.fallingEdge()) {
+    //Cycle through each option
+    midiCCOut(CCoscfx, voices.getOscFX() == 2 ? 0 : voices.getOscFX()+1);
+    myControlChange(midiChannel, CCoscfx, voices.getOscFX() == 2 ? 0 : voices.getOscFX()+1);
   }
 
   filterLFORetrigSwitch.update();
