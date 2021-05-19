@@ -1259,39 +1259,19 @@ void checkVolumePot() {
 
 void checkSwitches() {
   unisonSwitch.update();
-  if (unisonSwitch.read() == LOW && unisonSwitch.duration() > HOLD_DURATION) {
-    //If unison held, switch to unison 2
-    midiCCOut(CCunison, 2);
-    myControlChange(midiChannel, CCunison, 2);
-    unisonSwitch.write(HIGH); //Come out of this state
-    unison2 = true;           //Hack
-  } else  if (unisonSwitch.fallingEdge()) {
-    if (!unison2) {
-      uint8_t next = groupvec[activeGroupIndex]->params().unisonMode > 0 ? 0 : 1;
-      midiCCOut(CCunison, next);
-      myControlChange(midiChannel, CCunison, next);
-    } else {
-      unison2 = false;
-    }
+  if (unisonSwitch.fallingEdge()) {
+    //Cycle through each option
+    midiCCOut(CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode+1);
+    myControlChange(midiChannel, CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode+1);
   }
 
   oscFXSwitch.update();
-  if (oscFXSwitch.read() == LOW && oscFXSwitch.duration() > HOLD_DURATION) {
-    //If oscFX held, switch to oscFX 2
-    midiCCOut(CCoscfx, 2);
-    myControlChange(midiChannel, CCoscfx, 2);
-    oscFXSwitch.write(HIGH); //Come out of this state
-    oscFXMode = true;//Hack
-  } else if (oscFXSwitch.fallingEdge()) {
-    if (!oscFXMode) {
-      uint8_t value = groupvec[activeGroupIndex]->getOscFX() > 0 ? 0 : 1;
-      midiCCOut(CCoscfx, value);
-      myControlChange(midiChannel, CCoscfx, value);
-    } else {
-      oscFXMode = false;
-    }
+  if (oscFXSwitch.fallingEdge()) {
+    //Cycle through each option
+    midiCCOut(CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX()+1);
+    myControlChange(midiChannel, CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX()+1);
   }
-
+   
   filterLFORetrigSwitch.update();
   if (filterLFORetrigSwitch.fallingEdge()) {
     bool value = !groupvec[activeGroupIndex]->getFilterLfoRetrig();
