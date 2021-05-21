@@ -31,14 +31,14 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster        80+     59
+  600MHz Faster        80+     58
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
     Alexander Davis / Vince R. Pearson - Stereo ensemble chorus effect https://github.com/quarterturn/teensy3-ensemble-chorus
-    Will Winder - Major refactoring and monophonic mode
-    Vince Pearson - Exponential envelopes
-    Github member fab672000 - General improvements to code
+    Will Winder - Major refactoring, multi-timbrality and monophonic mode
+    Vince R. Pearson - Exponential envelopes & glide
+    Github members fab672000 & CDW2000 - General improvements to code
     Mark Tillotson - Special thanks for band-limiting the waveforms in the Audio Library
 
   Additional libraries:
@@ -133,7 +133,7 @@ FLASHMEM void setup() {
   setUpSettings();
   setupHardware();
 
-  AudioMemory(58);
+  AudioMemory(60);
   global.sgtl5000_1.enable();
   global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   global.sgtl5000_1.dacVolumeRamp();
@@ -224,7 +224,7 @@ FLASHMEM void setup() {
   //Read Filter and Amp Envelope shapes
   reloadFiltEnv();
   reloadAmpEnv();
-  reloadGlideShape();					 
+  reloadGlideShape();
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
@@ -1489,7 +1489,6 @@ void checkEncoder() {
         state = PARAMETER;
         break;
       case RECALL:
-        patches.push(patches.shift());
         patches.push(patches.shift());
         break;
       case SAVE:
