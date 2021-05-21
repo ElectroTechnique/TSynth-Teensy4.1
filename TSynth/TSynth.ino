@@ -1259,164 +1259,144 @@ void checkVolumePot() {
 
 void checkSwitches() {
   unisonSwitch.update();
-  if (unisonSwitch.fallingEdge()) {
+  if (unisonSwitch.numClicks() == 1) {
     //Cycle through each option
     midiCCOut(CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode+1);
     myControlChange(midiChannel, CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode+1);
-  }
+   }
 
   oscFXSwitch.update();
-  if (oscFXSwitch.fallingEdge()) {
+  if (oscFXSwitch.numClicks() == 1) {
     //Cycle through each option
     midiCCOut(CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX()+1);
     myControlChange(midiChannel, CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX()+1);
   }
-   
+
   filterLFORetrigSwitch.update();
-  if (filterLFORetrigSwitch.fallingEdge()) {
+  if (filterLFORetrigSwitch.numClicks() == 1) {
     bool value = !groupvec[activeGroupIndex]->getFilterLfoRetrig();
     midiCCOut(CCfilterlforetrig, value);
     myControlChange(midiChannel, CCfilterlforetrig, value);
   }
 
   tempoSwitch.update();
-  if (tempoSwitch.fallingEdge()) {
+  if (tempoSwitch.numClicks() == 1) {
     bool value = !groupvec[activeGroupIndex]->getFilterLfoMidiClockSync();
     midiCCOut(CCfilterLFOMidiClkSync, value);
     myControlChange(midiChannel, CCfilterLFOMidiClkSync, value);
   }
 
   saveButton.update();
-  if (saveButton.read() == LOW && saveButton.duration() > HOLD_DURATION) {
+  if (saveButton.held()) {
     switch (state) {
       case PARAMETER:
       case PATCH:
         state = DELETE;
-        saveButton.write(HIGH); //Come out of this state
-        del = true;             //Hack
         break;
     }
   }
-  else if (saveButton.risingEdge()) {
-    if (!del) {
-      switch (state) {
-        case PARAMETER:
-          if (patches.size() < PATCHES_LIMIT)  {
-            resetPatchesOrdering(); //Reset order of patches from first patch
-            patches.push({patches.size() + 1, INITPATCHNAME});
-            state = SAVE;
-          }
-          break;
-        case SAVE:
-          //Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
-          patchName = patches.last().patchName;
-          state = PATCH;
-          savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
-          showPatchPage(patches.last().patchNo, patches.last().patchName);
-          patchNo = patches.last().patchNo;
-          loadPatches(); //Get rid of pushed patch if it wasn't saved
-          setPatchesOrdering(patchNo);
-          renamedPatch = "";
-          state = PARAMETER;
-          break;
-        case PATCHNAMING:
-          if (renamedPatch.length() > 0) patchName = renamedPatch;//Prevent empty strings
-          state = PATCH;
-          savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
-          showPatchPage(patches.last().patchNo, patchName);
-          patchNo = patches.last().patchNo;
-          loadPatches(); //Get rid of pushed patch if it wasn't saved
-          setPatchesOrdering(patchNo);
-          renamedPatch = "";
-          state = PARAMETER;
-          break;
-      }
-    } else {
-      del = false;
+  else if (saveButton.numClicks() == 1) {
+    switch (state) {
+      case PARAMETER:
+        if (patches.size() < PATCHES_LIMIT)  {
+          resetPatchesOrdering(); //Reset order of patches from first patch
+          patches.push({patches.size() + 1, INITPATCHNAME});
+          state = SAVE;
+        }
+        break;
+      case SAVE:
+        //Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
+        patchName = patches.last().patchName;
+        state = PATCH;
+        savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
+        showPatchPage(patches.last().patchNo, patches.last().patchName);
+        patchNo = patches.last().patchNo;
+        loadPatches(); //Get rid of pushed patch if it wasn't saved
+        setPatchesOrdering(patchNo);
+        renamedPatch = "";
+        state = PARAMETER;
+        break;
+      case PATCHNAMING:
+        if (renamedPatch.length() > 0) patchName = renamedPatch;//Prevent empty strings
+        state = PATCH;
+        savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
+        showPatchPage(patches.last().patchNo, patchName);
+        patchNo = patches.last().patchNo;
+        loadPatches(); //Get rid of pushed patch if it wasn't saved
+        setPatchesOrdering(patchNo);
+        renamedPatch = "";
+        state = PARAMETER;
+        break;
     }
   }
 
   settingsButton.update();
-  if (settingsButton.read() == LOW && settingsButton.duration() > HOLD_DURATION) {
+  if (settingsButton.held()) {
     //If recall held, set current patch to match current hardware state
     //Reinitialise all hardware values to force them to be re-read if different
     state = REINITIALISE;
     reinitialiseToPanel();
-    settingsButton.write(HIGH); //Come out of this state
-    reini = true;           //Hack
-  } else if (settingsButton.risingEdge())  {
-    //cannot be fallingEdge because holding button won't work
-    if (!reini) {
-      switch (state) {
-        case PARAMETER:
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          break;
-        case SETTINGS:
-          settingsOptions.push(settingsOptions.shift());
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-        case SETTINGSVALUE:
-          //Same as pushing Recall - store current settings item and go back to options
-          settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          break;
-      }
-    } else {
-      reini = false;
+  } else if (settingsButton.numClicks() == 1)  {
+    switch (state) {
+      case PARAMETER:
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        break;
+      case SETTINGS:
+        settingsOptions.push(settingsOptions.shift());
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+      case SETTINGSVALUE:
+        //Same as pushing Recall - store current settings item and go back to options
+        settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        break;
     }
   }
 
   backButton.update();
-  if (backButton.read() == LOW && backButton.duration() > HOLD_DURATION) {
+  if (backButton.held()) {
     //If Back button held, Panic - all notes off
     groupvec[activeGroupIndex]->allNotesOff();
     groupvec[activeGroupIndex]->closeEnvelopes();
-    backButton.write(HIGH); //Come out of this state
-    panic = true;           //Hack
   }
-  else if (backButton.risingEdge())  {
-    //cannot be fallingEdge because holding button won't work
-    if (!panic) {
-      switch (state) {
-        case RECALL:
-          setPatchesOrdering(patchNo);
-          state = PARAMETER;
-          break;
-        case SAVE:
-          renamedPatch = "";
-          state = PARAMETER;
-          loadPatches();//Remove patch that was to be saved
-          setPatchesOrdering(patchNo);
-          break;
-        case PATCHNAMING:
-          charIndex = 0;
-          renamedPatch = "";
-          state = SAVE;
-          break;
-        case DELETE:
-          setPatchesOrdering(patchNo);
-          state = PARAMETER;
-          break;
-        case SETTINGS:
-          state = PARAMETER;
-          break;
-        case SETTINGSVALUE:
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          break;
-      }
-    } else {
-      panic = false;
+  else if (backButton.numClicks() == 1)  {
+    switch (state) {
+      case RECALL:
+        setPatchesOrdering(patchNo);
+        state = PARAMETER;
+        break;
+      case SAVE:
+        renamedPatch = "";
+        state = PARAMETER;
+        loadPatches();//Remove patch that was to be saved
+        setPatchesOrdering(patchNo);
+        break;
+      case PATCHNAMING:
+        charIndex = 0;
+        renamedPatch = "";
+        state = SAVE;
+        break;
+      case DELETE:
+        setPatchesOrdering(patchNo);
+        state = PARAMETER;
+        break;
+      case SETTINGS:
+        state = PARAMETER;
+        break;
+      case SETTINGSVALUE:
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        break;
     }
   }
 
   //Encoder switch
   recallButton.update();
-  if (recallButton.read() == LOW && recallButton.duration() > HOLD_DURATION) {
+  if (recallButton.held()) {
     //If Recall button held, return to current patch setting
     //which clears any changes made
     state = PATCH;
@@ -1424,65 +1404,59 @@ void checkSwitches() {
     patchNo = patches.first().patchNo;
     recallPatch(patchNo);
     state = PARAMETER;
-    recallButton.write(HIGH); //Come out of this state
-    recall = true;            //Hack
-  } else if (recallButton.risingEdge()) {
-    if (!recall) {
-      switch (state) {
-        case PARAMETER:
-          state = RECALL;//show patch list
-          break;
-        case RECALL:
-          state = PATCH;
-          //Recall the current patch
-          patchNo = patches.first().patchNo;
-          recallPatch(patchNo);
-          state = PARAMETER;
-          break;
-        case SAVE:
-          showRenamingPage(patches.last().patchName);
-          patchName  = patches.last().patchName;
-          state = PATCHNAMING;
-          break;
-        case PATCHNAMING:
-          if (renamedPatch.length() < 12) //actually 12 chars
-          {
-            renamedPatch.concat(String(currentCharacter));
-            charIndex = 0;
-            currentCharacter = CHARACTERS[charIndex];
-            showRenamingPage(renamedPatch);
-          }
-          break;
-        case DELETE:
-          //Don't delete final patch
-          if (patches.size() > 1) {
-            state = DELETEMSG;
-            patchNo = patches.first().patchNo;//PatchNo to delete from SD card
-            patches.shift();//Remove patch from circular buffer
-            deletePatch(String(patchNo).c_str());//Delete from SD card
-            loadPatches();//Repopulate circular buffer to start from lowest Patch No
-            renumberPatchesOnSD();
-            loadPatches();//Repopulate circular buffer again after delete
-            patchNo = patches.first().patchNo;//Go back to 1
-            recallPatch(patchNo);//Load first patch
-          }
-          state = PARAMETER;
-          break;
-        case SETTINGS:
-          //Choose this option and allow value choice
-          settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGSVALUE);
-          state = SETTINGSVALUE;
-          break;
-        case SETTINGSVALUE:
-          //Store current settings item and go back to options
-          settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
-          state = SETTINGS;
-          break;
-      }
-    } else {
-      recall = false;
+  } else if (recallButton.numClicks() == 1) {
+    switch (state) {
+      case PARAMETER:
+        state = RECALL;//show patch list
+        break;
+      case RECALL:
+        state = PATCH;
+        //Recall the current patch
+        patchNo = patches.first().patchNo;
+        recallPatch(patchNo);
+        state = PARAMETER;
+        break;
+      case SAVE:
+        showRenamingPage(patches.last().patchName);
+        patchName  = patches.last().patchName;
+        state = PATCHNAMING;
+        break;
+      case PATCHNAMING:
+        if (renamedPatch.length() < 12) //actually 12 chars
+        {
+          renamedPatch.concat(String(currentCharacter));
+          charIndex = 0;
+          currentCharacter = CHARACTERS[charIndex];
+          showRenamingPage(renamedPatch);
+        }
+        break;
+      case DELETE:
+        //Don't delete final patch
+        if (patches.size() > 1) {
+          state = DELETEMSG;
+          patchNo = patches.first().patchNo;//PatchNo to delete from SD card
+          patches.shift();//Remove patch from circular buffer
+          deletePatch(String(patchNo).c_str());//Delete from SD card
+          loadPatches();//Repopulate circular buffer to start from lowest Patch No
+          renumberPatchesOnSD();
+          loadPatches();//Repopulate circular buffer again after delete
+          patchNo = patches.first().patchNo;//Go back to 1
+          recallPatch(patchNo);//Load first patch
+        }
+        state = PARAMETER;
+        break;
+      case SETTINGS:
+        //Choose this option and allow value choice
+        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGSVALUE);
+        state = SETTINGSVALUE;
+        break;
+      case SETTINGSVALUE:
+        //Store current settings item and go back to options
+        settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
+        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        state = SETTINGS;
+        break;
     }
   }
 }
