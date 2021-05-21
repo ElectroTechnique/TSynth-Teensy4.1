@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.15
+  ElectroTechnique TSynth - Firmware Rev XXXXXXXXXX
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -31,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster        60+     96
+  600MHz Faster        80+     59
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -224,6 +224,7 @@ FLASHMEM void setup() {
   //Read Filter and Amp Envelope shapes
   reloadFiltEnv();
   reloadAmpEnv();
+  reloadGlideShape();					 
 }
 
 void myNoteOn(byte channel, byte note, byte velocity) {
@@ -1488,6 +1489,7 @@ void checkEncoder() {
         state = PARAMETER;
         break;
       case RECALL:
+        patches.push(patches.shift());
         patches.push(patches.shift());
         break;
       case SAVE:

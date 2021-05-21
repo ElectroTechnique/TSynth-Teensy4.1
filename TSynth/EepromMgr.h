@@ -12,6 +12,11 @@
 #define EEPROM_MIDI_THRU 9
 #define EEPROM_AMP_ENV 10
 #define EEPROM_FILT_ENV 11
+#define EEPROM_GLIDE_SHAPE 12
+
+FLASHMEM void storeGlideShape(byte type){
+  EEPROM.update(EEPROM_GLIDE_SHAPE, type);
+}
 
 FLASHMEM void storeAmpEnv(byte type){
   EEPROM.update(EEPROM_AMP_ENV, type);
@@ -21,12 +26,22 @@ FLASHMEM void storeFiltEnv(byte type){
   EEPROM.update(EEPROM_FILT_ENV, type);
 }
 
+FLASHMEM int8_t getGlideShape() {
+  int8_t gs = (int8_t)EEPROM.read(EEPROM_GLIDE_SHAPE);
+  if (gs < 0 || gs > 1) gs = 1;//If EEPROM has no glide shape (Exp type)
+  return gs;
+}
+
 FLASHMEM int8_t getAmpEnv() {
-  return  (int8_t)EEPROM.read(EEPROM_AMP_ENV);
+  int8_t ae = (int8_t)EEPROM.read(EEPROM_AMP_ENV);
+  if (ae < -8 || ae > 8) ae = -128;//If EEPROM has no amp env (Lin type)
+  return ae;
 }
 
 FLASHMEM int8_t getFiltEnv() {
-  return  (int8_t)EEPROM.read(EEPROM_FILT_ENV);
+  int8_t fe = (int8_t)EEPROM.read(EEPROM_FILT_ENV);
+  if (fe < -8 || fe > 8) fe = -128;//If EEPROM has no filter env (Lin type)
+  return fe;
 }
 
 FLASHMEM int getMIDIChannel() {

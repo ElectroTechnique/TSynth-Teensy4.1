@@ -19,6 +19,8 @@ int velocitySens = 0;//Default off - settings option
 // Exponential envelopes
 int8_t envTypeAmp=-128; // Linear
 int8_t envTypeFilt=-128; // Linear
+//Glide shape
+int8_t glideShape=1; // Exp
 
 //Pick-up - Experimental feature
 //Control will only start changing when the Knob/MIDI control reaches the current parameter value
