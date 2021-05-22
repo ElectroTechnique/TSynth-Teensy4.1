@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "Voice.h"
+#include "MonoNoteHistory.h"
 
 #define VG_FOR_EACH_OSC(CMD) VG_FOR_EACH_VOICE(voices[i]->patch().CMD)
 #define VG_FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < voices.size(); i++){ CMD; }
@@ -79,16 +80,8 @@ class VoiceGroup {
     float effectAmount;
     float effectMix;
 
-
-    struct noteStackData {
-        uint8_t note;
-        uint8_t velocity;
-    };
-
     // Used to remember active mono notes.
-    const static uint8_t maxMonoNote = 10;
-    noteStackData noteStack[maxMonoNote];
-    uint8_t top = 0;
+    MonoNoteHistory noteStack;
 
     public:
     VoiceGroup(PatchShared& shared_): 
@@ -207,7 +200,6 @@ class VoiceGroup {
     float getModWhAmount()          { return modWhAmount; }
     float getEffectAmount()         { return effectAmount; }
     float getEffectMix()            { return effectMix; }
-
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -680,6 +672,9 @@ class VoiceGroup {
     }
 
     inline void setMonophonic(uint8_t mode) {
+        if (mode != this->monophonic) {
+            noteStack.clear();
+        }
         this->monophonic = mode;
     }
 
@@ -757,7 +752,6 @@ class VoiceGroup {
     }
 
     void allNotesOff() {
-        this->top = 0;
         this->unisonNotesOn = 0;
         for (uint8_t i = 0; i < voices.size(); i++) {
             voices[i]->noteOff();
@@ -829,59 +823,45 @@ class VoiceGroup {
     private:
 
     void handleMonophonicNoteOn(uint8_t note, uint8_t velocity) {
-        this->noteStack[this->top].note = note;
-        this->noteStack[this->top].velocity = velocity;
-        this->top++;
+        noteStack.push(note, velocity);
 
         if (monophonic) {
-            int newNoteIdx = -1;
-            switch(monophonic) {
-                case MONOPHONIC_LEGATO:
-                case MONOPHONIC_LAST:
-                    newNoteIdx = this->top - 1;
-                    break;
-                case MONOPHONIC_FIRST:
-                    break;
-                case MONOPHONIC_HIGHEST: {
-                    if (note > monoNote) {
-                        newNoteIdx = this->top - 1;
+            MonoNoteHistory::Element nextNote{note, velocity};
+            // If there is more than 1 note check for retrigger.
+            if (noteStack.size() > 1) {
+                switch(monophonic) {
+                    case MONOPHONIC_FIRST:
+                        // Exit since there is already a note playing.
+                        return;
+                        break;
+                    case MONOPHONIC_LEGATO:
+                    case MONOPHONIC_LAST:
+                        // Always play the last note.
+                        break;
+                    case MONOPHONIC_HIGHEST: {
+                        // Play if higher than active note.
+                        if (note < monoNote) {
+                            return;
+                        }
+                        break;
                     }
-                    break;
-                }
-                case MONOPHONIC_LOWEST: {
-                    if (note < monoNote) {
-                        newNoteIdx = this->top - 1;
+                    case MONOPHONIC_LOWEST: {
+                        if (note > monoNote) {
+                            return;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
 
-            if (newNoteIdx == -1 && this->top == 1) newNoteIdx = 0;
-
-            // New note does not take priority.
-            if (newNoteIdx == -1) return;
-
-            uint8_t t = this->top;
-            allNotesOff();
-            this->top = t;
-
-            this->monoNote = this->noteStack[newNoteIdx].note;
-            noteOn(this->noteStack[newNoteIdx].note, this->noteStack[newNoteIdx].velocity, false);
-
+            // Make sure any active note is turned off.
+            for (uint8_t i = 0; i < voices.size(); i++) {
+                voices[i]->noteOff();
+            }
+            this->monoNote = nextNote.note;
+            noteOn(nextNote.note, nextNote.velocity, false);
         } else {
             noteOn(note, velocity, false);
-        }
-    }
-
-    void removeFromStack(uint8_t note) {
-        bool shifting = false;
-        for (uint8_t i = 0; i < top && i < maxMonoNote; i++) {
-            if (!shifting && this->noteStack[i].note == note) {
-                shifting = true;
-            }
-            if (shifting) {
-                this->noteStack[i] = this->noteStack[i+1];
-            }
         }
     }
 
@@ -891,55 +871,36 @@ class VoiceGroup {
         }
 
         // Remove turned-off note
-        removeFromStack(note);
+        noteStack.erase(note);
         bool activeNoteTurnedOff = 0 != noteOff(note, true);
 
-        this->top--;
-        // If last note is turned off, nothing to retrigger.
-        if (this->top < 1) {
-            this->top = 0;
-            return;
-        }
+        // Active note still active, or no more notes.
+        if (!activeNoteTurnedOff || noteStack.size() == 0) return;
 
-        // No retriggering if this wasn't the active note.
-        if (!activeNoteTurnedOff) return;
-
-        int noteIndex = -1;
+        MonoNoteHistory::Element nextNote;
         switch (this->monophonic)
         {
-        case MONOPHONIC_LEGATO:
-            // No retriggering.
-            break;
         case MONOPHONIC_LAST:
-            noteIndex = top - 1;
+            nextNote = noteStack.getLast();
             break;
         case MONOPHONIC_FIRST:
-            noteIndex = 0;
+            nextNote = noteStack.getFirst();
             break;
         case MONOPHONIC_LOWEST:
-            noteIndex = 0;
-            for(uint8_t i = 0; i < top; i++) {
-                if (this->noteStack[i].note < this->noteStack[noteIndex].note) {
-                    noteIndex = i;
-                }
-            }
+            nextNote = noteStack.getLowest();
             break;
         case MONOPHONIC_HIGHEST:
-            noteIndex = 0;
-            for(uint8_t i = 0; i < top; i++) {
-                if (this->noteStack[i].note > this->noteStack[noteIndex].note) {
-                    noteIndex = i;
-                }
-            }
+            nextNote = noteStack.getHighest();
             break;
+        case MONOPHONIC_LEGATO:
         default:
+            // No retriggering.
+            return;
             break;
         }
         
-        if (noteIndex >= 0) {
-            this->monoNote = this->noteStack[noteIndex].note;
-            noteOn(this->noteStack[noteIndex].note, this->noteStack[noteIndex].velocity, true);
-        }
+        this->monoNote = nextNote.note;
+        noteOn(nextNote.note, nextNote.velocity, true);
         return;
     }
 
