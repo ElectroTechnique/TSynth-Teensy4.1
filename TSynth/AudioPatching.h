@@ -236,7 +236,7 @@ struct Global {
             SharedAudio[i].voiceMixerM.gain(2, mixerLevel);
             SharedAudio[i].voiceMixerM.gain(3, mixerLevel);
 
-            SharedAudio[i].volumeMixer.gain(0, 1.0f);
+            SharedAudio[i].volumeMixer.gain(0, 1.6f);
             SharedAudio[i].volumeMixer.gain(1, 0);
             SharedAudio[i].volumeMixer.gain(2, 0);
             SharedAudio[i].volumeMixer.gain(3, 0);
