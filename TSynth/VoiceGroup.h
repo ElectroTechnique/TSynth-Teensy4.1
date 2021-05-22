@@ -486,12 +486,14 @@ class VoiceGroup {
             setOscModMixerB(3, 0);//XMod off
             //XOR 'Ring Mod' type effect
             setOscFXCombineMode(AudioEffectDigitalCombine::XOR);
-            setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//XOR
+            setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//XOR on
         } else {
             setOscModMixerA(3, 0);//XMod off
             setOscModMixerB(3, 0);//XMod off
             setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
-            setWaveformMixerLevel(3, 0);//XOR
+            setWaveformMixerLevel(0, oscLevelA);//Osc 1 (A)
+            setWaveformMixerLevel(1, oscLevelB);//Osc 2 (B)
+            setWaveformMixerLevel(3, 0);//XOR off
         }
     }
 

@@ -341,7 +341,7 @@ FLASHMEM void updateUnison(uint8_t unison) {
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   } else {
     showCurrentParameterPage("Chd. Unison", "On");
-    analogWriteFrequency(UNISON_LED, 1);
+    analogWriteFrequency(UNISON_LED, 1);//This is to make the LED flash using PWM rather than some thread
     analogWrite(UNISON_LED, 127);
   }
 }
@@ -673,7 +673,7 @@ FLASHMEM void updateOscFX(uint8_t value) {
   groupvec[activeGroupIndex]->setOscFX(value);
   if (value == 2) {
     showCurrentParameterPage("Osc FX", "On - X Mod");
-    analogWriteFrequency(OSC_FX_LED, 1);
+    analogWriteFrequency(OSC_FX_LED, 1);//This is to make the LED flash using PWM rather than some thread
     analogWrite(OSC_FX_LED, 127);
   } else if (value == 1) {
     showCurrentParameterPage("Osc FX", "On - XOR");
