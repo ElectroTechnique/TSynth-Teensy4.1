@@ -28,6 +28,7 @@
 #include <Arduino.h>
 #include "effect_envelope.h"
 
+
 #define RELEASE_BIAS 256 // based on a 1.31 fixed point integer. This is the level below zero that is the release target and causes the output to go to zero earlier. Otherwise it can take a relatively long time.
 // Difference equation for exponential envelope.
 
@@ -39,36 +40,74 @@
 
 void AudioEffectEnvelopeTS::noteOn(void)
 {
+
+ // Serial.print("     In Note On: ");
+ //   printState();
+ // Serial.println(noteCount);
   __disable_irq();
-  // Include STATE_IDLE_NEXT
-  if (state == STATE_IDLE || state==STATE_IDLE_NEXT|| state == STATE_DELAY || release_forced_count == 0) {
-    mult_hires = 0;
-    count = delay_count;
-    if (count > 0) {
-      state = STATE_DELAY;
-      inc_hires = 0;
-    } else {
-      state = STATE_ATTACK;
-      count = attack_count;
-      inc_hires = 0x40000000 / (int32_t)count;
-    }
-  } else if (state != STATE_FORCED) {
-    state = STATE_FORCED;
-    count = release_forced_count;
-    inc_hires = (-mult_hires) / (int32_t)count;
+ // noteCount++;
+ 
+  if(release_forced_count==0)
+    state=STATE_IDLE;
+  switch(state)
+  {
+
+    case STATE_IDLE:
+    case STATE_IDLE_NEXT:
+      count=delay_count;
+      if(count>0)
+      {
+        state=STATE_DELAY;
+        inc_hires=0;
+      }
+      else
+      {
+        state=STATE_ATTACK;
+        count=attack_count;
+        inc_hires=0x40000000;
+      }
+      break;    
+    case STATE_DELAY:
+    case STATE_HOLD:
+    case STATE_ATTACK:
+    case STATE_DECAY:
+    case STATE_SUSTAIN:
+    case STATE_SUSTAIN_FAST_CHANGE:
+    case STATE_RELEASE:
+      state=STATE_FORCED;
+      count=release_forced_count;
+      inc_hires=(-mult_hires)/(int32_t)count;
+    case STATE_FORCED:
+      break;
+    default:
+      state=STATE_RELEASE;
+      break;
   }
   __enable_irq();
 }
 
 void AudioEffectEnvelopeTS::noteOff(void)
 {
-  __disable_irq();
+ 
 
-  if ((state != STATE_IDLE) && (state != STATE_FORCED) && (state!=STATE_IDLE_NEXT) && (state!=STATE_RELEASE)) {
-    // Technically noteOff() should not occur when in STATE_RELEASE but added test for that so count does not get reloaded.
-    state = STATE_RELEASE;
-    count = release_count;
-    inc_hires = (-mult_hires) / (int32_t)count;
+ // Serial.print("In Note Off: ");
+ //   printState();
+// Serial.println(noteCount);
+ // Serial.println(YSUM2MULT(ysum));
+
+  __disable_irq();
+ //     noteCount--;
+  switch(state)
+  {
+    case STATE_IDLE:
+    case STATE_IDLE_NEXT:
+    case STATE_DELAY:
+      state=STATE_IDLE;
+      break;
+    default:
+      state = STATE_RELEASE;
+      count = release_count;
+      inc_hires = (-mult_hires) / (int32_t)count;
   }
   __enable_irq();
 }
@@ -262,9 +301,12 @@ void AudioEffectEnvelopeTS::update(void)
             
           case STATE_FORCED:
             ysum=EXP_ENV_FILT2(release_forced_k,ysum,0);
-            if(YSUM2MULT(ysum)==0) 
+           //Serial.println(YSUM2MULT(ysum));
+            if(YSUM2MULT(ysum)==0)
+            { 
               state=STATE_ATTACK;// revert to IDLE state when useful bits are zero.
-          
+              ysum=0;
+            }
           default:
             break;  
         }
@@ -311,3 +353,5 @@ bool AudioEffectEnvelopeTS::isSustain()
   if (current_state == STATE_SUSTAIN || current_state==STATE_SUSTAIN_FAST_CHANGE) return true;
   return false;
 }
+//volatile int32_t AudioEffectEnvelopeTS::noteCount=0;
+ 

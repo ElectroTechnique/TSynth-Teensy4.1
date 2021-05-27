@@ -147,6 +147,23 @@ void close(){
   using AudioStream::release;
   virtual void update(void);
   void setEnvType(uint8_t type);
+ /* void printState()
+  {
+    switch(state)
+    {
+      case STATE_IDLE: Serial.println("STATE_IDLE"); break;
+      case STATE_DELAY: Serial.println("STATE_DELAY"); break;
+      case STATE_ATTACK: Serial.println("STATE_ATTACK"); break;
+      case STATE_HOLD: Serial.println("STATE_HOLD"); break;
+      case STATE_DECAY: Serial.println("STATE_DECAY"); break;
+      case STATE_SUSTAIN: Serial.println("STATE_SUSTAIN"); break;
+      case STATE_SUSTAIN_FAST_CHANGE: Serial.println("STATE_SUSTAIN_FAST_CHANGE"); break;
+      case STATE_RELEASE: Serial.println("STATE_RELEASE"); break;
+      case STATE_FORCED: Serial.println("STATE_FORCED"); break;
+      case STATE_IDLE_NEXT: Serial.println("STATE_IDLE_NEXT"); break;
+    }
+  }
+  */
 private:
   uint16_t milliseconds2count(float milliseconds) {
     if (milliseconds < 0.0) milliseconds = 0.0;
@@ -190,7 +207,7 @@ private:
   FLASHMEM void updateExpReleaseNoteOn()
   {
     double k;
-    k=exp(-1.0L/(release_forced_count*4.0L));
+    k=exp(-8.0L/(release_forced_count*4.0L));
     release_forced_k=(uint32_t)(EXP_ENV_ONE*k);
   }
 
@@ -212,7 +229,7 @@ private:
   uint16_t release_forced_count;
 
 
-  enum { // Kake this a private class enum set instead of using defines.
+  enum { // Make this a private class enum set instead of using defines.
     STATE_IDLE,
     STATE_DELAY,
     STATE_ATTACK,
@@ -233,6 +250,7 @@ private:
   int32_t decay_k;
   int32_t release_k;
   int32_t release_forced_k;
+  volatile static int32_t noteCount;
 };
 
 #undef SAMPLES_PER_MSEC
