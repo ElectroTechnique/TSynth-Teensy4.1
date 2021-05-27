@@ -62,15 +62,20 @@ void AudioEffectEnvelopeTS::noteOn(void)
 
 void AudioEffectEnvelopeTS::noteOff(void)
 {
-  __disable_irq();
-
-  if ((state != STATE_IDLE) && (state != STATE_FORCED) && (state!=STATE_IDLE_NEXT) && (state!=STATE_RELEASE)) {
-    // Technically noteOff() should not occur when in STATE_RELEASE but added test for that so count does not get reloaded.
-    state = STATE_RELEASE;
-    count = release_count;
-    inc_hires = (-mult_hires) / (int32_t)count;
-  }
-  __enable_irq();
+ __disable_irq();
+ switch(state)
+ {
+   case STATE_IDLE:
+   case STATE_IDLE_NEXT:
+   case STATE_DELAY:
+    state=STATE_IDLE;
+    break;
+  default:
+  state = STATE_RELEASE;
+  count = release_count;
+  inc_hires = (-mult_hires) / (int32_t)count;
+ }
+ __enable_irq();
 }
 
 void AudioEffectEnvelopeTS::update(void)

@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev MT and ExpGlide
+  ElectroTechnique TSynth - Firmware Rev XXXXXXXXXX
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -31,7 +31,7 @@
     Optimize: "Faster"
 
   Performance Tests   Max CPU  Mem
-  600MHz Faster        80+     58
+  600MHz Faster        80+     59
 
   Includes code by:
     Dave Benn - Handling MUXs, a few other bits and original inspiration  https://www.notesandvolts.com/2019/01/teensy-synth-part-10-hardware.html
@@ -341,7 +341,7 @@ FLASHMEM void updateUnison(uint8_t unison) {
     digitalWriteFast(UNISON_LED, HIGH);  // LED on
   } else {
     showCurrentParameterPage("Chd. Unison", "On");
-    analogWriteFrequency(UNISON_LED, 1);
+    analogWriteFrequency(UNISON_LED, 1);//This is to make the LED flash using PWM rather than some thread
     analogWrite(UNISON_LED, 127);
   }
 }
@@ -673,7 +673,7 @@ FLASHMEM void updateOscFX(uint8_t value) {
   groupvec[activeGroupIndex]->setOscFX(value);
   if (value == 2) {
     showCurrentParameterPage("Osc FX", "On - X Mod");
-    analogWriteFrequency(OSC_FX_LED, 1);
+    analogWriteFrequency(OSC_FX_LED, 1);//This is to make the LED flash using PWM rather than some thread
     analogWrite(OSC_FX_LED, 127);
   } else if (value == 1) {
     showCurrentParameterPage("Osc FX", "On - XOR");
