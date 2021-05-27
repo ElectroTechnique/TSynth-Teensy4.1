@@ -92,10 +92,10 @@ TButton filterLFORetrigSwitch{FILTER_LFO_RETRIG_SW, LOW, HOLD_DURATION, DEBOUNCE
 TButton unisonSwitch{UNISON_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TButton tempoSwitch{TEMPO_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TButton recallButton{RECALL_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION}; //On encoder
-TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};											  										   
+		
+TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TButton settingsButton{SETTINGS_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 TButton backButton{BACK_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
-		
 Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
 
 FLASHMEM void setupHardware() {
