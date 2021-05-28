@@ -40,13 +40,7 @@
 
 void AudioEffectEnvelopeTS::noteOn(void)
 {
-
- // Serial.print("     In Note On: ");
- //   printState();
- // Serial.println(noteCount);
   __disable_irq();
- // noteCount++;
- 
   if(release_forced_count==0)
     state=STATE_IDLE;
   switch(state)
@@ -88,15 +82,7 @@ void AudioEffectEnvelopeTS::noteOn(void)
 
 void AudioEffectEnvelopeTS::noteOff(void)
 {
- 
-
- // Serial.print("In Note Off: ");
- //   printState();
-// Serial.println(noteCount);
- // Serial.println(YSUM2MULT(ysum));
-
   __disable_irq();
- //     noteCount--;
   switch(state)
   {
     case STATE_IDLE:
@@ -353,5 +339,4 @@ bool AudioEffectEnvelopeTS::isSustain()
   if (current_state == STATE_SUSTAIN || current_state==STATE_SUSTAIN_FAST_CHANGE) return true;
   return false;
 }
-//volatile int32_t AudioEffectEnvelopeTS::noteCount=0;
  

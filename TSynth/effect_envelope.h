@@ -147,23 +147,7 @@ void close(){
   using AudioStream::release;
   virtual void update(void);
   void setEnvType(uint8_t type);
- /* void printState()
-  {
-    switch(state)
-    {
-      case STATE_IDLE: Serial.println("STATE_IDLE"); break;
-      case STATE_DELAY: Serial.println("STATE_DELAY"); break;
-      case STATE_ATTACK: Serial.println("STATE_ATTACK"); break;
-      case STATE_HOLD: Serial.println("STATE_HOLD"); break;
-      case STATE_DECAY: Serial.println("STATE_DECAY"); break;
-      case STATE_SUSTAIN: Serial.println("STATE_SUSTAIN"); break;
-      case STATE_SUSTAIN_FAST_CHANGE: Serial.println("STATE_SUSTAIN_FAST_CHANGE"); break;
-      case STATE_RELEASE: Serial.println("STATE_RELEASE"); break;
-      case STATE_FORCED: Serial.println("STATE_FORCED"); break;
-      case STATE_IDLE_NEXT: Serial.println("STATE_IDLE_NEXT"); break;
-    }
-  }
-  */
+
 private:
   uint16_t milliseconds2count(float milliseconds) {
     if (milliseconds < 0.0) milliseconds = 0.0;
@@ -207,7 +191,10 @@ private:
   FLASHMEM void updateExpReleaseNoteOn()
   {
     double k;
-    k=exp(-8.0L/(release_forced_count*4.0L));
+    // Increased forced release rate x8 so it will end before the next note off call.
+    // Unlike linear mode this time is dependant on sustain level and release rate. It may be better to implement this state as a linear ramp with a fixed time
+    // for consistent behaviour. 
+    k=exp(-4L/(release_forced_count*4.0L));
     release_forced_k=(uint32_t)(EXP_ENV_ONE*k);
   }
 
@@ -250,7 +237,6 @@ private:
   int32_t decay_k;
   int32_t release_k;
   int32_t release_forced_k;
-  volatile static int32_t noteCount;
 };
 
 #undef SAMPLES_PER_MSEC
