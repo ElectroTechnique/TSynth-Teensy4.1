@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define MAX_NOTE_HISTORY 20
+
 class MonoNoteHistory {
     public:
     struct Element {
@@ -18,7 +20,7 @@ class MonoNoteHistory {
         uint8_t velocity;
     };
 
-    MonoNoteHistory(){}
+    MonoNoteHistory();
 
     // Remove everything from the note stack.
     void clear();
@@ -42,7 +44,8 @@ class MonoNoteHistory {
     Element getLowest();
 
     private:
-    std::vector<Element> data;
+    uint8_t numElements;
+    Element data[MAX_NOTE_HISTORY];
 };
 
 #endif
