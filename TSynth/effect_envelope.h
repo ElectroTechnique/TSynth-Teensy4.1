@@ -130,7 +130,6 @@ public:
   }
   void releaseNoteOn(float milliseconds) {
     release_forced_count = milliseconds2count(milliseconds);
-    if (release_count == 0) release_count = 1;
     updateExpReleaseNoteOn();
   }
  //ElectroTechnique 2020 - close the envelope to silence it
@@ -191,10 +190,10 @@ private:
   FLASHMEM void updateExpReleaseNoteOn()
   {
     double k;
-    // Increased forced release rate x8 so it will end before the next note off call.
+    // Increased forced release rate x4 so it will end before the next note off call.
     // Unlike linear mode this time is dependant on sustain level and release rate. It may be better to implement this state as a linear ramp with a fixed time
     // for consistent behaviour. 
-    k=exp(-4L/(release_forced_count*4.0L));
+    k=exp(-4.0L/(release_forced_count*8.0L));
     release_forced_k=(uint32_t)(EXP_ENV_ONE*k);
   }
 

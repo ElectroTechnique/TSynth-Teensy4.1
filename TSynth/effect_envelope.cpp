@@ -31,7 +31,7 @@
 
 #define RELEASE_BIAS 256 // based on a 1.31 fixed point integer. This is the level below zero that is the release target and causes the output to go to zero earlier. Otherwise it can take a relatively long time.
 // Difference equation for exponential envelope.
-
+#define FORCED_RELEASE_BIAS 0x1000000 // empirically determined with forced release time constant to attain ~5ms between forced release and next attack.
 // Form 1 for attack stage: y(n+1) = k1*y(n)+kx using unsigned S1.30 fixed point format
 #define EXP_ENV_FILT1(k,y,x) ((uint32_t)(((uint64_t)(y)*(k))>>30)+(uint32_t)(x))
 // Form 2 for remaining stages: y(n+1) = k1*(y(n)-x(n))+x(n) using unsigned S1.30 fixed point format
@@ -49,7 +49,7 @@ void AudioEffectEnvelopeTS::noteOn(void)
     case STATE_IDLE:
     case STATE_IDLE_NEXT:
       count=delay_count;
-      if(count>0)
+      if(count>1)
       {
         state=STATE_DELAY;
         inc_hires=0;
@@ -69,8 +69,16 @@ void AudioEffectEnvelopeTS::noteOn(void)
     case STATE_SUSTAIN_FAST_CHANGE:
     case STATE_RELEASE:
       state=STATE_FORCED;
-      count=release_forced_count;
-      inc_hires=(-mult_hires)/(int32_t)count;
+      if(env_type==-128)
+      {
+        count=release_forced_count;
+        inc_hires=(-mult_hires)/(int32_t)count;
+      }
+      else
+      {
+        count=release_forced_count<<3;
+        inc_hires=(-ysum)/(int32_t)count;
+      }
     case STATE_FORCED:
       break;
     default:
@@ -92,7 +100,7 @@ void AudioEffectEnvelopeTS::noteOff(void)
       break;
     default:
       state = STATE_RELEASE;
-      count = release_count;
+        count = release_count;
       inc_hires = (-mult_hires) / (int32_t)count;
   }
   __enable_irq();
@@ -285,10 +293,9 @@ void AudioEffectEnvelopeTS::update(void)
               state=STATE_IDLE;
             break;
             
-          case STATE_FORCED:
-            ysum=EXP_ENV_FILT2(release_forced_k,ysum,0);
-           //Serial.println(YSUM2MULT(ysum));
-            if(YSUM2MULT(ysum)==0)
+          case STATE_FORCED:            
+            ysum=EXP_ENV_FILT2(release_forced_k,ysum,-FORCED_RELEASE_BIAS);
+            if(YSUM2MULT(ysum)<=0)
             { 
               state=STATE_ATTACK;// revert to IDLE state when useful bits are zero.
               ysum=0;
