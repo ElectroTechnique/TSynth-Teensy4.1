@@ -95,6 +95,23 @@ void test_function_get_lowest_2(void) {
     TEST_ASSERT_EQUAL(2, elem.velocity);
 }
 
+void test_function_push_too_many() {
+    MonoNoteHistory s;
+    for (uint8_t num = 0; num < MAX_NOTE_HISTORY; num++) {
+        s.push(num, num);
+    }
+
+    TEST_ASSERT_EQUAL(MAX_NOTE_HISTORY, s.size());
+    TEST_ASSERT_EQUAL(0, s.getLowest().note);
+    TEST_ASSERT_EQUAL(MAX_NOTE_HISTORY-1, s.getHighest().note);
+
+    // Push one more. Oldest note (lowest with the push pattern) should be gone.
+    s.push(MAX_NOTE_HISTORY, MAX_NOTE_HISTORY);
+    TEST_ASSERT_EQUAL(MAX_NOTE_HISTORY, s.size());
+    TEST_ASSERT_EQUAL(1, s.getLowest().note);
+    TEST_ASSERT_EQUAL(MAX_NOTE_HISTORY, s.getHighest().note);
+}
+
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
@@ -107,6 +124,7 @@ int main(int argc, char **argv) {
     RUN_TEST(test_function_get_highest_2);
     RUN_TEST(test_function_get_lowest_1);
     RUN_TEST(test_function_get_lowest_2);
+    RUN_TEST(test_function_push_too_many);
     UNITY_END();
 
     return 0;
