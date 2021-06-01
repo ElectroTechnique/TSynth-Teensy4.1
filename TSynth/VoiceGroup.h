@@ -773,7 +773,7 @@ class VoiceGroup {
         uint8_t num = 0;
         switch (this->_params.unisonMode) {
             case 0:
-                num = noteOff(note, false);
+                num = noteOff(note, false); // changed for experiment
                 break;
             default:
                 num = noteOff(note, true);

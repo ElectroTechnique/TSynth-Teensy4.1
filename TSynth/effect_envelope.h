@@ -79,6 +79,9 @@ public:
   void noteOff();
   FLASHMEM void delay(float milliseconds) {
     delay_count = milliseconds2count(milliseconds); // Number of samples is 8 times this number for linear mode.
+    __disable_irq();
+    if(state==STATE_IDLE_NEXT) state=STATE_IDLE; // Force counter reload if in STATE_IDLE_NEXT.
+    __enable_irq();
   }
 
  // Attack curve negative numbers generate negative curvature (like typical exp attack curves).
@@ -95,7 +98,7 @@ public:
   FLASHMEM void setEnvType(int8_t type)
   {
     env_type=type;
-    updateExpAttack(); // Exponential filter parameters need updating.
+    updateExpAttack(); // Exponential attack parameters need updating.
   }
   FLASHMEM int8_t getEnvType() { return env_type;};
 
@@ -128,13 +131,12 @@ public:
     if (release_count == 0) release_count = 1;
     updateExpRelease();
   }
-  void releaseNoteOn(float milliseconds) {
+  FLASHMEM void releaseNoteOn(float milliseconds) {
     release_forced_count = milliseconds2count(milliseconds);
-    if (release_count == 0) release_count = 1;
     updateExpReleaseNoteOn();
   }
  //ElectroTechnique 2020 - close the envelope to silence it
-void close(){
+FLASHMEM void close(){
  __disable_irq();
      mult_hires = 0;//Zero gain
      inc_hires = 0;//Same as STATE_DELAY
@@ -147,6 +149,7 @@ void close(){
   using AudioStream::release;
   virtual void update(void);
   void setEnvType(uint8_t type);
+
 private:
   uint16_t milliseconds2count(float milliseconds) {
     if (milliseconds < 0.0) milliseconds = 0.0;
@@ -190,7 +193,10 @@ private:
   FLASHMEM void updateExpReleaseNoteOn()
   {
     double k;
-    k=exp(-1.0L/(release_forced_count*4.0L));
+    // Increased forced release rate x4 so it will end before the next note off call.
+    // Unlike linear mode this time is dependant on sustain level and release rate. It may be better to implement this state as a linear ramp with a fixed time
+    // for consistent behaviour. 
+    k=exp(-4.0L/(release_forced_count*8.0L));
     release_forced_k=(uint32_t)(EXP_ENV_ONE*k);
   }
 
@@ -212,7 +218,7 @@ private:
   uint16_t release_forced_count;
 
 
-  enum { // Kake this a private class enum set instead of using defines.
+  enum { // Make this a private class enum set instead of using defines.
     STATE_IDLE,
     STATE_DELAY,
     STATE_ATTACK,
