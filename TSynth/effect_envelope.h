@@ -79,6 +79,9 @@ public:
   void noteOff();
   FLASHMEM void delay(float milliseconds) {
     delay_count = milliseconds2count(milliseconds); // Number of samples is 8 times this number for linear mode.
+    __disable_irq();
+    if(state==STATE_IDLE_NEXT) state=STATE_IDLE; // Force counter reload if in STATE_IDLE_NEXT.
+    __enable_irq();
   }
 
  // Attack curve negative numbers generate negative curvature (like typical exp attack curves).
@@ -95,7 +98,7 @@ public:
   FLASHMEM void setEnvType(int8_t type)
   {
     env_type=type;
-    updateExpAttack(); // Exponential filter parameters need updating.
+    updateExpAttack(); // Exponential attack parameters need updating.
   }
   FLASHMEM int8_t getEnvType() { return env_type;};
 
@@ -128,12 +131,12 @@ public:
     if (release_count == 0) release_count = 1;
     updateExpRelease();
   }
-  void releaseNoteOn(float milliseconds) {
+  FLASHMEM void releaseNoteOn(float milliseconds) {
     release_forced_count = milliseconds2count(milliseconds);
     updateExpReleaseNoteOn();
   }
  //ElectroTechnique 2020 - close the envelope to silence it
-void close(){
+FLASHMEM void close(){
  __disable_irq();
      mult_hires = 0;//Zero gain
      inc_hires = 0;//Same as STATE_DELAY

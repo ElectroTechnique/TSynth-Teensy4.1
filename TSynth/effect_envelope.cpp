@@ -49,7 +49,7 @@ void AudioEffectEnvelopeTS::noteOn(void)
     case STATE_IDLE:
     case STATE_IDLE_NEXT:
       count=delay_count;
-      if(count>1)
+      if(count>0)
       {
         state=STATE_DELAY;
         inc_hires=0;
@@ -69,16 +69,8 @@ void AudioEffectEnvelopeTS::noteOn(void)
     case STATE_SUSTAIN_FAST_CHANGE:
     case STATE_RELEASE:
       state=STATE_FORCED;
-      if(env_type==-128)
-      {
-        count=release_forced_count;
-        inc_hires=(-mult_hires)/(int32_t)count;
-      }
-      else
-      {
-        count=release_forced_count<<3;
-        inc_hires=(-ysum)/(int32_t)count;
-      }
+      count=release_forced_count;
+      inc_hires=(-mult_hires)/(int32_t)count;
     case STATE_FORCED:
       break;
     default:
@@ -100,7 +92,7 @@ void AudioEffectEnvelopeTS::noteOff(void)
       break;
     default:
       state = STATE_RELEASE;
-        count = release_count;
+      count = release_count;
       inc_hires = (-mult_hires) / (int32_t)count;
   }
   __enable_irq();
@@ -122,7 +114,7 @@ void AudioEffectEnvelopeTS::update(void)
   p = (uint32_t *)(block->data);
   end = p + AUDIO_BLOCK_SAMPLES/2;
   if(env_type==-128)
-  { // Original AudioEffectEnvelope class linear envelop.
+  { // Original AudioEffectEnvelope class linear envelope.
     while (p < end) {
       // we only care about the state when completing a region
       if (count == 0) {
@@ -175,6 +167,11 @@ void AudioEffectEnvelopeTS::update(void)
           count = attack_count;
           inc_hires = 0x40000000 / count;
           continue;
+        }
+        else
+        {
+          state=STATE_IDLE; // If in some unused state switching back into linear mode, set to known state that linear mode uses.
+          count=delay_count;
         }
       }
 
