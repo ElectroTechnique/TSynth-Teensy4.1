@@ -35,7 +35,7 @@ struct PatchShared {
     AudioMixer4 voiceMixerM;
 
     AudioEffectEnsemble ensemble;
-    AudioFilterStateVariable dcOffsetFilter;
+    AudioFilterStateVariableTS dcOffsetFilter;
     AudioMixer4 volumeMixer;
     AudioMixer4 effectMixerL;
     AudioMixer4 effectMixerR;
@@ -101,7 +101,7 @@ struct Patch {
 
     AudioMixer4 filterModMixer_;
 
-    AudioFilterStateVariable filter_;
+    AudioFilterStateVariableTS filter_;
 
     AudioMixer4 filterMixer_;
 
