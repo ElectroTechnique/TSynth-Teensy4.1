@@ -23,7 +23,7 @@ AudioMixer4              voiceMixer1;    //xy=2233,581
 AudioMixer4              voiceMixer2;    //xy=2240,1791
 AudioMixer4              voiceMixer3;    //xy=2237,2976
 AudioMixer4              voiceMixerM;    //xy=2431,1798
-AudioFilterStateVariable dcOffsetFilter; //xy=2591,1804
+AudioFilterStateVariableTS dcOffsetFilter; //xy=2591,1804
 AudioMixer4              volumeMixer;    //xy=2774,1756
 AudioEffectEnsemble      ensemble;      //xy=1800,600
 Oscilloscope             scope;
@@ -301,18 +301,18 @@ AudioMixer4              filterModMixer10; //xy=1516,2865
 AudioMixer4              filterModMixer11; //xy=1516,3165
 AudioMixer4              filterModMixer12; //xy=1516,3465
 
-AudioFilterStateVariable filter1;        //xy=1681,145
-AudioFilterStateVariable filter2;        //xy=1681,445
-AudioFilterStateVariable filter3;        //xy=1681,745
-AudioFilterStateVariable filter4;        //xy=1681,1045
-AudioFilterStateVariable filter5;        //xy=1681,1345
-AudioFilterStateVariable filter6;        //xy=1681,1645
-AudioFilterStateVariable filter7;        //xy=1681,1945
-AudioFilterStateVariable filter8;        //xy=1681,2245
-AudioFilterStateVariable filter9;        //xy=1681,2545
-AudioFilterStateVariable filter10;       //xy=1681,2845
-AudioFilterStateVariable filter11;       //xy=1681,3145
-AudioFilterStateVariable filter12;       //xy=1681,3445
+AudioFilterStateVariableTS filter1;        //xy=1681,145
+AudioFilterStateVariableTS filter2;        //xy=1681,445
+AudioFilterStateVariableTS filter3;        //xy=1681,745
+AudioFilterStateVariableTS filter4;        //xy=1681,1045
+AudioFilterStateVariableTS filter5;        //xy=1681,1345
+AudioFilterStateVariableTS filter6;        //xy=1681,1645
+AudioFilterStateVariableTS filter7;        //xy=1681,1945
+AudioFilterStateVariableTS filter8;        //xy=1681,2245
+AudioFilterStateVariableTS filter9;        //xy=1681,2545
+AudioFilterStateVariableTS filter10;       //xy=1681,2845
+AudioFilterStateVariableTS filter11;       //xy=1681,3145
+AudioFilterStateVariableTS filter12;       //xy=1681,3445
 
 AudioMixer4              filterMixer1;   //xy=1821,145
 AudioMixer4              filterMixer2;   //xy=1821,445
@@ -789,7 +789,7 @@ struct Patch {
 
     AudioMixer4 &filterModMixer_;
 
-    AudioFilterStateVariable &filter_;
+    AudioFilterStateVariableTS &filter_;
 
     AudioMixer4 &filterMixer_;
 

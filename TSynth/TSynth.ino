@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.20
+  ElectroTechnique TSynth - Firmware Rev 2.21
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -803,11 +803,11 @@ void myControlChange(byte channel, byte control, byte value) {
 
     case CCfilterres:
       //Pick up
-      if (!pickUpActive && pickUp && (resonancePrevValue <  ((13.9f * POWER[value - TOLERANCE]) + 1.1f) || resonancePrevValue >  ((13.9f * POWER[value + TOLERANCE]) + 1.1f))) return; //PICK-UP
+      if (!pickUpActive && pickUp && (resonancePrevValue <  ((14.29f * POWER[value - TOLERANCE]) + 0.71f) || resonancePrevValue >  ((14.29f * POWER[value + TOLERANCE]) + 0.71f))) return; //PICK-UP
       
       //If <1.1 there is noise at high cutoff freq
-      updateFilterRes((13.9f * POWER[value]) + 1.1f);
-      resonancePrevValue = (13.9f * POWER[value]) + 1.1f;//PICK-UP
+      updateFilterRes((14.29f * POWER[value]) + 0.71f);
+      resonancePrevValue = (14.29f * POWER[value]) + 0.71f;//PICK-UP
       break;
 
     case CCfiltermixer:
