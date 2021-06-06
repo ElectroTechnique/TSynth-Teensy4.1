@@ -1484,6 +1484,9 @@ void checkEncoder() {
         patchNo = patches.first().patchNo;
         recallPatch(patchNo);
         state = PARAMETER;
+        // Make sure the current setting value is refreshed.
+        settings::increment_setting();
+        settings::decrement_setting();
         break;
       case RECALL:
         patches.push(patches.shift());
@@ -1517,6 +1520,9 @@ void checkEncoder() {
         patchNo = patches.first().patchNo;
         recallPatch(patchNo);
         state = PARAMETER;
+        // Make sure the current setting value is refreshed.
+        settings::increment_setting();
+        settings::decrement_setting();
         break;
       case RECALL:
         patches.unshift(patches.pop());
