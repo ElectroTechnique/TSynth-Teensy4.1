@@ -6,8 +6,6 @@
 // https://community.platformio.org/t/pio-test-not-building-project-source/4501
 #include "MonoNoteHistory.cpp"
 
-#ifdef UNIT_TEST
-
 MonoNoteHistory* s;
 
 void setUp(void) {
@@ -113,7 +111,7 @@ void test_function_push_too_many() {
 }
 
 
-int main(int argc, char **argv) {
+void notestack_tests() {
     UNITY_BEGIN();
     RUN_TEST(test_function_push);
     RUN_TEST(test_function_erase_end);
@@ -126,8 +124,4 @@ int main(int argc, char **argv) {
     RUN_TEST(test_function_get_lowest_2);
     RUN_TEST(test_function_push_too_many);
     UNITY_END();
-
-    return 0;
 }
-
-#endif

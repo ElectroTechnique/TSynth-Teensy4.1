@@ -53,6 +53,7 @@
 #include <USBHost_t36.h>
 #include <TeensyThreads.h>
 #include "MidiCC.h"
+#include "SettingsService.h"
 #include "AudioPatching.h"
 #include "Constants.h"
 #include "Parameters.h"
@@ -1257,6 +1258,10 @@ void checkVolumePot() {
   }
 }
 
+void showSettingsPage() {
+  showSettingsPage(settings::current_setting(), settings::current_setting_value(), state);
+}
+
 void checkSwitches() {
   unisonSwitch.update();
   if (unisonSwitch.numClicks() == 1) {
@@ -1339,19 +1344,15 @@ void checkSwitches() {
   } else if (settingsButton.numClicks() == 1)  {
     switch (state) {
       case PARAMETER:
-        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
         state = SETTINGS;
+        showSettingsPage();
         break;
       case SETTINGS:
-        settingsOptions.push(settingsOptions.shift());
-        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        showSettingsPage();
       case SETTINGSVALUE:
-        //Same as pushing Recall - store current settings item and go back to options
-        settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        settings::save_current_value();
         state = SETTINGS;
+        showSettingsPage();
         break;
     }
   }
@@ -1387,9 +1388,8 @@ void checkSwitches() {
         state = PARAMETER;
         break;
       case SETTINGSVALUE:
-        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
         state = SETTINGS;
+        showSettingsPage();
         break;
     }
   }
@@ -1446,16 +1446,13 @@ void checkSwitches() {
         state = PARAMETER;
         break;
       case SETTINGS:
-        //Choose this option and allow value choice
-        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGSVALUE);
         state = SETTINGSVALUE;
+        showSettingsPage();
         break;
       case SETTINGSVALUE:
-        //Store current settings item and go back to options
-        settingsHandler(settingsOptions.first().value[settingsValueIndex], settingsOptions.first().handler);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        settings::save_current_value();
         state = SETTINGS;
+        showSettingsPage();
         break;
     }
   }
@@ -1503,13 +1500,12 @@ void checkEncoder() {
         patches.push(patches.shift());
         break;
       case SETTINGS:
-        settingsOptions.push(settingsOptions.shift());
-        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex] , SETTINGS);
+        settings::increment_setting();
+        showSettingsPage();
         break;
       case SETTINGSVALUE:
-        if (strcmp(settingsOptions.first().value[settingsValueIndex + 1],"\0") !=0)
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[++settingsValueIndex], SETTINGSVALUE);
+        settings::increment_setting_value();
+        showSettingsPage();
         break;
     }
     encPrevious = encRead;
@@ -1538,13 +1534,12 @@ void checkEncoder() {
         patches.unshift(patches.pop());
         break;
       case SETTINGS:
-        settingsOptions.unshift(settingsOptions.pop());
-        settingsValueIndex = getCurrentIndex(settingsOptions.first().currentIndex);
-        showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[settingsValueIndex], SETTINGS);
+        settings::decrement_setting();
+        showSettingsPage();
         break;
       case SETTINGSVALUE:
-        if (settingsValueIndex > 0)
-          showSettingsPage(settingsOptions.first().option, settingsOptions.first().value[--settingsValueIndex], SETTINGSVALUE);
+        settings::decrement_setting_value();
+        showSettingsPage();
         break;
     }
     encPrevious = encRead;
