@@ -204,13 +204,15 @@ struct Global {
 
     AudioControlSGTL5000     sgtl5000_1;
 
-    AudioConnection connectionsArray[10] = {
+    AudioConnection connectionsArray[12] = {
         {effectMixerL[0], 0, effectMixerLM, 0},
         {effectMixerL[1], 0, effectMixerLM, 1},
         {effectMixerL[2], 0, effectMixerLM, 2},
         {effectMixerR[0], 0, effectMixerRM, 0},
         {effectMixerR[1], 0, effectMixerRM, 1},
         {effectMixerR[2], 0, effectMixerRM, 2},
+        {effectMixerLM, 0, scope, 0},
+        {effectMixerLM, 0, peak, 0},
         {effectMixerRM, 0, usbAudio, 1},
         {effectMixerRM, 0, i2s, 1},
         {effectMixerLM, 0, i2s, 0},
