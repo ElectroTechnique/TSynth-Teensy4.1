@@ -62,7 +62,6 @@
 #include "EepromMgr.h"
 #include "Detune.h"
 #include "utils.h"
-#include "Velocity.h"
 #include "Voice.h"
 #include "VoiceGroup.h"
 // This should be included here, but it introduces a circular dependency.
@@ -964,7 +963,7 @@ FLASHMEM void myProgramChange(byte channel, byte program) {
 }
 
 FLASHMEM void myMIDIClockStart() {
-  MIDIClkSignal = true;
+  setMIDIClkSignal(true);
   //Resync LFOs when MIDI Clock starts.
   //When there's a jump to a different
   //part of a track, such as in a DAW, the DAW must have same
@@ -975,7 +974,7 @@ FLASHMEM void myMIDIClockStart() {
 }
 
 FLASHMEM void myMIDIClockStop() {
-  MIDIClkSignal = false;
+  setMIDIClkSignal(false);
 }
 
 FLASHMEM void myMIDIClock() {
@@ -983,7 +982,7 @@ FLASHMEM void myMIDIClock() {
   if (count > 23) {
     // TODO: Most of this needs to move into the VoiceGroup
 
-    MIDIClkSignal = !MIDIClkSignal;
+    setMIDIClkSignal(!getMIDIClkSignal());
     float timeNow = millis();
     midiClkTimeInterval = (timeNow - previousMillis);
     lfoSyncFreq = 1000.0f / midiClkTimeInterval;

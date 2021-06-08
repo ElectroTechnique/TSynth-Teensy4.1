@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include "AudioPatching.h"
 #include "Constants.h"
+#include "Detune.h"
+#include "Velocity.h"
 
 // TODO: Store / update these in the VoiceGroup instead of re-initializing for each noteOn.
 struct VoiceParams {

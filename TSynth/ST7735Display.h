@@ -53,6 +53,14 @@ void startTimer() {
   }
 }
 
+FLASHMEM void setMIDIClkSignal(bool val) {
+  MIDIClkSignal = val;
+}
+
+FLASHMEM bool getMIDIClkSignal() {
+  return MIDIClkSignal;
+}
+
 FLASHMEM void renderBootUpPage()
 {
   tft.fillScreen(ST7735_BLACK);

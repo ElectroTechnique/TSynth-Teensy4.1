@@ -5,6 +5,7 @@
 */
 //Agileware CircularBuffer available in libraries manager
 #include <CircularBuffer.h>
+#include "Constants.h"
 
 #define TOTALCHARS 64
 
