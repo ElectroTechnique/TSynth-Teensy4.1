@@ -6,6 +6,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "Voice.h"
+#include "MonoNoteHistory.h"
+#include "Constants.h"
 
 #define VG_FOR_EACH_OSC(CMD) VG_FOR_EACH_VOICE(voices[i]->patch().CMD)
 #define VG_FOR_EACH_VOICE(CMD) for (uint8_t i = 0; i < voices.size(); i++){ CMD; }
@@ -37,7 +39,8 @@ class VoiceGroup {
     bool pitchLFOMidiClockSync;
 
     VoiceParams _params;
-    uint8_t notesOn;
+    uint8_t unisonNotesOn;
+    uint8_t voicesOn;
     uint8_t monoNote;
     uint8_t monophonic;
     uint8_t waveformA;
@@ -75,15 +78,11 @@ class VoiceGroup {
     float pitchLfoAmount;
     float pitchLfoRate;
     float modWhAmount;
+    float effectAmount;
+    float effectMix;
 
-
-    struct noteStackData {
-        uint8_t note;
-        uint8_t velocity;
-    };
-
-    noteStackData noteStack[NO_OF_VOICES];
-    uint8_t top = 0;
+    // Used to remember active mono notes.
+    MonoNoteHistory noteStack;
 
     public:
     VoiceGroup(PatchShared& shared_): 
@@ -93,7 +92,8 @@ class VoiceGroup {
             midiClockSignal(false),
             filterLfoMidiClockSync(false),
             pitchLFOMidiClockSync(false),
-            notesOn(0),
+            unisonNotesOn(0),
+            voicesOn(0),
             monophonic(0),
             waveformA(WAVEFORM_SQUARE),
             waveformB(WAVEFORM_SQUARE),
@@ -129,7 +129,9 @@ class VoiceGroup {
             pitchLfoRetrig(false),
             pitchLfoAmount(0),
             pitchLfoRate(4.0),
-            modWhAmount(0.0)
+            modWhAmount(0.0),
+            effectAmount(1.0),
+            effectMix(0.0)
         {
         _params.keytrackingAmount = 0.5; //Half - MIDI CC & settings option
         _params.mixerLevel = 0.0;
@@ -150,6 +152,9 @@ class VoiceGroup {
         shared.pwmLfoB.amplitude(ONE);
         shared.pwmLfoB.begin(PWMWAVEFORM);
         shared.pwmLfoB.phase(10.0f);//Off set phase of second osc
+
+        setEffectAmount(effectAmount);
+        setEffectMix(effectMix);
     }
 
     inline uint8_t size()           { return this->voices.size(); }
@@ -194,7 +199,8 @@ class VoiceGroup {
     float getPitchLfoAmount()       { return pitchLfoAmount; }
     float getPitchLfoRate()         { return pitchLfoRate; }
     float getModWhAmount()          { return modWhAmount; }
-
+    float getEffectAmount()         { return effectAmount; }
+    float getEffectMix()            { return effectMix; }
 
     inline void setPatchName(String name) {
         this->patchName = name;
@@ -473,12 +479,14 @@ class VoiceGroup {
             setOscModMixerB(3, 0);//XMod off
             //XOR 'Ring Mod' type effect
             setOscFXCombineMode(AudioEffectDigitalCombine::XOR);
-            setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//XOR
+            setWaveformMixerLevel(3, (oscLevelA + oscLevelB) / 2.0f);//XOR on
         } else {
             setOscModMixerA(3, 0);//XMod off
             setOscModMixerB(3, 0);//XMod off
             setOscFXCombineMode(AudioEffectDigitalCombine::OFF);//Set XOR type off
-            setWaveformMixerLevel(3, 0);//XOR
+            setWaveformMixerLevel(0, oscLevelA);//Osc 1 (A)
+            setWaveformMixerLevel(1, oscLevelB);//Osc 2 (B)
+            setWaveformMixerLevel(3, 0);//XOR off
         }
     }
 
@@ -590,23 +598,23 @@ class VoiceGroup {
 
     void setFilterLfoRetrig(bool value) {
         filterLfoRetrig = value;
-        VG_FOR_EACH_OSC(filterLfo_.sync())
+        shared.filterLfo.sync();
     }
 
     void setFilterLfoRate(float value) {
         filterLfoRate = value;
-        VG_FOR_EACH_OSC(filterLfo_.frequency(value))
+        shared.filterLfo.frequency(value);
     }
 
     void setFilterLfoAmt(float value) {
         filterLfoAmt = value;
-        VG_FOR_EACH_OSC(filterLfo_.amplitude(value))
+        shared.filterLfo.amplitude(value);
     }
 
     void setFilterLfoWaveform(int waveform) {
         if (filterLfoWaveform == waveform) return;
         filterLfoWaveform = waveform;
-        VG_FOR_EACH_OSC(filterLfo_.begin(filterLfoWaveform))
+        shared.filterLfo.begin(filterLfoWaveform);
     }
 
     void setPinkNoiseLevel(float value) {
@@ -651,7 +659,23 @@ class VoiceGroup {
         shared.pitchLfo.amplitude(value + pitchLfoAmount);
     }
 
+    void setEffectAmount(float value) {
+        effectAmount = value;
+        shared.ensemble.lfoRate(effectAmount);
+    }
+
+    void setEffectMix(float value) {
+        effectMix = value;
+        shared.effectMixerL.gain(0, 1.0f - effectMix); //Dry
+        shared.effectMixerL.gain(1, effectMix);        //Wet
+        shared.effectMixerR.gain(0, 1.0f - effectMix); //Dry
+        shared.effectMixerR.gain(1, effectMix);        //Wet
+    }
+
     inline void setMonophonic(uint8_t mode) {
+        if (mode != this->monophonic) {
+            noteStack.clear();
+        }
         this->monophonic = mode;
     }
 
@@ -659,7 +683,7 @@ class VoiceGroup {
         if (mode == 0) allNotesOff();
 
         this->_params.unisonMode = mode;
-        this->notesOn = 0;
+        this->unisonNotesOn = 0;
 
         // Update noise gain
         setPinkNoiseLevel(pinkLevel);
@@ -675,7 +699,7 @@ class VoiceGroup {
     }
 
     inline uint8_t unisonNotes() {
-        return this->notesOn;
+        return this->unisonNotesOn;
     }
 
     //
@@ -700,28 +724,9 @@ class VoiceGroup {
     }
 
     void add(Voice* v) {
+        Mixer* m = v->patch().connectTo(shared, voices.size());
+        v->setMixer(m);
         voices.push_back(v);
-
-        // TODO: Below could be functions of the patch.
-
-        // In case this was allocated before, delete it.
-        delete v->patch().pitchMixerAConnection;
-        delete v->patch().pitchMixerBConnection;
-        delete v->patch().pwmLfoAConnection;
-        delete v->patch().pwmLfoBConnection;
-        delete v->patch().pwaConnection;
-        delete v->patch().pwbConnection;
-        delete v->patch().noiseMixerConnection;
-        delete v->patch().filterLfoConnection;
-
-        v->patch().pitchMixerAConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_a, 0);
-        v->patch().pitchMixerBConnection = new AudioConnection(shared.pitchMixer, 0, v->patch().oscModMixer_b, 0);
-        v->patch().pwmLfoAConnection = new AudioConnection(shared.pwmLfoA, 0, v->patch().pwMixer_a, 0);
-        v->patch().pwmLfoBConnection = new AudioConnection(shared.pwmLfoB, 0, v->patch().pwMixer_b, 0);
-        v->patch().pwaConnection = new AudioConnection(shared.pwa, 0, v->patch().pwMixer_a, 1);
-        v->patch().pwbConnection = new AudioConnection(shared.pwb, 0, v->patch().pwMixer_b, 1);
-        v->patch().noiseMixerConnection = new AudioConnection(shared.noiseMixer, 0, v->patch().waveformMixer_, 2);
-        v->patch().filterLfoConnection = new AudioConnection(shared.filterLfo, 0, v->patch().filterModMixer_, 1);
     }
 
     // Merges the other VoiceGroup into this one, making additional voices
@@ -741,15 +746,14 @@ class VoiceGroup {
         noteOn(note, velocity, false);
     }
 
-    void allNotesOn(uint8_t note, int velocity) {
+    void allNotesOn(uint8_t note, int velocity, uint8_t id) {
         for (uint8_t i = 0; i < voices.size(); i++) {
-            voices[i]->noteOn(note, velocity, this->_params, notesOn);
+            voices[i]->noteOn(note, velocity, this->_params, unisonNotesOn, id);
         }
     }
 
     void allNotesOff() {
-        this->top = 0;
-        this->notesOn = 0;
+        this->unisonNotesOn = 0;
         for (uint8_t i = 0; i < voices.size(); i++) {
             voices[i]->noteOff();
         }
@@ -757,7 +761,7 @@ class VoiceGroup {
 
     void updateVoices() {
         for (uint8_t i = 0; i < voices.size(); i++) {
-            voices[i]->updateVoice(this->_params, notesOn);
+            voices[i]->updateVoice(this->_params, unisonNotesOn);
         }
     }
 
@@ -767,16 +771,18 @@ class VoiceGroup {
             return;
         }
 
-        if (this->notesOn > 0) this->notesOn --;
-        
+        uint8_t num = 0;
         switch (this->_params.unisonMode) {
             case 0:
-                noteOff(note, false);
+                num = noteOff(note, false); // changed for experiment
                 break;
             default:
-                noteOff(note, true);
+                num = noteOff(note, true);
                 break;
         }
+
+        // Decrement unison note count if noteOff modified a voice.
+        if (this->unisonNotesOn > 0 && num > 0) this->unisonNotesOn--;
     }
 
     void pitchBend(float amount) {
@@ -785,7 +791,7 @@ class VoiceGroup {
 
     void midiClockStart() {
         midiClockSignal = true;
-        VG_FOR_EACH_OSC(filterLfo_.sync())
+        shared.filterLfo.sync();
     }
 
     void midiClockStop() {
@@ -796,7 +802,7 @@ class VoiceGroup {
         midiClockSignal = true;
 
         if (filterLfoMidiClockSync) {
-            VG_FOR_EACH_OSC(filterLfo_.frequency(frequency))
+            shared.filterLfo.frequency(frequency);
         }
 
         if (pitchLFOMidiClockSync) {
@@ -818,124 +824,91 @@ class VoiceGroup {
     private:
 
     void handleMonophonicNoteOn(uint8_t note, uint8_t velocity) {
-        this->noteStack[this->top].note = note;
-        this->noteStack[this->top].velocity = velocity;
-        this->top++;
+        noteStack.push(note, velocity);
 
         if (monophonic) {
-            int newNoteIdx = -1;
-            switch(monophonic) {
-                case MONOPHONIC_LEGATO:
-                case MONOPHONIC_LAST:
-                    newNoteIdx = this->top - 1;
-                    break;
-                case MONOPHONIC_FIRST:
-                    break;
-                case MONOPHONIC_HIGHEST: {
-                    if (note > monoNote) {
-                        newNoteIdx = this->top - 1;
+            MonoNoteHistory::Element nextNote{note, velocity};
+            // If there is more than 1 note check for retrigger.
+            if (noteStack.size() > 1) {
+                switch(monophonic) {
+                    case MONOPHONIC_FIRST:
+                        // Exit since there is already a note playing.
+                        return;
+                        break;
+                    case MONOPHONIC_LEGATO:
+                    case MONOPHONIC_LAST:
+                        // Always play the last note.
+                        break;
+                    case MONOPHONIC_HIGHEST: {
+                        // Play if higher than active note.
+                        if (note < monoNote) {
+                            return;
+                        }
+                        break;
                     }
-                    break;
-                }
-                case MONOPHONIC_LOWEST: {
-                    if (note < monoNote) {
-                        newNoteIdx = this->top - 1;
+                    case MONOPHONIC_LOWEST: {
+                        if (note > monoNote) {
+                            return;
+                        }
+                        break;
                     }
-                    break;
                 }
             }
 
-            if (newNoteIdx == -1 && this->top == 1) newNoteIdx = 0;
-
-            // New note does not take priority.
-            if (newNoteIdx == -1) return;
-
-            uint8_t t = this->top;
-            allNotesOff();
-            this->top = t;
-
-            this->monoNote = this->noteStack[newNoteIdx].note;
-            noteOn(this->noteStack[newNoteIdx].note, this->noteStack[newNoteIdx].velocity, false);
-
+            // Make sure any active note is turned off.
+            for (uint8_t i = 0; i < voices.size(); i++) {
+                voices[i]->noteOff();
+            }
+            this->monoNote = nextNote.note;
+            noteOn(nextNote.note, nextNote.velocity, false);
         } else {
             noteOn(note, velocity, false);
         }
     }
 
-    void removeFromStack(uint8_t note) {
-        bool shifting = false;
-        for (uint8_t i = 0; i < top && i < NO_OF_VOICES; i++) {
-            if (!shifting && this->noteStack[i].note == note) {
-                shifting = true;
-            }
-            if (shifting) {
-                this->noteStack[i] = this->noteStack[i+1];
-            }
-        }
-    }
-
     void handleMonophonicNoteOff(uint8_t note) {
-
-        if (this->monophonic) {
-            // Remove turned-off note
-            removeFromStack(note);
-            bool activeNoteTurnedOff = 0 != noteOff(note, true);
-
-            this->top--;
-            // If last note is turned off, nothing to retrigger.
-            if (this->top < 1) {
-                this->top = 0;
-                return;
-            }
-
-            // No retriggering if this wasn't the active note.
-            if (!activeNoteTurnedOff) return;
-
-            int noteIndex = -1;
-            switch (this->monophonic)
-            {
-            case MONOPHONIC_LEGATO:
-                // No retriggering.
-                break;
-            case MONOPHONIC_LAST:
-                noteIndex = top - 1;
-                break;
-            case MONOPHONIC_FIRST:
-                noteIndex = 0;
-                break;
-            case MONOPHONIC_LOWEST:
-                noteIndex = 0;
-                for(uint8_t i = 0; i < top; i++) {
-                    if (this->noteStack[i].note < this->noteStack[noteIndex].note) {
-                        noteIndex = i;
-                    }
-                }
-                break;
-            case MONOPHONIC_HIGHEST:
-                noteIndex = 0;
-                for(uint8_t i = 0; i < top; i++) {
-                    if (this->noteStack[i].note > this->noteStack[noteIndex].note) {
-                        noteIndex = i;
-                    }
-                }
-                break;
-            default:
-                break;
-            }
-            
-            if (noteIndex >= 0) {
-                this->monoNote = this->noteStack[noteIndex].note;
-                noteOn(this->noteStack[noteIndex].note, this->noteStack[noteIndex].velocity, true);
-            }
+        if (!this->monophonic) {
             return;
         }
+
+        // Remove turned-off note
+        noteStack.erase(note);
+        bool activeNoteTurnedOff = 0 != noteOff(note, true);
+
+        // Active note still active, or no more notes.
+        if (!activeNoteTurnedOff || noteStack.size() == 0) return;
+
+        MonoNoteHistory::Element nextNote;
+        switch (this->monophonic)
+        {
+        case MONOPHONIC_LAST:
+            nextNote = noteStack.getLast();
+            break;
+        case MONOPHONIC_FIRST:
+            nextNote = noteStack.getFirst();
+            break;
+        case MONOPHONIC_LOWEST:
+            nextNote = noteStack.getLowest();
+            break;
+        case MONOPHONIC_HIGHEST:
+            nextNote = noteStack.getHighest();
+            break;
+        case MONOPHONIC_LEGATO:
+        default:
+            // No retriggering.
+            return;
+            break;
+        }
+        
+        this->monoNote = nextNote.note;
+        noteOn(nextNote.note, nextNote.velocity, true);
+        return;
     }
 
     // Get the oldest free voice, of none free get the oldest active voice.
     Voice* getVoice() {
         Voice* result = nullptr;
 
-        //NoteOn() - Get the oldest free voice, or oldest on voice if all are on. (recent voices may be still on release stage)
         for (uint8_t i = 0; i < voices.size(); i++) {
             if (result == nullptr || !voices[i]->on() || result->on()) {
                 if (result == nullptr || voices[i]->timeOn() < result->timeOn()) {
@@ -950,11 +923,11 @@ class VoiceGroup {
     // Turn off one or more notes, return the number of notes turned off.
     int noteOff(uint8_t note, bool all) {
         int num = 0;    
-        //NoteOff() - Get voice number from note
         for (uint8_t i = 0; i < voices.size(); i++) {
             if (voices[i]->note() == note && voices[i]->on() == true) {
                 num++;
                 voices[i]->noteOff();
+                this->voicesOn--;
                 if (! all) {
                     return 1;
                 }
@@ -966,58 +939,77 @@ class VoiceGroup {
     void noteOn(uint8_t note, uint8_t velocity, bool monoRetrigger) {
 
         if (filterLfoRetrig) {
-            VG_FOR_EACH_OSC(filterLfo_.sync());
+            shared.filterLfo.sync();
         }
 
         switch (this->_params.unisonMode) {
-            case 0:
+            case 0: {
                 this->_params.mixerLevel = VOICEMIXERLEVEL;
-                this->getVoice()->noteOn(note, velocity, this->_params, notesOn);
+                Voice* v = this->getVoice();
+                if (!v->on()) this->voicesOn++;
+                v->noteOn(note, velocity, this->_params, unisonNotesOn, 0);
                 break;
-            case 1:
-                //UNISON MODE
-                //1 Note : 0-11
-                //2 Notes: 0-5, 6-11
-                //3 Notes: 0-3, 4-7, 8-11
-                //4 Notes: 0-2, 3/7/8, 4-6, 9-11
-                //5 or more: extra notes are ignored and new voices used for 4 notes
-
-                //Retrigger voices
-                //      1 2 3 4 5 6 7 8 9 10 11 12
-                //    1 x x x x x x x x x x  x  x
-                //    2             x x x x  x  x
-                //    3         x x x x
-                //    4       x       x x
-                this->notesOn ++;
+            }
+            case 1: {
+                this->unisonNotesOn++;
                 this->_params.mixerLevel = UNISONVOICEMIXERLEVEL;
-                switch(this->notesOn) {
-                    case 1:
-                        allNotesOn(note, velocity);
-                        break;
-                    case 2:
-                        voices[6]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[8]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[9]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[10]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[11]->noteOn(note, velocity, this->_params, notesOn);
-                        break;
-                    case 3:
-                        voices[4]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[5]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[6]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
-                        break;
-                    case 4:
-                        voices[3]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[7]->noteOn(note, velocity, this->_params, notesOn);
-                        voices[8]->noteOn(note, velocity, this->_params, notesOn);
-                        break;
+
+                uint8_t maxUnison = voices.size() / MINUNISONVOICES;
+                uint8_t tally[maxUnison] = {};
+                uint8_t oldestVoiceIndex = 0;
+
+                // Figure out which note id to use.
+                for (uint8_t i = 0; i < this->voices.size(); i++) {
+                    if (voices[i]->on()) {
+                        tally[voices[i]->noteId()]++;
+                        if (voices[i]->timeOn() < voices[oldestVoiceIndex]->timeOn()) {
+                            oldestVoiceIndex = i;
+                        }
+                    }
                 }
+
+                uint8_t id = 0;
+                for (uint8_t i = 0; i < maxUnison; i++) {
+                    if (tally[i] == 0) {
+                        id = i;
+                        break;
+                    }
+                }
+
+                // Replace oldest note if too many are playing.
+                if (this->unisonNotesOn > maxUnison) {
+                    id = voices[oldestVoiceIndex]->noteId();
+                    noteOff(voices[oldestVoiceIndex]->note());
+                }
+
+                // Fill gaps if there are any.
+                if (this->unisonNotesOn != 1 && this->voicesOn != this->voices.size()) {
+                    for (uint8_t i = 0; i < this->voices.size(); i++) {
+                        if (!voices[i]->on()) {
+                            voices[i]->noteOn(note, velocity, this->_params, unisonNotesOn, id);
+                            this->voicesOn++;
+                        }
+                    }
+                    return;
+                }
+
+                // Start all voices or...
+                // Steal voices until each has the right amount.
+                uint8_t max = this->voices.size() / unisonNotesOn;
+                for (uint8_t i = 0; i < voices.size(); i++) {
+                    if (!voices[i]->on() || tally[voices[i]->noteId()] > max) {
+                        // underflow here when starting first unison note, but it still works.
+                        tally[voices[i]->noteId()]--;
+                        voices[i]->noteOn(note, velocity, this->_params, unisonNotesOn, id);
+                    }
+                }
+                voicesOn = voices.size();
+
                 break;
+            }
             case 2:
                 this->_params.mixerLevel = UNISONVOICEMIXERLEVEL;
-                allNotesOn(note, velocity);
+                allNotesOn(note, velocity, 0);
                 break;
         }
         this->_params.prevNote = note;

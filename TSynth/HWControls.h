@@ -2,7 +2,7 @@
 // It must be defined before Encoder.h is included.
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
-#include <Bounce.h>
+#include "TButton.h"
 #include <ADC.h>
 #include <ADC_util.h>
 
@@ -87,21 +87,15 @@ static int volumePrevious = 0;
 static long encPrevious = 0;
 
 //These are pushbuttons and require debouncing
-Bounce oscFXSwitch = Bounce(OSC_FX_SW, DEBOUNCE);
-boolean oscFXMode = false; //Hack for oscFX button
-Bounce filterLFORetrigSwitch = Bounce(FILTER_LFO_RETRIG_SW, DEBOUNCE);
-Bounce unisonSwitch = Bounce(UNISON_SW, DEBOUNCE);
-boolean unison2 = false; //Hack for unison button
-Bounce tempoSwitch = Bounce(TEMPO_SW, DEBOUNCE);
-
-Bounce recallButton = Bounce(RECALL_SW, DEBOUNCE); //On encoder
-boolean recall = true; //Hack for recall button
-Bounce saveButton = Bounce(SAVE_SW, DEBOUNCE);
-boolean del = false; //Hack for save button
-Bounce settingsButton = Bounce(SETTINGS_SW, DEBOUNCE);
-boolean reini = false; //Hack for settings button
-Bounce backButton = Bounce(BACK_SW, DEBOUNCE);
-boolean panic = false; //Hack for back button
+TButton oscFXSwitch{OSC_FX_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton filterLFORetrigSwitch{FILTER_LFO_RETRIG_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton unisonSwitch{UNISON_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton tempoSwitch{TEMPO_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton recallButton{RECALL_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION}; //On encoder
+		
+TButton saveButton{SAVE_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton settingsButton{SETTINGS_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
+TButton backButton{BACK_SW, LOW, HOLD_DURATION, DEBOUNCE, CLICK_DURATION};
 Encoder encoder(ENCODER_PINB, ENCODER_PINA);//This often needs the pins swapping depending on the encoder
 
 FLASHMEM void setupHardware() {

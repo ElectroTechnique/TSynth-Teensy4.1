@@ -1,42 +1,41 @@
-//Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
+#pragma once
+#include <stdint.h>
+#include <MIDI.h>
 
 // Globals used for OLED Settings
-byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
-byte midiOutCh = 0;//(EEPROM)
-midi::Thru::Mode MIDIThru = midi::Thru::Off;//(EEPROM)
-String patchName = INITPATCHNAME;
-boolean encCW = true;//This is to set the encoder to increment when turned CW - Settings Option
-			   	 			 
-float lfoSyncFreq = 1.0f;
-float midiClkTimeInterval = 0.0f;
-float lfoTempoValue = 1.0f;
-int pitchBendRange = 12;
-float modWheelDepth = 0.2f;
-String oscLFOTimeDivStr = "";//For display
+extern byte midiChannel;
+extern byte midiOutCh;
+extern midi::Thru::Mode MIDIThru;
+extern String patchName;
+extern boolean encCW;
+extern boolean vuMeter;
 
-float fxAmt = 1.0f;
-float fxMix = 0.0f;
-
-int velocitySens = 0;//Default off - settings option
-
-boolean vuMeter = false;
+// Global patch modifiers
+extern float lfoSyncFreq;
+extern float midiClkTimeInterval;
+extern float lfoTempoValue;
+extern int pitchBendRange;
+extern float modWheelDepth;
+extern String oscLFOTimeDivStr;
+extern int velocitySens;
+// Exponential envelopes
+extern int8_t envTypeAmp;
+extern int8_t envTypeFilt;
+//Glide shape
+extern int8_t glideShape;
 
 //Pick-up - Experimental feature
 //Control will only start changing when the Knob/MIDI control reaches the current parameter value
 //Prevents jumps in value when the patch parameter and control are different values
-boolean pickUp = false;//settings option (EEPROM)
-boolean pickUpActive = false;
+extern boolean pickUp;
+extern boolean pickUpActive;
 #define TOLERANCE 2 //Gives a window of when pick-up occurs, this is due to the speed of control changing and Mux reading
-float filterfreqPrevValue = 0;//Need to set these when patch loaded
-float filterMixPrevValue = 0.0f;//Need to set these when patch loaded
-float resonancePrevValue = 0.0f;//Need to set these when patch loaded
-float oscLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
-float oscLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
-float filterLfoRatePrevValue = 0.0f;//Need to set these when patch loaded
-float filterLfoAmtPrevValue = 0.0f;//Need to set these when patch loaded
-float fxAmtPrevValue = 0.0f;//Need to set these when patch loaded
-float fxMixPrevValue = 0.0f;//Need to set these when patch loaded
-
-// Exponential envelopes
-int8_t envTypeAmp=-128; // Linear
-int8_t envTypeFilt=-128; // Linear
+extern float filterfreqPrevValue;
+extern float filterMixPrevValue;
+extern float resonancePrevValue;
+extern float oscLfoAmtPrevValue;
+extern float oscLfoRatePrevValue;
+extern float filterLfoRatePrevValue;
+extern float filterLfoAmtPrevValue;
+extern float fxAmtPrevValue;
+extern float fxMixPrevValue;

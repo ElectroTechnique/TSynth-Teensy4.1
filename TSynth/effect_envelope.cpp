@@ -28,9 +28,10 @@
 #include <Arduino.h>
 #include "effect_envelope.h"
 
+
 #define RELEASE_BIAS 256 // based on a 1.31 fixed point integer. This is the level below zero that is the release target and causes the output to go to zero earlier. Otherwise it can take a relatively long time.
 // Difference equation for exponential envelope.
-
+#define FORCED_RELEASE_BIAS 0x1000000 // empirically determined with forced release time constant to attain ~5ms between forced release and next attack.
 // Form 1 for attack stage: y(n+1) = k1*y(n)+kx using unsigned S1.30 fixed point format
 #define EXP_ENV_FILT1(k,y,x) ((uint32_t)(((uint64_t)(y)*(k))>>30)+(uint32_t)(x))
 // Form 2 for remaining stages: y(n+1) = k1*(y(n)-x(n))+x(n) using unsigned S1.30 fixed point format
@@ -40,22 +41,41 @@
 void AudioEffectEnvelopeTS::noteOn(void)
 {
   __disable_irq();
-  // Include STATE_IDLE_NEXT
-  if (state == STATE_IDLE || state==STATE_IDLE_NEXT|| state == STATE_DELAY || release_forced_count == 0) {
-    mult_hires = 0;
-    count = delay_count;
-    if (count > 0) {
-      state = STATE_DELAY;
-      inc_hires = 0;
-    } else {
-      state = STATE_ATTACK;
-      count = attack_count;
+  if(release_forced_count==0)
+    state=STATE_IDLE;
+  switch(state)
+  {
+
+    case STATE_IDLE:
+    case STATE_IDLE_NEXT:
+      count=delay_count;
+      if(count>0)
+      {
+        state=STATE_DELAY;
+        inc_hires=0;
+      }
+      else
+      {
+        state=STATE_ATTACK;
+        count=attack_count;
       inc_hires = 0x40000000 / (int32_t)count;
-    }
-  } else if (state != STATE_FORCED) {
-    state = STATE_FORCED;
-    count = release_forced_count;
-    inc_hires = (-mult_hires) / (int32_t)count;
+      }
+      break;    
+    case STATE_DELAY:
+    case STATE_HOLD:
+    case STATE_ATTACK:
+    case STATE_DECAY:
+    case STATE_SUSTAIN:
+    case STATE_SUSTAIN_FAST_CHANGE:
+    case STATE_RELEASE:
+      state=STATE_FORCED;
+      count=release_forced_count;
+      inc_hires=(-mult_hires)/(int32_t)count;
+    case STATE_FORCED:
+      break;
+    default:
+      state=STATE_RELEASE;
+      break;
   }
   __enable_irq();
 }
@@ -63,12 +83,17 @@ void AudioEffectEnvelopeTS::noteOn(void)
 void AudioEffectEnvelopeTS::noteOff(void)
 {
   __disable_irq();
-
-  if ((state != STATE_IDLE) && (state != STATE_FORCED) && (state!=STATE_IDLE_NEXT) && (state!=STATE_RELEASE)) {
-    // Technically noteOff() should not occur when in STATE_RELEASE but added test for that so count does not get reloaded.
-    state = STATE_RELEASE;
-    count = release_count;
-    inc_hires = (-mult_hires) / (int32_t)count;
+  switch(state)
+  {
+    case STATE_IDLE:
+    case STATE_IDLE_NEXT:
+    case STATE_DELAY:
+      state=STATE_IDLE;
+      break;
+    default:
+      state = STATE_RELEASE;
+      count = release_count;
+      inc_hires = (-mult_hires) / (int32_t)count;
   }
   __enable_irq();
 }
@@ -89,7 +114,7 @@ void AudioEffectEnvelopeTS::update(void)
   p = (uint32_t *)(block->data);
   end = p + AUDIO_BLOCK_SAMPLES/2;
   if(env_type==-128)
-  { // Original AudioEffectEnvelope class linear envelop.
+  { // Original AudioEffectEnvelope class linear envelope.
     while (p < end) {
       // we only care about the state when completing a region
       if (count == 0) {
@@ -142,6 +167,11 @@ void AudioEffectEnvelopeTS::update(void)
           count = attack_count;
           inc_hires = 0x40000000 / count;
           continue;
+        }
+        else
+        {
+          state=STATE_IDLE; // If in some unused state switching back into linear mode, set to known state that linear mode uses.
+          count=delay_count;
         }
       }
 
@@ -260,11 +290,13 @@ void AudioEffectEnvelopeTS::update(void)
               state=STATE_IDLE;
             break;
             
-          case STATE_FORCED:
-            ysum=EXP_ENV_FILT2(release_forced_k,ysum,0);
-            if(YSUM2MULT(ysum)==0) 
+          case STATE_FORCED:            
+            ysum=EXP_ENV_FILT2(release_forced_k,ysum,-FORCED_RELEASE_BIAS);
+            if(YSUM2MULT(ysum)<=0)
+            { 
               state=STATE_ATTACK;// revert to IDLE state when useful bits are zero.
-          
+              ysum=0;
+            }
           default:
             break;  
         }
@@ -311,3 +343,4 @@ bool AudioEffectEnvelopeTS::isSustain()
   if (current_state == STATE_SUSTAIN || current_state==STATE_SUSTAIN_FAST_CHANGE) return true;
   return false;
 }
+ 
