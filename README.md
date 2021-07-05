@@ -12,4 +12,4 @@ Format your SD card using [the SD Association formatter](https://www.sdcard.org/
 
 # Instructions
 
-The source code requires Teensyduino 1.53 from [PJRC](https://pjrc.com) to compile. You also need CircularBuffer from Agileware and Adafruit_GFX, which are available in the Arduino Library Manager. The latest Teensyduino 1.54 beta 9 works fine, but you need to delete data_bandlimit_step.c from the TSynth folder.
+The source code **requires** Teensyduino 1.54 from [PJRC](https://pjrc.com) to compile. You also need CircularBuffer from Agileware and Adafruit_GFX, which are available in the Arduino Library Manager.
