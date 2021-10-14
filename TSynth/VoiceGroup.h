@@ -16,18 +16,6 @@
         CMD;                                    \
     }
 
-// These are here because of a Settings.h circular dependency.
-#define MONOPHONIC_OFF 0
-#define MONOPHONIC_LAST 1
-#define MONOPHONIC_FIRST 2
-#define MONOPHONIC_HIGHEST 3
-#define MONOPHONIC_LOWEST 4
-// Legato isn't supported, the envelope state from the previous note needs to transfer to the new note
-#define MONOPHONIC_LEGATO 5
-
-const static uint32_t WAVEFORM_PARABOLIC = 103;
-const static uint32_t WAVEFORM_HARMONIC = 104;
-
 class VoiceGroup
 {
 private:

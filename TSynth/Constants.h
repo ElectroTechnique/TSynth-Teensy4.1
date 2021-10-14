@@ -3,6 +3,17 @@
 #include <stdint.h>
 #include "Arduino.h"
 
+#define MONOPHONIC_OFF 0
+#define MONOPHONIC_LAST 1
+#define MONOPHONIC_FIRST 2
+#define MONOPHONIC_HIGHEST 3
+#define MONOPHONIC_LOWEST 4
+// Legato isn't supported, the envelope state from the previous note needs to transfer to the new note
+#define MONOPHONIC_LEGATO 5
+
+#define WAVEFORM_PARABOLIC 103
+#define WAVEFORM_HARMONIC 104
+
 #define RE_READ -99
 #define PWMWAVEFORM WAVEFORM_SINE
 #define PATCHES_LIMIT 999
