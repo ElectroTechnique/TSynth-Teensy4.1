@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "Constants.h"
+#include "Audio.h"
 
 //waveformX      -->   waveformMixerX   -->   voiceMixer1-3   -->   voiceMixerM  --> volumeMixer
 //WAVEFORMLEVEL        oscA/BLevel             VELOCITY    VOICEMIXERLEVEL/UNISONVOICEMIXERLEVEL    volume

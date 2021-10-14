@@ -8,6 +8,7 @@
 #include "Voice.h"
 #include "MonoNoteHistory.h"
 #include "Constants.h"
+#include "AudioPatching.h"
 
 #define VG_FOR_EACH_OSC(CMD) VG_FOR_EACH_VOICE(voices[i]->patch().CMD)
 #define VG_FOR_EACH_VOICE(CMD)                  \
