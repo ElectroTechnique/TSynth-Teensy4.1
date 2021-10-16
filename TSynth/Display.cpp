@@ -1,5 +1,8 @@
-#ifndef TSYNTH_ST7735_DISPLAY_H
-#define TSYNTH_ST7735_DISPLAY_H
+#include <TeensyThreads.h>
+#include "Display.h"
+#include "globals.h"
+#include "Parameters.h"
+#include "PatchMgr.h"
 
 #define sclk 27
 #define mosi 26
@@ -8,22 +11,6 @@
 #define rst 9
 #define DISPLAYTIMEOUT 700
 
-#include <Adafruit_GFX.h>
-#include "ST7735_t3.h" // Local copy from TD1.48 that works for 0.96" IPS 160x80 display
-#include "Voice.h"
-
-#include "Fonts/Org_01.h"
-#include "Yeysk16pt7b.h"
-#include "Fonts/FreeSansBold18pt7b.h"
-#include "Fonts/FreeSans12pt7b.h"
-#include "Fonts/FreeSans9pt7b.h"
-#include "Fonts/FreeSansOblique24pt7b.h"
-#include "Fonts/FreeSansBoldOblique24pt7b.h"
-
-#define PULSE 1
-#define VAR_TRI 2
-#define FILTER_ENV 3
-#define AMP_ENV 4
 
 ST7735_t3 tft = ST7735_t3(cs, dc, mosi, sclk, rst);
 
@@ -460,5 +447,3 @@ void setupDisplay() {
   tft.updateScreen();
   threads.addThread(displayThread);
 }
-
-#endif

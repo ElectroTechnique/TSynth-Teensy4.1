@@ -51,7 +51,6 @@
 #include <SD.h>
 #include <MIDI.h>
 #include <USBHost_t36.h>
-#include <TeensyThreads.h>
 #include "MidiCC.h"
 #include "SettingsService.h"
 #include "AudioPatching.h"
@@ -64,29 +63,8 @@
 #include "utils.h"
 #include "Voice.h"
 #include "VoiceGroup.h"
-// This should be included here, but it introduces a circular dependency.
-// #include "ST7735Display.h"
-
-#define PARAMETER 0     //The main page for displaying the current patch and control (parameter) changes
-#define RECALL 1        //Patches list
-#define SAVE 2          //Save patch page
-#define REINITIALISE 3  // Reinitialise message
-#define PATCH 4         // Show current patch bypassing PARAMETER
-#define PATCHNAMING 5   // Patch naming page
-#define DELETE 6        //Delete patch page
-#define DELETEMSG 7     //Delete patch message page
-#define SETTINGS 8      //Settings page
-#define SETTINGSVALUE 9 //Settings page
-
-uint32_t state = PARAMETER;
-
-// Initialize the audio configuration.
-Global global{VOICEMIXERLEVEL};
-//VoiceGroup voices1{global.SharedAudio[0]};
-std::vector<VoiceGroup *> groupvec;
-uint8_t activeGroupIndex = 0;
-
-#include "ST7735Display.h"
+#include "globals.h"
+#include "Display.h"
 
 // Used for entering patch names.
 const static char CHARACTERS[TOTALCHARS] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
