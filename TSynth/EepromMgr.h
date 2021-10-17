@@ -1,4 +1,6 @@
+#include <Arduino.h>
 #include <EEPROM.h>
+#include <MIDI.h>
 
 #define EEPROM_MIDI_CH 0
 #define EEPROM_PITCHBEND 1

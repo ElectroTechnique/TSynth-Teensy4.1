@@ -65,6 +65,7 @@
 #include "VoiceGroup.h"
 #include "globals.h"
 #include "Display.h"
+#include "Settings.h"
 
 // Used for entering patch names.
 const static char CHARACTERS[TOTALCHARS] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
@@ -86,8 +87,6 @@ void changeMIDIThruMode()
 {
   MIDI.turnThruOn(MIDIThru);
 }
-
-#include "Settings.h"
 
 boolean cardStatus = false;
 boolean firstPatchLoaded = false;
@@ -1445,7 +1444,7 @@ void checkVolumePot()
 
 void showSettingsPage()
 {
-  showSettingsPage(settings::current_setting(), settings::current_setting_value(), state);
+  showSettingsPage(mainSettings.current_setting(), mainSettings.current_setting_value(), state);
 }
 
 void checkSwitches()
@@ -1551,7 +1550,7 @@ void checkSwitches()
     case SETTINGS:
       showSettingsPage();
     case SETTINGSVALUE:
-      settings::save_current_value();
+      mainSettings.save_current_value();
       state = SETTINGS;
       showSettingsPage();
       break;
@@ -1659,7 +1658,7 @@ void checkSwitches()
       showSettingsPage();
       break;
     case SETTINGSVALUE:
-      settings::save_current_value();
+      mainSettings.save_current_value();
       state = SETTINGS;
       showSettingsPage();
       break;
@@ -1699,8 +1698,8 @@ void checkEncoder()
       recallPatch(patchNo);
       state = PARAMETER;
       // Make sure the current setting value is refreshed.
-      settings::increment_setting();
-      settings::decrement_setting();
+      mainSettings.increment_setting();
+      mainSettings.decrement_setting();
       break;
     case RECALL:
       patches.push(patches.shift());
@@ -1718,11 +1717,11 @@ void checkEncoder()
       patches.push(patches.shift());
       break;
     case SETTINGS:
-      settings::increment_setting();
+      mainSettings.increment_setting();
       showSettingsPage();
       break;
     case SETTINGSVALUE:
-      settings::increment_setting_value();
+      mainSettings.increment_setting_value();
       showSettingsPage();
       break;
     }
@@ -1739,8 +1738,8 @@ void checkEncoder()
       recallPatch(patchNo);
       state = PARAMETER;
       // Make sure the current setting value is refreshed.
-      settings::increment_setting();
-      settings::decrement_setting();
+      mainSettings.increment_setting();
+      mainSettings.decrement_setting();
       break;
     case RECALL:
       patches.unshift(patches.pop());
@@ -1758,11 +1757,11 @@ void checkEncoder()
       patches.unshift(patches.pop());
       break;
     case SETTINGS:
-      settings::decrement_setting();
+      mainSettings.decrement_setting();
       showSettingsPage();
       break;
     case SETTINGSVALUE:
-      settings::decrement_setting_value();
+      mainSettings.decrement_setting_value();
       showSettingsPage();
       break;
     }

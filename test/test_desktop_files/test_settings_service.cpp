@@ -7,6 +7,8 @@
 #include "SettingsService.cpp"
 #include <iostream>
 
+settings::SettingsService settingsService;
+
 #define OPTION_1_VALUES {"All", "Some", "None", "\0"}
 const char* option1Values[SETTINGSVALUESNO] = OPTION_1_VALUES;
 int option1Index = 0;    
@@ -39,7 +41,7 @@ settings::SettingsOption option2{"MIDI Ch.", OPTION_2_VALUES, option2Update, opt
 void resetOptions(void) {    
     option1Index = 0;
     option2Index = 0;
-    settings::reset();
+    settingsService.reset();
 }
 
 /*
@@ -65,71 +67,71 @@ void save_current_value();
 
 void test_one_setting(void) {
     resetOptions();
-    settings::append(option1);
+    settingsService.append(option1);
 
     // Defaults to first setting.
-    TEST_ASSERT_EQUAL(option1.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
+    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 
     // There's only 1 setting, it is still selected
-    settings::increment_setting();
-    TEST_ASSERT_EQUAL(option1.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
+    settingsService.increment_setting();
+    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 }
 
 void test_two_settings(void) {
     resetOptions();
-    settings::append(option1);
-    settings::append(option2);
+    settingsService.append(option1);
+    settingsService.append(option2);
 
     // Defaults to first setting.
-    TEST_ASSERT_EQUAL(option1.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
+    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 
     // Increment to second setting
-    settings::increment_setting();
-    TEST_ASSERT_EQUAL(option2.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option2Values[0], settings::current_setting_value());
+    settingsService.increment_setting();
+    TEST_ASSERT_EQUAL(option2.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option2Values[0], settingsService.current_setting_value());
 
     // Increment back to the first setting
-    settings::increment_setting();
-    TEST_ASSERT_EQUAL(option1.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
+    settingsService.increment_setting();
+    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 }
 
 void test_cycle_option_values(void) {
     resetOptions();
-    settings::append(option1);
+    settingsService.append(option1);
 
     // There are 3 values, increment twice to make sure we get them all.
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
-    settings::increment_setting_value();
-    TEST_ASSERT_EQUAL(option1Values[1], settings::current_setting_value());
-    settings::increment_setting_value();
-    TEST_ASSERT_EQUAL(option1Values[2], settings::current_setting_value());
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
+    settingsService.increment_setting_value();
+    TEST_ASSERT_EQUAL(option1Values[1], settingsService.current_setting_value());
+    settingsService.increment_setting_value();
+    TEST_ASSERT_EQUAL(option1Values[2], settingsService.current_setting_value());
 
     // The last value is a null, make sure increment is a no-op at this point.
-    settings::increment_setting_value();
-    TEST_ASSERT_EQUAL(option1Values[2], settings::current_setting_value());
+    settingsService.increment_setting_value();
+    TEST_ASSERT_EQUAL(option1Values[2], settingsService.current_setting_value());
 
     // Decrement back to the first value
-    TEST_ASSERT_EQUAL(option1Values[2], settings::current_setting_value());
-    settings::decrement_setting_value();
-    TEST_ASSERT_EQUAL(option1Values[1], settings::current_setting_value());
-    settings::decrement_setting_value();
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
+    TEST_ASSERT_EQUAL(option1Values[2], settingsService.current_setting_value());
+    settingsService.decrement_setting_value();
+    TEST_ASSERT_EQUAL(option1Values[1], settingsService.current_setting_value());
+    settingsService.decrement_setting_value();
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 
     // Decrementing from the first value should be a no-op
-    settings::decrement_setting_value();
-    TEST_ASSERT_EQUAL(option1Values[0], settings::current_setting_value());
+    settingsService.decrement_setting_value();
+    TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 }
 
 void test_save(void) {
     resetOptions();
-    settings::append(option2);
-    settings::increment_setting_value();
+    settingsService.append(option2);
+    settingsService.increment_setting_value();
     TEST_ASSERT_EQUAL(option2Index, 0);
-    settings::save_current_value();
+    settingsService.save_current_value();
     TEST_ASSERT_EQUAL(option2Index, 1);
 }
 
@@ -137,17 +139,17 @@ void test_initialize(void) {
     resetOptions();
     option1Index = 1;
     option2Index = 2;
-    settings::append(option1);
-    settings::append(option2);
+    settingsService.append(option1);
+    settingsService.append(option2);
 
     // Defaults to first setting, initialized to index 1
-    TEST_ASSERT_EQUAL(option1.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option1Values[1], settings::current_setting_value());
+    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1Values[1], settingsService.current_setting_value());
 
     // second setting initialized to index 2
-    settings::increment_setting();
-    TEST_ASSERT_EQUAL(option2.option, settings::current_setting());
-    TEST_ASSERT_EQUAL(option2Values[2], settings::current_setting_value());
+    settingsService.increment_setting();
+    TEST_ASSERT_EQUAL(option2.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option2Values[2], settingsService.current_setting_value());
 }
 
 void settingservice_tests() {

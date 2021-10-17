@@ -13,7 +13,8 @@
 
 #pragma once
 
-#define SETTINGSOPTIONSNO 16//No of options
+#include <vector>
+
 #define SETTINGSVALUESNO 19//Maximum number of settings option values needed
 
 namespace settings {
@@ -32,27 +33,41 @@ struct SettingsOption
   index currentIndex;
 };
 
-// setting names
-const char* current_setting();
-const char* previous_setting();
-const char* next_setting();
+class SettingsService {
+  private:
+  // global settings buffer
+  std::vector<settings::SettingsOption> settingsOptions;
 
-const char* previous_setting_value();
-const char* next_setting_value();
+  public:
+  // setting names
+  const char* current_setting();
+  const char* previous_setting();
+  const char* next_setting();
 
-const char* current_setting_value();
-const char* current_setting_previous_value();
-const char* current_setting_next_value();
+  const char* previous_setting_value();
+  const char* next_setting_value();
 
-void increment_setting();
-void decrement_setting();
+  const char* current_setting_value();
+  const char* current_setting_previous_value();
+  const char* current_setting_next_value();
 
-void increment_setting_value();
-void decrement_setting_value();
+  void increment_setting();
+  void decrement_setting();
 
-void save_current_value();
+  void increment_setting_value();
+  void decrement_setting_value();
 
-void append(SettingsOption option);
-void reset();
+  void save_current_value();
+
+  void append(SettingsOption option);
+  void reset();
+
+  private:
+  int currentSettingIndex();
+  int nextSettingIndex();
+  int prevSettingIndex();
+  void refresh_current_value_index();
+
+};
 
 }
