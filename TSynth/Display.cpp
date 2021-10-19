@@ -383,6 +383,9 @@ FLASHMEM void showPatchPage(String number, String patchName) {
 }
 
 FLASHMEM void showSettingsPage(const char *  option, const char * value, int settingsPart) {
+  Serial.println(option);
+  Serial.println(value);
+  Serial.println(settingsPart);
   currentSettingsOption = option;
   currentSettingsValue = value;
   currentSettingsPart = settingsPart;

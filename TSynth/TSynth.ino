@@ -100,6 +100,7 @@ long earliestTime = millis(); //For voice allocation - initialise to now
 
 FLASHMEM void setup()
 {
+  while(!Serial);
   // Initialize the voice groups.
   uint8_t total = 0;
   while (total < global.maxVoices())
@@ -117,7 +118,6 @@ FLASHMEM void setup()
   }
 
   setupDisplay();
-  setUpSettings();
   setupHardware();
 
   AudioMemory(60);
@@ -212,10 +212,14 @@ FLASHMEM void setup()
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
+
   //Read Filter and Amp Envelope shapes
   reloadFiltEnv();
   reloadAmpEnv();
   reloadGlideShape();
+
+  // Setup settings menu last.
+  setUpSettings();
 }
 
 void myNoteOn(byte channel, byte note, byte velocity)
@@ -1244,6 +1248,7 @@ FLASHMEM void setCurrentPatchData(String data[])
 
   Serial.print(F("Set Patch: "));
   Serial.println(data[0]);
+  mainSettings.refresh_current_values();
 }
 
 FLASHMEM String getCurrentPatchData()

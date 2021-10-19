@@ -1,15 +1,31 @@
 #include "Settings.h"
+#include "SettingsService.h"
 #include "Parameters.h"
 #include "globals.h"
 #include "EepromMgr.h"
 #include "Display.h"
 
-// main settings page;
+// timbre settings page
+settings::SettingsService timbreSettings;
+
+// main settings page
 settings::SettingsService mainSettings;
 
 // Defined in TSynth.ino
 void updateKeyTracking(float value);
 void changeMIDIThruMode();
+
+void settingsTimbreMIDICh(int index, const char * value);
+int currentIndexTimbreMIDICh();
+
+FLASHMEM void settingsTimbreMIDICh(int index, const char * value) {
+  if (strcmp(value, "ALL") == 0) {
+    midiChannel = MIDI_CHANNEL_OMNI;
+  } else {
+    midiChannel = atoi(value);
+  }
+  //storeMidiChannel(midiChannel);
+}
 
 // Forward declare everything
 void settingsMIDICh(int index, const char * value);
@@ -46,24 +62,48 @@ int currentIndexAmpEnv();
 int currentIndexFiltEnv();
 int currentIndexGlideShape();
 
-// Initialize settings objects
+
+// Add options to program memory
+#define SINGLE_ARG(...) __VA_ARGS__
+#define ARRAY_OPTION_GLOBAL(PREFIX, NAME, VALUES, HANDLER, INDEX)                                     \
+  const prog_char* PREFIX##Values[] PROGMEM = VALUES;                                                              \
+  settings::ArrayOption PREFIX##Option(NAME, (const char**)(&PREFIX##Values), HANDLER, INDEX);
+
+ARRAY_OPTION_GLOBAL(option_midiIn, "MIDI In Ch.", {SINGLE_ARG("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0")}, settingsMIDICh, currentIndexMIDICh);
+ARRAY_OPTION_GLOBAL(option_keyTracking, "Key Tracking", {SINGLE_ARG("None", "Half", "Full", "\0")}, settingsMIDICh, currentIndexKeyTracking);
+ARRAY_OPTION_GLOBAL(option_mono, "Monophonic", {SINGLE_ARG("Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0")}, settingsMonophonic, currentIndexMonophonicMode);
+ARRAY_OPTION_GLOBAL(option_pitchBend, "Pitch Bend", {SINGLE_ARG("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "\0")}, settingsPitchBend, currentIndexPitchBend);
+ARRAY_OPTION_GLOBAL(option_mwDepth, "MW Depth", {SINGLE_ARG("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "\0")}, settingsModWheelDepth, currentIndexModWheelDepth);
+ARRAY_OPTION_GLOBAL(option_midiOut, "MIDI Out Ch.", {SINGLE_ARG("Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0")}, settingsMIDIOutCh, currentIndexMIDIOutCh);
+ARRAY_OPTION_GLOBAL(option_midiThru, "MIDI Thru", {SINGLE_ARG("Off", "Full", "Same Ch.", "Diff. Ch.", "\0")}, settingsMIDIThru, currentIndexMIDIThru);
+ARRAY_OPTION_GLOBAL(option_ampEnv, "Amp. Env.", {SINGLE_ARG("Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0")}, settingsAmpEnv, currentIndexAmpEnv);
+ARRAY_OPTION_GLOBAL(option_filterEnv, "Filter Env.", {SINGLE_ARG("Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0")}, settingsFiltEnv, currentIndexFiltEnv);
+ARRAY_OPTION_GLOBAL(option_glideShape, "Glide Shape", {SINGLE_ARG("Lin", "Exp", "\0")}, settingsGlideShape, currentIndexGlideShape);
+ARRAY_OPTION_GLOBAL(option_pickUp, "Pick-up", {SINGLE_ARG("Off", "On", "\0")}, settingsPickupEnable, currentIndexPickupEnable);
+ARRAY_OPTION_GLOBAL(option_encoder, "Encoder", {SINGLE_ARG("Type 1", "Type 2", "\0")}, settingsEncoderDir, currentIndexEncoderDir);
+ARRAY_OPTION_GLOBAL(option_oscilloscope, "Oscilloscope", {SINGLE_ARG("Off", "On", "\0")}, settingsScopeEnable, currentIndexScopeEnable);
+ARRAY_OPTION_GLOBAL(option_meter, "VU Meter", {SINGLE_ARG("Off", "On", "\0")}, settingsVUEnable, currentIndexVUEnable);
+ARRAY_OPTION_GLOBAL(option_bassEnh, "Bass Enh.", {SINGLE_ARG("Off", "On", "\0")}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable);
+
+// Initialize settings object.
 FLASHMEM void setUpSettings() {
-  mainSettings.append(settings::SettingsOption{"MIDI In Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDICh, currentIndexMIDICh});
-  mainSettings.append(settings::SettingsOption{"Key Tracking", {"None", "Half", "Full", "\0"}, settingsKeyTracking, currentIndexKeyTracking});
-  mainSettings.append(settings::SettingsOption{"Vel. Sens.", {"Off", "1", "2", "3", "4", "\0"}, settingsVelocitySens, currentIndexVelocitySens});
-  mainSettings.append(settings::SettingsOption{"Monophonic", {"Off", "Last", "First", "Highest", "Lowest"/* , "Legato"*/, "\0"}, settingsMonophonic, currentIndexMonophonicMode});
-  mainSettings.append(settings::SettingsOption{"Pitch Bend", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "\0"}, settingsPitchBend, currentIndexPitchBend});
-  mainSettings.append(settings::SettingsOption{"MW Depth", {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "\0"}, settingsModWheelDepth, currentIndexModWheelDepth});
-  mainSettings.append(settings::SettingsOption{"MIDI Out Ch.", {"Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, settingsMIDIOutCh, currentIndexMIDIOutCh});
-  mainSettings.append(settings::SettingsOption{"MIDI Thru", {"Off", "Full", "Same Ch.", "Diff. Ch.", "\0"}, settingsMIDIThru, currentIndexMIDIThru});
-  mainSettings.append(settings::SettingsOption{"Amp. Env.", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsAmpEnv, currentIndexAmpEnv});
-  mainSettings.append(settings::SettingsOption{"Filter Env.", {"Lin", "Exp -8", "Exp -7", "Exp -6", "Exp -5", "Exp -4", "Exp -3", "Exp -2", "Exp -1", "Exp 0", "Exp +1", "Exp +2", "Exp +3", "Exp +4", "Exp +5", "Exp +6", "Exp +7", "Exp +8", "\0"}, settingsFiltEnv, currentIndexFiltEnv});
-  mainSettings.append(settings::SettingsOption{"Glide Shape", {"Lin", "Exp", "\0"}, settingsGlideShape, currentIndexGlideShape});
-  mainSettings.append(settings::SettingsOption{"Pick-up", {"Off", "On", "\0"}, settingsPickupEnable, currentIndexPickupEnable});
-  mainSettings.append(settings::SettingsOption{"Encoder", {"Type 1", "Type 2", "\0"}, settingsEncoderDir, currentIndexEncoderDir});
-  mainSettings.append(settings::SettingsOption{"Oscilloscope", {"Off", "On", "\0"}, settingsScopeEnable, currentIndexScopeEnable});
-  mainSettings.append(settings::SettingsOption{"VU Meter", {"Off", "On", "\0"}, settingsVUEnable, currentIndexVUEnable});
-  mainSettings.append(settings::SettingsOption{"Bass Enh.", {"Off", "On", "\0"}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable});
+  mainSettings.append(option_midiInOption);
+  mainSettings.append(option_keyTrackingOption);
+  mainSettings.append(option_monoOption);
+  mainSettings.append(option_pitchBendOption);
+  mainSettings.append(option_mwDepthOption);
+  mainSettings.append(option_midiOutOption);
+  mainSettings.append(option_midiThruOption);
+  mainSettings.append(option_ampEnvOption);
+  mainSettings.append(option_filterEnvOption);
+  mainSettings.append(option_glideShapeOption);
+  mainSettings.append(option_pickUpOption);
+  mainSettings.append(option_encoderOption);
+  mainSettings.append(option_oscilloscopeOption);
+  mainSettings.append(option_meterOption);
+  mainSettings.append(option_bassEnhOption);
+
+  //timbreSettings.append(settings::SettingsOption{"MIDI In Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, timbreMIDICh, currenttimbreIDICh});
 }
 
 FLASHMEM int currentIndexGlideShape() {

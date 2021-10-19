@@ -7,10 +7,8 @@
 #include "SettingsService.cpp"
 #include <iostream>
 
-settings::SettingsService settingsService;
-
 #define OPTION_1_VALUES {"All", "Some", "None", "\0"}
-const char* option1Values[SETTINGSVALUESNO] = OPTION_1_VALUES;
+const char* option1Values[] = OPTION_1_VALUES;
 int option1Index = 0;    
 const char* option1Value;
 int option1Current() {
@@ -22,10 +20,9 @@ void option1Update(int index, const char* value) {
     option1Value = value;
     std::cout << "updating option 1: " << index << "    " << value << std::endl;
 }
-settings::SettingsOption option1{"MIDI Ch.", OPTION_1_VALUES, option1Update, option1Current};
 
 #define OPTION_2_VALUES {"All", "Some", "None", "\0"}
-const char* option2Values[SETTINGSVALUESNO] = OPTION_2_VALUES;
+const char* option2Values[] = OPTION_2_VALUES;
 int option2Index = 0;
 const char* option2Value;
 int option2Current() {   
@@ -36,12 +33,21 @@ void option2Update(int index, const char* value) {
     option2Value = value;
     std::cout << "updating option 2: " << index << "    " << value << std::endl;
 }
-settings::SettingsOption option2{"MIDI Ch.", OPTION_2_VALUES, option2Update, option2Current};
 
-void resetOptions(void) {    
+settings::ArrayOption makeOption(int optionNum) {
+    if (optionNum == 1) {
+        return settings::ArrayOption("MIDI Ch.", option1Values, option1Update, option1Current);
+    } else {
+        return settings::ArrayOption("MIDI Ch.", option2Values, option2Update, option2Current);
+    }
+}
+
+settings::SettingsService setupService(void) {    
+    settings::SettingsService settingsService;
     option1Index = 0;
     option2Index = 0;
-    settingsService.reset();
+
+    return settingsService;
 }
 
 /*
@@ -66,41 +72,46 @@ void save_current_value();
 */
 
 void test_one_setting(void) {
-    resetOptions();
+    auto settingsService = setupService();
+    auto option1 = makeOption(1);
     settingsService.append(option1);
+    //settingsService.append(makeOption(1));
 
     // Defaults to first setting.
-    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 
     // There's only 1 setting, it is still selected
     settingsService.increment_setting();
-    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 }
 
 void test_two_settings(void) {
-    resetOptions();
+    auto settingsService = setupService();
+    auto option1 = makeOption(1);
+    auto option2 = makeOption(2);
     settingsService.append(option1);
     settingsService.append(option2);
 
     // Defaults to first setting.
-    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 
     // Increment to second setting
     settingsService.increment_setting();
-    TEST_ASSERT_EQUAL(option2.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option2.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option2Values[0], settingsService.current_setting_value());
 
     // Increment back to the first setting
     settingsService.increment_setting();
-    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option1Values[0], settingsService.current_setting_value());
 }
 
 void test_cycle_option_values(void) {
-    resetOptions();
+    auto settingsService = setupService();
+    auto option1 = makeOption(1);
     settingsService.append(option1);
 
     // There are 3 values, increment twice to make sure we get them all.
@@ -127,7 +138,8 @@ void test_cycle_option_values(void) {
 }
 
 void test_save(void) {
-    resetOptions();
+    auto settingsService = setupService();
+    auto option2 = makeOption(2);
     settingsService.append(option2);
     settingsService.increment_setting_value();
     TEST_ASSERT_EQUAL(option2Index, 0);
@@ -136,19 +148,21 @@ void test_save(void) {
 }
 
 void test_initialize(void) {
-    resetOptions();
+    auto settingsService = setupService();
     option1Index = 1;
     option2Index = 2;
+    auto option1 = makeOption(1);
+    auto option2 = makeOption(2);
     settingsService.append(option1);
     settingsService.append(option2);
 
     // Defaults to first setting, initialized to index 1
-    TEST_ASSERT_EQUAL(option1.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option1.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option1Values[1], settingsService.current_setting_value());
 
     // second setting initialized to index 2
     settingsService.increment_setting();
-    TEST_ASSERT_EQUAL(option2.option, settingsService.current_setting());
+    TEST_ASSERT_EQUAL(option2.name(), settingsService.current_setting());
     TEST_ASSERT_EQUAL(option2Values[2], settingsService.current_setting_value());
 }
 

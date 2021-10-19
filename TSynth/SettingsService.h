@@ -14,6 +14,7 @@
 #pragma once
 
 #include <vector>
+#include <stdint.h>
 
 #define SETTINGSVALUESNO 19//Maximum number of settings option values needed
 
@@ -25,20 +26,95 @@ typedef void (*updater)(int index, const char* value);
 //Function to array index of current value for this settings option
 typedef int (*index)();
 
-struct SettingsOption
+class SettingsOption {
+
+  public:
+  virtual const char* current_setting_value() = 0;
+  virtual const char* previous_setting_value() = 0;
+  virtual const char* next_setting_value() = 0;
+
+  virtual void refresh() = 0;
+  virtual void increment() = 0;
+  virtual void decrement() = 0;
+  virtual void save() = 0;
+  virtual const char* name() = 0;
+};
+
+class ArrayOption : public SettingsOption
 {
-  const char * option;//Settings option string
-  const char * value[SETTINGSVALUESNO];//Array of strings of settings option values
-  updater updateHandler;
-  index currentIndex;
+  private:
+  const char * optionName;//Settings option string
+  const char ** values;
+  settings::updater updateHandler;
+  settings::index currentIndex;
+  uint8_t i;
+  //const char * values[SETTINGSVALUESNO];
+
+  public:
+  // values must be null terminated.
+  ArrayOption(const char* name, const char** list, settings::updater updateHandler, settings::index currentIndex):
+    optionName(name),
+    values(list),
+    updateHandler(updateHandler),
+    currentIndex(currentIndex)
+  {}
+
+  virtual const char* name() {
+    return optionName;
+  }
+
+  virtual void refresh() {
+    i = currentIndex();
+  }
+
+  virtual const char* current_setting_value() {
+    return values[i];
+  };
+
+  virtual const char* previous_setting_value() {
+    if (i == 0) {
+      return "";
+    }
+    return values[i - 1];
+  }
+
+  virtual const char* next_setting_value() {
+    if (*(values[i + 1]) == '\0') {
+      return "";
+    }
+    return values[i + 1];
+  }
+
+  virtual void increment() {
+    if (*(values[i + 1]) == '\0') {
+      return;
+    }
+    ++i;
+  }
+
+  virtual void decrement() {
+    if (i == 0) {
+      return;
+    }
+    --i;
+  }
+
+  virtual void save() {
+    updateHandler(i, values[i]);
+  }
 };
 
 class SettingsService {
   private:
   // global settings buffer
-  std::vector<settings::SettingsOption> settingsOptions;
+  std::vector<settings::SettingsOption*> settingsOptions;
+  // currently selected settings option value index
+  int selectedSettingIndex;
+  //int selectedSettingValueIndex;
 
   public:
+  SettingsService(): selectedSettingIndex(0) {};
+
   // setting names
   const char* current_setting();
   const char* previous_setting();
@@ -59,15 +135,14 @@ class SettingsService {
 
   void save_current_value();
 
-  void append(SettingsOption option);
+  void append(SettingsOption &option);
+  void refresh_current_values();
   void reset();
 
   private:
   int currentSettingIndex();
   int nextSettingIndex();
   int prevSettingIndex();
-  void refresh_current_value_index();
-
 };
 
 }

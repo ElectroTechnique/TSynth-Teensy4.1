@@ -5,6 +5,8 @@
 #include "SettingsService.h"
 
 extern settings::SettingsService mainSettings;
+extern settings::SettingsService timbreSettings;
+
 
 // initialize all the settings objects.
 void setUpSettings();
