@@ -187,7 +187,9 @@ struct Global {
     static const uint8_t MAX_NO_VOICE = 12;
 
     public:
+#if AUDIO_INTERFACE
     AudioOutputUSB           usbAudio;
+#endif
     AudioSynthWaveformDcTS     constant1Dc;
     AudioSynthNoisePink      pink;
     AudioSynthNoiseWhite     white;
@@ -204,7 +206,11 @@ struct Global {
 
     AudioControlSGTL5000     sgtl5000_1;
 
+#if AUDIO_INTERFACE
     AudioConnection connectionsArray[12] = {
+#else
+    AudioConnection connectionsArray[10] = {
+#endif
         {effectMixerL[0], 0, effectMixerLM, 0},
         {effectMixerL[1], 0, effectMixerLM, 1},
         {effectMixerL[2], 0, effectMixerLM, 2},
@@ -213,10 +219,12 @@ struct Global {
         {effectMixerR[2], 0, effectMixerRM, 2},
         {effectMixerLM, 0, scope, 0},
         {effectMixerLM, 0, peak, 0},
-        {effectMixerRM, 0, usbAudio, 1},
         {effectMixerRM, 0, i2s, 1},
         {effectMixerLM, 0, i2s, 0},
+#if AUDIO_INTERFACE
+        {effectMixerRM, 0, usbAudio, 1},
         {effectMixerLM, 0, usbAudio, 0}
+#endif
     };
 
     std::vector<AudioConnection*> connections;
