@@ -183,10 +183,6 @@ struct Patch {
 };
 
 struct Global {
-    private:
-    static const uint8_t MAX_NO_TIMBER = 2;
-    static const uint8_t MAX_NO_VOICE = 12;
-
     public:
 #if AUDIO_INTERFACE
     AudioOutputUSB           usbAudio;

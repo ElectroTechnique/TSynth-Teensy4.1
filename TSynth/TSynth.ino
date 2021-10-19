@@ -95,6 +95,7 @@ float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;           //For MIDI Clk Sync
 uint32_t patchNo = 1;         //Current patch no
+uint32_t timbreNo = 1;        //Current timbre
 int voiceToReturn = -1;       //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
@@ -102,6 +103,7 @@ FLASHMEM void setup()
 {
   while(!Serial);
   // Initialize the voice groups.
+  /*
   uint8_t total = 0;
   while (total < global.maxVoices())
   {
@@ -109,13 +111,50 @@ FLASHMEM void setup()
 
     for (uint8_t i = 0; total < global.maxVoices() && i < global.maxVoicesPerGroup(); i++)
     {
+      Serial.printf("groups (%d), i (%d)\n", groupvec.size(), i);
       Voice *v = new Voice(global.Oscillators[i], i);
       currentGroup->add(v);
       total++;
+      if (groupvec.size() == 0 && total >= (global.maxVoices() / 2)) {
+        groupvec.push_back(currentGroup);
+        currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
+      }
     }
 
     groupvec.push_back(currentGroup);
   }
+  */
+
+  VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[0]};
+  currentGroup->add(new Voice(global.Oscillators[0], 0));
+  currentGroup->add(new Voice(global.Oscillators[1], 1));
+  currentGroup->add(new Voice(global.Oscillators[2], 2));
+  currentGroup->add(new Voice(global.Oscillators[3], 3));
+  currentGroup->add(new Voice(global.Oscillators[4], 4));
+  currentGroup->add(new Voice(global.Oscillators[5], 5));
+
+  groupvec.push_back(currentGroup);
+  currentGroup = new VoiceGroup{global.SharedAudio[1]};
+
+  currentGroup->add(new Voice(global.Oscillators[6], 6));
+  currentGroup->add(new Voice(global.Oscillators[7], 7));
+  currentGroup->add(new Voice(global.Oscillators[8], 8));
+  currentGroup->add(new Voice(global.Oscillators[9], 9));
+  currentGroup->add(new Voice(global.Oscillators[10], 10));
+  currentGroup->add(new Voice(global.Oscillators[11], 11));
+  groupvec.push_back(currentGroup);
+  /*
+  currentGroup = new VoiceGroup{global.SharedAudio[1]};
+  currentGroup->add(new Voice(global.Oscillators[6], 6));
+  currentGroup->add(new Voice(global.Oscillators[7], 7));
+  currentGroup->add(new Voice(global.Oscillators[8], 8));
+  currentGroup->add(new Voice(global.Oscillators[9], 9));
+  currentGroup->add(new Voice(global.Oscillators[10], 10));
+  currentGroup->add(new Voice(global.Oscillators[11], 11));
+  groupvec.push_back(currentGroup);
+  */
+
+  Serial.println("initialized...");
 
   setupDisplay();
   setupHardware();
@@ -228,12 +267,24 @@ void myNoteOn(byte channel, byte note, byte velocity)
   if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
-  groupvec[activeGroupIndex]->noteOn(note, velocity);
+  if (channel == 1 || channel == 3) {
+    groupvec[0]->noteOn(note, velocity);
+  }
+  if (channel > 1 && groupvec.size() > 1) {
+    groupvec[1]->noteOn(note, velocity);
+  }
+  //groupvec[activeGroupIndex]->noteOn(note, velocity);
 }
 
 void myNoteOff(byte channel, byte note, byte velocity)
 {
-  groupvec[activeGroupIndex]->noteOff(note);
+  //groupvec[activeGroupIndex]->noteOff(note);
+  if (channel == 1 || channel == 3) {
+    groupvec[0]->noteOff(note);
+  }
+  if (channel > 1 && groupvec.size() > 1) {
+    groupvec[1]->noteOff(note);
+  }
 }
 
 int getLFOWaveform(int value)
@@ -1424,7 +1475,11 @@ void checkMux()
     checkVolumePot(); //Check here
     if (!firstPatchLoaded)
     {
-      recallPatch(patchNo); //Load first patch after all controls read
+      for (auto i = 0; i < groupvec.size(); i++) {
+        activeGroupIndex = i;
+        recallPatch(patchNo + i); //Load first patch after all controls read
+      }
+      activeGroupIndex = 0;
       firstPatchLoaded = true;
       global.sgtl5000_1.unmuteHeadphone();
       global.sgtl5000_1.unmuteLineout();
@@ -1603,8 +1658,8 @@ void checkSwitches()
   }
 
   //Encoder switch
-  recallButton.update();
-  if (recallButton.held())
+  encoderButton.update();
+  if (encoderButton.held())
   {
     //If Recall button held, return to current patch setting
     //which clears any changes made
@@ -1614,12 +1669,24 @@ void checkSwitches()
     recallPatch(patchNo);
     state = PARAMETER;
   }
-  else if (recallButton.numClicks() == 1)
+  else if (encoderButton.numClicks() == 2) {
+    // enter multi timbral config
+    switch (state)
+    {
+    case PARAMETER:
+      state = MT_CONFIG_LIST;
+      break;
+    }
+  }
+  else if (encoderButton.numClicks() == 1)
   {
     switch (state)
     {
     case PARAMETER:
       state = RECALL; //show patch list
+      break;
+    case MT_CONFIG_LIST:
+      state = MT_CONFIG_SETTINGS;
       break;
     case RECALL:
       state = PATCH;

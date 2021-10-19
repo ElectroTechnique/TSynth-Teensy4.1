@@ -3,6 +3,9 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+#define MAX_NO_TIMBER 2
+#define MAX_NO_VOICE 12
+
 #define MONOPHONIC_OFF 0
 #define MONOPHONIC_LAST 1
 #define MONOPHONIC_FIRST 2
@@ -25,6 +28,8 @@
 #define DELETEMSG 7     //Delete patch message page
 #define SETTINGS 8      //Settings page
 #define SETTINGSVALUE 9 //Settings page
+#define MT_CONFIG_LIST 10     //MultiTimbre config list
+#define MT_CONFIG_SETTINGS 11 //MultiTimbre config settings
 
 
 #define RE_READ -99
