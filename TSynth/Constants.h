@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#define MAX_NO_TIMBER 2
+#define MAX_NO_TIMBER 3
 #define MAX_NO_VOICE 12
 
 #define MONOPHONIC_OFF 0

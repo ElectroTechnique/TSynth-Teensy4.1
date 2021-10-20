@@ -139,6 +139,10 @@ FLASHMEM void setup()
   currentGroup->add(new Voice(global.Oscillators[6], 6));
   currentGroup->add(new Voice(global.Oscillators[7], 7));
   currentGroup->add(new Voice(global.Oscillators[8], 8));
+
+  groupvec.push_back(currentGroup);
+  currentGroup = new VoiceGroup{global.SharedAudio[2]};
+
   currentGroup->add(new Voice(global.Oscillators[9], 9));
   currentGroup->add(new Voice(global.Oscillators[10], 10));
   currentGroup->add(new Voice(global.Oscillators[11], 11));
@@ -267,23 +271,21 @@ void myNoteOn(byte channel, byte note, byte velocity)
   if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
-  if (channel == 1 || channel == 3) {
-    groupvec[0]->noteOn(note, velocity);
+  bool all = channel > groupvec.size();
+  for (auto i = 0; i < groupvec.size(); i++) {
+    if (all || channel == i + 1) {
+      groupvec[i]->noteOn(note, velocity);
+    }
   }
-  if (channel > 1 && groupvec.size() > 1) {
-    groupvec[1]->noteOn(note, velocity);
-  }
-  //groupvec[activeGroupIndex]->noteOn(note, velocity);
 }
 
 void myNoteOff(byte channel, byte note, byte velocity)
 {
-  //groupvec[activeGroupIndex]->noteOff(note);
-  if (channel == 1 || channel == 3) {
-    groupvec[0]->noteOff(note);
-  }
-  if (channel > 1 && groupvec.size() > 1) {
-    groupvec[1]->noteOff(note);
+  bool all = channel > groupvec.size();
+  for (auto i = 0; i < groupvec.size(); i++) {
+    if (all || channel == i + 1) {
+      groupvec[i]->noteOff(note);
+    }
   }
 }
 
@@ -1475,10 +1477,16 @@ void checkMux()
     checkVolumePot(); //Check here
     if (!firstPatchLoaded)
     {
-      for (auto i = 0; i < groupvec.size(); i++) {
-        activeGroupIndex = i;
-        recallPatch(patchNo + i); //Load first patch after all controls read
-      }
+      //for (auto i = 0; i < groupvec.size(); i++) {
+        activeGroupIndex = 0;
+        recallPatch(55); //Load first patch after all controls read
+
+        activeGroupIndex = 1;
+        recallPatch(57); //Load first patch after all controls read
+
+        activeGroupIndex = 2;
+        recallPatch(36); //Load first patch after all controls read
+      //}
       activeGroupIndex = 0;
       firstPatchLoaded = true;
       global.sgtl5000_1.unmuteHeadphone();
