@@ -3,6 +3,7 @@
 #define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 #include "TButton.h"
+#include "Constants.h"
 #include <ADC.h>
 #include <ADC_util.h>
 

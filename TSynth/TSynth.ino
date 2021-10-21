@@ -103,28 +103,34 @@ FLASHMEM void setup()
 {
   while(!Serial);
   // Initialize the voice groups.
-  /*
+#define INIT_ONE 1
+#if INIT_ONE
   uint8_t total = 0;
+  VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
   while (total < global.maxVoices())
   {
-    VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
-
-    for (uint8_t i = 0; total < global.maxVoices() && i < global.maxVoicesPerGroup(); i++)
-    {
-      Serial.printf("groups (%d), i (%d)\n", groupvec.size(), i);
-      Voice *v = new Voice(global.Oscillators[i], i);
-      currentGroup->add(v);
-      total++;
-      if (groupvec.size() == 0 && total >= (global.maxVoices() / 2)) {
-        groupvec.push_back(currentGroup);
-        currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
-      }
-    }
-
-    groupvec.push_back(currentGroup);
+    Voice *v = new Voice(global.Oscillators[total], total);
+    currentGroup->add(v);
+    total++;
   }
-  */
+  groupvec.push_back(currentGroup);
 
+  currentGroup = new VoiceGroup{global.SharedAudio[1]};
+  currentGroup->add(groupvec[0]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  groupvec.push_back(currentGroup);
+
+  currentGroup = new VoiceGroup{global.SharedAudio[2]};
+  currentGroup->add(groupvec[1]->pop());
+  currentGroup->add(groupvec[1]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  currentGroup->add(groupvec[0]->pop());
+  groupvec.push_back(currentGroup);
+#elif INIT_TWO
   VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[0]};
   currentGroup->add(new Voice(global.Oscillators[0], 0));
   currentGroup->add(new Voice(global.Oscillators[1], 1));
@@ -147,23 +153,14 @@ FLASHMEM void setup()
   currentGroup->add(new Voice(global.Oscillators[10], 10));
   currentGroup->add(new Voice(global.Oscillators[11], 11));
   groupvec.push_back(currentGroup);
-  /*
-  currentGroup = new VoiceGroup{global.SharedAudio[1]};
-  currentGroup->add(new Voice(global.Oscillators[6], 6));
-  currentGroup->add(new Voice(global.Oscillators[7], 7));
-  currentGroup->add(new Voice(global.Oscillators[8], 8));
-  currentGroup->add(new Voice(global.Oscillators[9], 9));
-  currentGroup->add(new Voice(global.Oscillators[10], 10));
-  currentGroup->add(new Voice(global.Oscillators[11], 11));
-  groupvec.push_back(currentGroup);
-  */
+#endif
 
   Serial.println("initialized...");
 
   setupDisplay();
   setupHardware();
 
-  AudioMemory(60);
+  AudioMemory(80); // I've maxed it out at 65 with 3 timbres...
   global.sgtl5000_1.enable();
   global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   global.sgtl5000_1.dacVolumeRamp();
@@ -1884,5 +1881,5 @@ void loop()
   checkMux();
   checkSwitches();
   checkEncoder();
-  //CPUMonitor();
+  CPUMonitor();
 }

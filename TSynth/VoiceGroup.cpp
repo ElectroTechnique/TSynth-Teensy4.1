@@ -692,6 +692,9 @@ void VoiceGroup::add(Voice *v)
 
 void VoiceGroup::merge(VoiceGroup other)
 {
+    while(other.size() > 0) {
+        add(other.pop());
+    }
 }
 
 void VoiceGroup::noteOn(uint8_t note, uint8_t velocity)

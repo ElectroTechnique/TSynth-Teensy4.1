@@ -29,7 +29,8 @@ boolean MIDIClkSignal = false;
 uint32_t peakCount = 0;
 uint16_t prevLen = 0;
 
-uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
+#define NUM_COLORS 5
+uint32_t colourPriority[NUM_COLORS] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
 
 unsigned long timer = 0;
 
@@ -112,9 +113,14 @@ FLASHMEM void renderCurrentPatchPage() {
   // Select colours based on voice state.
   uint8_t i = 0;
   for (uint8_t group = 0; group < groupvec.size(); group++) {
-    for (uint8_t voice = 0; voice  < groupvec[group]->size(); voice++) {
+    auto g = groupvec[group];
+    for (uint8_t voice = 0; voice  < g->size(); voice++) {
       borderColour[i] = group + 1;
-      if ((*groupvec[group])[voice]->on()) fillColour[i] = (*groupvec[group])[voice]->noteId() + 1;
+      if ((*g)[voice]->on()) {
+        // Start the fill color on the same color as the group, then
+        // continue on for unison colors.
+        fillColour[i] = (group + (*g)[voice]->noteId() + 1) % NUM_COLORS;
+      }
       else fillColour[i] = 0;
       i++;
     }

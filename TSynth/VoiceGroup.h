@@ -77,6 +77,8 @@ public:
     VoiceGroup(PatchShared &shared_);
 
     uint8_t size();
+
+    // Getters.
     String getPatchName();
     bool getFilterLfoMidiClockSync();
     bool getPitchLfoMidiClockSync();
@@ -120,13 +122,13 @@ public:
     float getModWhAmount();
     float getEffectAmount();
     float getEffectMix();
+    uint8_t unisonNotes();
 
+    // Setters
     void setPatchName(String name);
     void setPatchIndex(uint32_t index);
-
     void setWaveformA(uint32_t waveform);
     void setWaveformB(uint32_t waveform);
-
     void setPwmRate(float value);
     void setPitchEnvelope(float value);
     void setPwmMixerALFO(float value);
@@ -135,9 +137,6 @@ public:
     void setPwmMixerBPW(float value);
     void setPwmMixerAFEnv(float value);
     void setPwmMixerBFEnv(float value);
-
-    // MIDI-CC Only
-    void overridePwmAmount(float value);
     void setPWA(float valuePwA, float valuePwmAmtA);
     void setPWB(float valuePwA, float valuePwmAmtA);
     void setPWMSource(uint8_t value);
@@ -179,12 +178,14 @@ public:
     void setUnisonMode(uint8_t mode);
     void setFilterLfoMidiClockSync(bool value);
     void setPitchLfoMidiClockSync(bool value);
-    uint8_t unisonNotes();
+
+    // MIDI-CC Only
+    void overridePwmAmount(float value);
 
     //
-    // Configure the group
+    // Configure the voice parameters with this
     //
-    VoiceParams &params();
+    VoiceParams& params();
 
     //
     // Modify the group
