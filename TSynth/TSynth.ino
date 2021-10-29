@@ -57,6 +57,7 @@
 #include "Constants.h"
 #include "Parameters.h"
 #include "PatchMgr.h"
+#include "TimbreMgr.h"
 #include "HWControls.h"
 #include "EepromMgr.h"
 #include "Detune.h"
@@ -95,7 +96,8 @@ float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;           //For MIDI Clk Sync
 uint32_t patchNo = 1;         //Current patch no
-uint32_t timbreNo = 1;        //Current timbre
+uint32_t timbreProfileNo = 1; //Current timbre profile
+uint32_t timbreIdx = 0;       //Selected timbre / voice group index.
 int voiceToReturn = -1;       //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
@@ -182,6 +184,12 @@ FLASHMEM void setup()
       savePatch("1", INITPATCH);
       loadPatches();
     }
+
+    loadTimbreProfiles();
+    if (timbreProfiles.size() == 0)
+    {
+      // TODO: create default profile
+    }
   }
   else
   {
@@ -264,12 +272,13 @@ FLASHMEM void setup()
 
 void myNoteOn(byte channel, byte note, byte velocity)
 {
+  // TODO: Check range in voice, this check is currently wrong with multiple timbres.
   //Check for out of range notes
   if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
   bool all = channel > groupvec.size();
-  for (auto i = 0; i < groupvec.size(); i++) {
+  for (unsigned int i = 0; i < groupvec.size(); i++) {
     if (all || channel == i + 1) {
       groupvec[i]->noteOn(note, velocity);
     }
@@ -279,7 +288,7 @@ void myNoteOn(byte channel, byte note, byte velocity)
 void myNoteOff(byte channel, byte note, byte velocity)
 {
   bool all = channel > groupvec.size();
-  for (auto i = 0; i < groupvec.size(); i++) {
+  for (unsigned int i = 0; i < groupvec.size(); i++) {
     if (all || channel == i + 1) {
       groupvec[i]->noteOff(note);
     }
@@ -1512,6 +1521,11 @@ void showSettingsPage()
   showSettingsPage(mainSettings.current_setting(), mainSettings.current_setting_value(), state);
 }
 
+void showTimbreSettingsPage(uint32_t settingOrValue)
+{
+  showSettingsPage(timbreSettings.current_setting(), timbreSettings.current_setting_value(), settingOrValue);
+}
+
 void checkSwitches()
 {
   unisonSwitch.update();
@@ -1619,6 +1633,22 @@ void checkSwitches()
       state = SETTINGS;
       showSettingsPage();
       break;
+    // Setting button should go back?
+    case MT_PROFILE_LIST:
+      state = PARAMETER;
+      break;
+    case MT_TIMBRE_LIST:
+      state = MT_PROFILE_LIST;
+      break;
+    case MT_TIMBRE_SETTINGS:
+      state = MT_TIMBRE_LIST;
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.save_current_value();
+      state = MT_TIMBRE_SETTINGS;
+      showTimbreSettingsPage(SETTINGS);
+      break;
     }
   }
 
@@ -1659,6 +1689,19 @@ void checkSwitches()
       state = SETTINGS;
       showSettingsPage();
       break;
+    case MT_PROFILE_LIST:
+      state = PARAMETER;
+      break;
+    case MT_TIMBRE_LIST:
+      state = MT_PROFILE_LIST;
+      break;
+    case MT_TIMBRE_SETTINGS:
+      state = MT_TIMBRE_LIST;
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      state = MT_TIMBRE_SETTINGS;
+      showTimbreSettingsPage(SETTINGS);
+      break;
     }
   }
 
@@ -1679,7 +1722,7 @@ void checkSwitches()
     switch (state)
     {
     case PARAMETER:
-      state = MT_CONFIG_LIST;
+      state = MT_PROFILE_LIST;
       break;
     }
   }
@@ -1689,9 +1732,6 @@ void checkSwitches()
     {
     case PARAMETER:
       state = RECALL; //show patch list
-      break;
-    case MT_CONFIG_LIST:
-      state = MT_CONFIG_SETTINGS;
       break;
     case RECALL:
       state = PATCH;
@@ -1738,6 +1778,25 @@ void checkSwitches()
       mainSettings.save_current_value();
       state = SETTINGS;
       showSettingsPage();
+      break;
+    case MT_PROFILE_LIST:
+      state = MT_TIMBRE_LIST;
+      timbreProfileNo = timbreProfiles.first().profileNo;
+      break;
+    case MT_TIMBRE_LIST:
+      state = MT_TIMBRE_SETTINGS;
+      timbreIdx = timbres.first().timbreVoiceGroupIdx;
+      // TODO: Load timbre settings for whichever one is selected.
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS:
+      state = MT_TIMBRE_SETTINGS_VALUE;
+      showTimbreSettingsPage(SETTINGSVALUE);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.save_current_value();
+      state = MT_TIMBRE_SETTINGS;
+      showTimbreSettingsPage(SETTINGS);
       break;
     }
   }
@@ -1801,6 +1860,20 @@ void checkEncoder()
       mainSettings.increment_setting_value();
       showSettingsPage();
       break;
+    case MT_PROFILE_LIST:
+      timbreProfiles.push(timbreProfiles.shift());
+      break;
+    case MT_TIMBRE_LIST:
+      timbres.push(timbres.shift());
+      break;
+    case MT_TIMBRE_SETTINGS:
+      timbreSettings.increment_setting();
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.increment_setting_value();
+      showTimbreSettingsPage(SETTINGSVALUE);
+      break;
     }
     encPrevious = encRead;
   }
@@ -1840,6 +1913,20 @@ void checkEncoder()
     case SETTINGSVALUE:
       mainSettings.decrement_setting_value();
       showSettingsPage();
+      break;
+    case MT_PROFILE_LIST:
+      timbreProfiles.unshift(timbreProfiles.pop());
+      break;
+    case MT_TIMBRE_LIST:
+      timbres.unshift(timbres.pop());
+      break;
+    case MT_TIMBRE_SETTINGS:
+      timbreSettings.decrement_setting();
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.decrement_setting_value();
+      showTimbreSettingsPage(SETTINGSVALUE);
       break;
     }
     encPrevious = encRead;
@@ -1881,5 +1968,5 @@ void loop()
   checkMux();
   checkSwitches();
   checkEncoder();
-  CPUMonitor();
+  //CPUMonitor();
 }

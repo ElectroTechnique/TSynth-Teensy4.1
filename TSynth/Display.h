@@ -47,8 +47,6 @@ void renderReinitialisePage();
 
 void renderPatchNamingPage();
 
-void renderRecallPage();
-
 void showRenamingPage(String newName);
 
 void renderUpDown(uint16_t  x, uint16_t  y, uint16_t  colour);

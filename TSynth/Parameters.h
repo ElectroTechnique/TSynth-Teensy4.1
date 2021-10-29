@@ -10,6 +10,12 @@ extern String patchName;
 extern boolean encCW;
 extern boolean vuMeter;
 
+// MultiTimbre OLED Settings
+extern byte mtMidiChannel1;
+extern byte mtMidiChannel2;
+extern byte mtMidiChannel3;
+extern byte mtNumVoices;
+
 // Global patch modifiers
 extern float lfoSyncFreq;
 extern float midiClkTimeInterval;

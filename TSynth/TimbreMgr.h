@@ -5,9 +5,17 @@
 
 #define TOTALCHARS 64
 
-struct TimbreNoAndName{
-  int timbreNo;
+struct TimbreProfile{
+  int profileNo;
+  String profileName;
+};
+
+struct TimbreSettings{
+  int timbreVoiceGroupIdx;
   String timbreName;
 };
 
-extern CircularBuffer<TimbreNoAndName, MAX_NO_TIMBER> timbres;
+extern CircularBuffer<TimbreProfile, TIMBRE_PROFILE_LIMIT> timbreProfiles;
+extern CircularBuffer<TimbreSettings, MAX_NO_TIMBER> timbres;
+
+void loadTimbreProfiles();

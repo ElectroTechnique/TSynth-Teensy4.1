@@ -3,6 +3,12 @@
 
 //Values below are just for initialising and will be changed when synth is initialised to current panel controls & EEPROM settings
 
+// MultiTimbre Settings
+byte mtMidiChannel1 = MIDI_CHANNEL_OMNI;
+byte mtMidiChannel2 = MIDI_CHANNEL_OMNI;
+byte mtMidiChannel3 = MIDI_CHANNEL_OMNI;
+byte mtNumVoices = MAX_NO_VOICE;
+
 // Globals used for OLED Settings
 byte midiChannel = MIDI_CHANNEL_OMNI;//(EEPROM)
 byte midiOutCh = 0;//(EEPROM)

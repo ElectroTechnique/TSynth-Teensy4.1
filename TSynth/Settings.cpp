@@ -62,11 +62,21 @@ int currentIndexAmpEnv();
 int currentIndexFiltEnv();
 int currentIndexGlideShape();
 
+// MT settings
+void mtSettingsMIDICh1(int index, const char * value);
+void mtSettingsMIDICh2(int index, const char * value);
+void mtSettingsMIDICh3(int index, const char * value);
+void mtSettingsVoices(int index, const char * value);
+int mtCurrentIndexMIDICh1();
+int mtCurrentIndexMIDICh2();
+int mtCurrentIndexMIDICh3();
+int mtCurrentIndexVoices();
+
 
 // Add options to program memory
 #define SINGLE_ARG(...) __VA_ARGS__
-#define ARRAY_OPTION_GLOBAL(PREFIX, NAME, VALUES, HANDLER, INDEX)                                     \
-  const prog_char* PREFIX##Values[] PROGMEM = VALUES;                                                              \
+#define ARRAY_OPTION_GLOBAL(PREFIX, NAME, VALUES, HANDLER, INDEX)                              \
+  const prog_char* PREFIX##Values[] PROGMEM = VALUES;                                          \
   settings::ArrayOption PREFIX##Option(NAME, (const char**)(&PREFIX##Values), HANDLER, INDEX);
 
 ARRAY_OPTION_GLOBAL(option_midiIn, "MIDI In Ch.", {SINGLE_ARG("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0")}, settingsMIDICh, currentIndexMIDICh);
@@ -84,6 +94,11 @@ ARRAY_OPTION_GLOBAL(option_encoder, "Encoder", {SINGLE_ARG("Type 1", "Type 2", "
 ARRAY_OPTION_GLOBAL(option_oscilloscope, "Oscilloscope", {SINGLE_ARG("Off", "On", "\0")}, settingsScopeEnable, currentIndexScopeEnable);
 ARRAY_OPTION_GLOBAL(option_meter, "VU Meter", {SINGLE_ARG("Off", "On", "\0")}, settingsVUEnable, currentIndexVUEnable);
 ARRAY_OPTION_GLOBAL(option_bassEnh, "Bass Enh.", {SINGLE_ARG("Off", "On", "\0")}, settingsBassEnhanceEnable, currentIndexBassEnhanceEnable);
+
+ARRAY_OPTION_GLOBAL(option_mt_midiCh1, "MIDI Ch. 1", {SINGLE_ARG("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0")}, mtSettingsMIDICh1, mtCurrentIndexMIDICh1);
+ARRAY_OPTION_GLOBAL(option_mt_midiCh2, "MIDI Ch. 2", {SINGLE_ARG("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0")}, mtSettingsMIDICh2, mtCurrentIndexMIDICh2);
+ARRAY_OPTION_GLOBAL(option_mt_midiCh3, "MIDI Ch. 3", {SINGLE_ARG("All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0")}, mtSettingsMIDICh3, mtCurrentIndexMIDICh3);
+ARRAY_OPTION_GLOBAL(option_mt_voices, "Voices", {SINGLE_ARG("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "\0")}, mtSettingsVoices, mtCurrentIndexVoices);
 
 // Initialize settings object.
 FLASHMEM void setUpSettings() {
@@ -104,6 +119,10 @@ FLASHMEM void setUpSettings() {
   mainSettings.append(option_bassEnhOption);
 
   //timbreSettings.append(settings::SettingsOption{"MIDI In Ch.", {"All", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "\0"}, timbreMIDICh, currenttimbreIDICh});
+  timbreSettings.append(option_mt_midiCh1Option);
+  timbreSettings.append(option_mt_midiCh2Option);
+  timbreSettings.append(option_mt_midiCh3Option);
+  timbreSettings.append(option_mt_voicesOption);
 }
 
 FLASHMEM int currentIndexGlideShape() {
@@ -313,6 +332,39 @@ FLASHMEM void settingsVUEnable(int index, const char * value) {
   }
 }
 
+FLASHMEM void mtSettingsMIDICh1(int index, const char * value) {
+  if (strcmp(value, "ALL") == 0) {
+    mtMidiChannel1 = MIDI_CHANNEL_OMNI;
+  } else {
+    mtMidiChannel1 = atoi(value);
+  }
+  // TODO: Store timbre config.
+}
+
+FLASHMEM void mtSettingsMIDICh2(int index, const char * value) {
+  if (strcmp(value, "ALL") == 0) {
+    mtMidiChannel2 = MIDI_CHANNEL_OMNI;
+  } else {
+    mtMidiChannel2 = atoi(value);
+  }
+  // TODO: Store timbre config.
+}
+
+FLASHMEM void mtSettingsMIDICh3(int index, const char * value) {
+  if (strcmp(value, "ALL") == 0) {
+    mtMidiChannel3 = MIDI_CHANNEL_OMNI;
+  } else {
+    mtMidiChannel3 = atoi(value);
+  }
+  // TODO: Store timbre config.
+  //timbres.first()
+}
+
+FLASHMEM void mtSettingsVoices(int index, const char * value) {
+  mtNumVoices = atoi(value);
+  // TODO: Store timbre config.
+}
+
 FLASHMEM int currentIndexMIDICh() {
   return getMIDIChannel();
 }
@@ -370,4 +422,20 @@ FLASHMEM int currentIndexScopeEnable() {
 
 FLASHMEM int currentIndexVUEnable() {
   return getVUEnable() ? 1 : 0;
+}
+
+FLASHMEM int mtCurrentIndexMIDICh1() {
+  return mtMidiChannel1;
+}
+
+FLASHMEM int mtCurrentIndexMIDICh2() {
+  return mtMidiChannel2;
+}
+
+FLASHMEM int mtCurrentIndexMIDICh3() {
+  return mtMidiChannel3;
+}
+
+FLASHMEM int mtCurrentIndexVoices() {
+  return mtNumVoices - 1;
 }

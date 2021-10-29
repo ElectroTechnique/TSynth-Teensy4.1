@@ -3,6 +3,8 @@
 #include "globals.h"
 #include "Parameters.h"
 #include "PatchMgr.h"
+#include "TimbreMgr.h"
+#include "Settings.h"
 
 #define sclk 27
 #define mosi 26
@@ -310,31 +312,32 @@ FLASHMEM void renderPatchNamingPage()
   tft.println(newPatchName);
 }
 
-FLASHMEM void renderRecallPage()
+FLASHMEM void renderChooserPage(String id1, String field1, String id2, String field2, String id3, String field3)
 {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 45);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.last().patchNo);
+  tft.println(id1);
   tft.setCursor(35, 45);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.last().patchName);
+  tft.println(field1);
 
   tft.fillRect(0, 56, tft.width(), 23, 0xA000);
   tft.setCursor(0, 72);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.first().patchNo);
+  tft.println(id2);
   tft.setCursor(35, 72);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.first().patchName);
+  tft.println(field2);
 
   tft.setCursor(0, 98);
   tft.setTextColor(ST7735_YELLOW);
-  patches.size() > 1 ? tft.println(patches[1].patchNo) : tft.println(patches.last().patchNo);
+  tft.println(id3);
   tft.setCursor(35, 98);
   tft.setTextColor(ST7735_WHITE);
-  patches.size() > 1 ? tft.println(patches[1].patchName) : tft.println(patches.last().patchName);
+  //patches.size() > 1 ? tft.println(patches[1].patchName) : tft.println(patches.last().patchName);
+  tft.println(field3);
 }
 
 FLASHMEM void showRenamingPage(String newName) {
@@ -415,7 +418,44 @@ void displayThread() {
         }
         break;
       case RECALL:
-        renderRecallPage();
+        renderChooserPage(
+          patches.last().patchNo,
+          patches.last().patchName,
+          patches.first().patchNo,
+          patches.first().patchName,
+          patches.size() > 1 ? patches[1].patchNo : patches.last().patchNo,
+          patches.size() > 1 ? patches[1].patchName : patches.last().patchName
+        );
+        break;
+      case MT_PROFILE_LIST:
+        renderChooserPage(
+          timbreProfiles.last().profileNo,
+          timbreProfiles.last().profileName,
+          timbreProfiles.first().profileNo,
+          timbreProfiles.first().profileName,
+          timbreProfiles.size() > 1 ? timbreProfiles[1].profileNo : timbreProfiles.last().profileNo,
+          timbreProfiles.size() > 1 ? timbreProfiles[1].profileName : timbreProfiles.last().profileName
+        );
+        break;
+      case MT_TIMBRE_LIST:
+        if (timbres.size() == 1) {
+          renderChooserPage(
+            "",
+            "",
+            timbres.first().timbreVoiceGroupIdx,
+            timbres.first().timbreName,
+            "",
+            ""
+          );
+        }
+        renderChooserPage(
+          timbres.last().timbreVoiceGroupIdx,
+          timbres.last().timbreName,
+          timbres.first().timbreVoiceGroupIdx,
+          timbres.first().timbreName,
+          timbres.size() > 1 ? timbres[1].timbreVoiceGroupIdx : timbres.last().timbreVoiceGroupIdx,
+          timbres.size() > 1 ? timbres[1].timbreName : timbres.last().timbreName
+        );
         break;
       case SAVE:
         renderSavePage();
@@ -438,6 +478,8 @@ void displayThread() {
       case DELETEMSG:
         renderDeleteMessagePage();
         break;
+      case MT_TIMBRE_SETTINGS:
+      case MT_TIMBRE_SETTINGS_VALUE:
       case SETTINGS:
       case SETTINGSVALUE:
         renderSettingsPage();

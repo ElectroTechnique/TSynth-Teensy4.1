@@ -27,14 +27,17 @@
 #define DELETE 6        //Delete patch page
 #define DELETEMSG 7     //Delete patch message page
 #define SETTINGS 8      //Settings page
-#define SETTINGSVALUE 9 //Settings page
-#define MT_CONFIG_LIST 10     //MultiTimbre config list
-#define MT_CONFIG_SETTINGS 11 //MultiTimbre config settings
+#define SETTINGSVALUE 9 //Settings value page
+#define MT_PROFILE_LIST 10    //MultiTimbre profile list
+#define MT_TIMBRE_LIST 11     //MultiTimbre profile timbre list
+#define MT_TIMBRE_SETTINGS 12 //MultiTimbre timbre settings
+#define MT_TIMBRE_SETTINGS_VALUE 13 //MultiTimbre timbre settings value
 
 
 #define RE_READ -99
 #define PWMWAVEFORM WAVEFORM_SINE
 #define PATCHES_LIMIT 999
+#define TIMBRE_PROFILE_LIMIT 999
 
 extern const char* VERSION;
 extern const float PROGMEM FILTERFREQS256[256];
