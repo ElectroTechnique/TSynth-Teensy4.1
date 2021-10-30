@@ -7,7 +7,7 @@ void loadTimbreProfiles() {
   timbreProfiles.push(TimbreProfile{1, "Default"});
   timbreProfiles.push(TimbreProfile{2, "Ghosts"});
   timbreProfiles.push(TimbreProfile{3, "Dynamic"});
-  timbreProfiles.push(TimbreProfile{-1, "NEW"});
+  timbreProfiles.push(TimbreProfile{0, "NEW"});
 
 
   timbres.push(TimbreSettings{0, "Early Synth"});

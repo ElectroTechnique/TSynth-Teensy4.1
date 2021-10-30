@@ -152,6 +152,7 @@ FLASHMEM void renumberPatchesOnSD() {
   deletePatch(String(patches.size() + 1).c_str()); //Delete final patch which is duplicate of penultimate patch
 }
 
+// Make sure the correct patch is displayed.
 FLASHMEM void setPatchesOrdering(int no) {
   if (patches.size() < 2)return;
   while (patches.first().patchNo != no) {

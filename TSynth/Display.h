@@ -53,7 +53,9 @@ void renderUpDown(uint16_t  x, uint16_t  y, uint16_t  colour);
 
 void renderSettingsPage();
 
-void showCurrentParameterPage( const char *param, float val, int pType);
+void showMessage(const char *line1, const char *line2);
+
+void showCurrentParameterPage(const char *param, float val, int pType);
 
 void showCurrentParameterPage(const char *param, String val, int pType);
 

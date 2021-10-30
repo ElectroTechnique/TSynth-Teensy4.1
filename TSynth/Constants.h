@@ -25,13 +25,17 @@
 #define PATCH 4         // Show current patch bypassing PARAMETER
 #define PATCHNAMING 5   // Patch naming page
 #define DELETE 6        //Delete patch page
-#define DELETEMSG 7     //Delete patch message page
+#define MESSAGE 7       //Display a message
 #define SETTINGS 8      //Settings page
 #define SETTINGSVALUE 9 //Settings value page
 #define MT_PROFILE_LIST 10    //MultiTimbre profile list
 #define MT_TIMBRE_LIST 11     //MultiTimbre profile timbre list
 #define MT_TIMBRE_SETTINGS 12 //MultiTimbre timbre settings
 #define MT_TIMBRE_SETTINGS_VALUE 13 //MultiTimbre timbre settings value
+#define DELETE_MT_PROFILE 14 // Delete one of the multitimbre profiles
+#define DELETE_MT_TIMBRE 15  // Delete one of the timbres from the profile
+#define MT_TIMBRE_ADD_SELECT 16 // Add new timbre to profile
+#define MT_PROFILE_NAMING 17 // Add/name new timbre profile
 
 
 #define RE_READ -99

@@ -1561,6 +1561,7 @@ void checkSwitches()
   }
 
   saveButton.update();
+  // Delete
   if (saveButton.held())
   {
     switch (state)
@@ -1569,8 +1570,15 @@ void checkSwitches()
     case PATCH:
       state = DELETE;
       break;
+    case MT_PROFILE_LIST:
+      state = DELETE_MT_PROFILE;
+      break;
+    case MT_TIMBRE_LIST:
+      state = DELETE_MT_TIMBRE;
+      break;
     }
   }
+  // Save
   else if (saveButton.numClicks() == 1)
   {
     switch (state)
@@ -1607,17 +1615,51 @@ void checkSwitches()
       renamedPatch = "";
       state = PARAMETER;
       break;
+    case MT_TIMBRE_ADD_SELECT:
+      timbres.push(TimbreSettings{timbres.size() + 1, patches.first().patchName});
+      state = MT_TIMBRE_LIST;
+      // TODO: Save profile.
+      // TODO: Update settings.
+      break;
     }
   }
 
   settingsButton.update();
+  // Init
   if (settingsButton.held())
   {
-    //If recall held, set current patch to match current hardware state
-    //Reinitialise all hardware values to force them to be re-read if different
-    state = REINITIALISE;
-    reinitialiseToPanel();
+    switch (state) {
+      case MT_PROFILE_LIST:
+        // new timbre profile
+        Serial.println("profile naming.");
+        state = MT_PROFILE_NAMING;
+        break;
+      case MT_TIMBRE_LIST:
+        // new timbre
+        if (timbres.size() >= MAX_NO_TIMBER) {
+          showMessage("Too many", "Timbres");
+          state = MESSAGE;
+          // TODO: does this mess up audio? Use a timer?
+          delay(750);
+          state = MT_TIMBRE_LIST;
+        } else {
+          Serial.println("add timbre");
+          state = MT_TIMBRE_ADD_SELECT;
+        }
+        break;
+      case MT_PROFILE_NAMING:
+      case MT_TIMBRE_ADD_SELECT:
+        // TODO: Change "held()" so that it is consumed.
+        // Make sure we don't hit the default case for these.
+        break;
+      default:
+        //If recall held, set current patch to match current hardware state
+        //Reinitialise all hardware values to force them to be re-read if different
+        state = REINITIALISE;
+        reinitialiseToPanel();
+    }
   }
+  // Settings
   else if (settingsButton.numClicks() == 1)
   {
     switch (state)
@@ -1638,7 +1680,7 @@ void checkSwitches()
       state = PARAMETER;
       break;
     case MT_TIMBRE_LIST:
-      state = MT_PROFILE_LIST;
+      state = PARAMETER;
       break;
     case MT_TIMBRE_SETTINGS:
       state = MT_TIMBRE_LIST;
@@ -1693,7 +1735,7 @@ void checkSwitches()
       state = PARAMETER;
       break;
     case MT_TIMBRE_LIST:
-      state = MT_PROFILE_LIST;
+      state = PARAMETER;
       break;
     case MT_TIMBRE_SETTINGS:
       state = MT_TIMBRE_LIST;
@@ -1701,6 +1743,10 @@ void checkSwitches()
     case MT_TIMBRE_SETTINGS_VALUE:
       state = MT_TIMBRE_SETTINGS;
       showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_ADD_SELECT:
+      // TODO: Cancel timbre add.
+      state = MT_TIMBRE_LIST;
       break;
     }
   }
@@ -1717,6 +1763,16 @@ void checkSwitches()
     recallPatch(patchNo);
     state = PARAMETER;
   }
+  // Double click settings to configure multi-timbre.
+  else if (settingsButton.numClicks() == 2) {
+    switch (state)
+    {
+    case PARAMETER:
+      state = MT_TIMBRE_LIST;
+      break;
+    }
+  }
+  // Double click encoder to enter the multi-timbre profile config.
   else if (encoderButton.numClicks() == 2) {
     // enter multi timbral config
     switch (state)
@@ -1758,7 +1814,8 @@ void checkSwitches()
       //Don't delete final patch
       if (patches.size() > 1)
       {
-        state = DELETEMSG;
+        showMessage("Updating", "SD Card.");
+        state = MESSAGE;
         patchNo = patches.first().patchNo;    //PatchNo to delete from SD card
         patches.shift();                      //Remove patch from circular buffer
         deletePatch(String(patchNo).c_str()); //Delete from SD card
@@ -1767,6 +1824,32 @@ void checkSwitches()
         loadPatches();                     //Repopulate circular buffer again after delete
         patchNo = patches.first().patchNo; //Go back to 1
         recallPatch(patchNo);              //Load first patch
+      }
+      state = PARAMETER;// Stop showing the message.
+      break;
+    case DELETE_MT_PROFILE:
+      //Don't delete final profile
+      if (timbreProfiles.size() > 1) {
+        showMessage("Updating", "SD Card.");
+        state = MESSAGE;
+        timbreProfiles.shift();
+        // TODO: delete from SD card.
+        // TODO: load next profile
+        // TODO: renumber stuff
+        delay(500);
+      }
+      state = PARAMETER;
+      break;
+    case DELETE_MT_TIMBRE:
+      //Don't delete final timbre
+      if (timbres.size() > 1) {
+        showMessage("Updating", "SD Card.");
+        state = MESSAGE;
+        timbres.shift();
+        // TODO: delete from SD card.
+        // TODO: load next timbre
+        // TODO: renumber stuff
+        delay(500);
       }
       state = PARAMETER;
       break;
@@ -1780,8 +1863,12 @@ void checkSwitches()
       showSettingsPage();
       break;
     case MT_PROFILE_LIST:
-      state = MT_TIMBRE_LIST;
-      timbreProfileNo = timbreProfiles.first().profileNo;
+      // Select / load a profile.
+      state = PARAMETER;
+      if (int(timbreProfileNo) != timbreProfiles.first().profileNo) {
+        timbreProfileNo = timbreProfiles.first().profileNo;
+        // TODO: Load the new profile.
+      }
       break;
     case MT_TIMBRE_LIST:
       state = MT_TIMBRE_SETTINGS;
@@ -1838,9 +1925,9 @@ void checkEncoder()
       mainSettings.decrement_setting();
       break;
     case RECALL:
-      patches.push(patches.shift());
-      break;
     case SAVE:
+    case DELETE:
+    case MT_TIMBRE_ADD_SELECT:
       patches.push(patches.shift());
       break;
     case PATCHNAMING:
@@ -1849,8 +1936,6 @@ void checkEncoder()
       currentCharacter = CHARACTERS[charIndex++];
       showRenamingPage(renamedPatch + currentCharacter);
       break;
-    case DELETE:
-      patches.push(patches.shift());
       break;
     case SETTINGS:
       mainSettings.increment_setting();
@@ -1861,9 +1946,11 @@ void checkEncoder()
       showSettingsPage();
       break;
     case MT_PROFILE_LIST:
+    case DELETE_MT_PROFILE:
       timbreProfiles.push(timbreProfiles.shift());
       break;
     case MT_TIMBRE_LIST:
+    case DELETE_MT_TIMBRE:
       timbres.push(timbres.shift());
       break;
     case MT_TIMBRE_SETTINGS:
@@ -1892,9 +1979,9 @@ void checkEncoder()
       mainSettings.decrement_setting();
       break;
     case RECALL:
-      patches.unshift(patches.pop());
-      break;
     case SAVE:
+    case DELETE:
+    case MT_TIMBRE_ADD_SELECT:
       patches.unshift(patches.pop());
       break;
     case PATCHNAMING:
@@ -1902,9 +1989,6 @@ void checkEncoder()
         charIndex = TOTALCHARS - 1;
       currentCharacter = CHARACTERS[charIndex--];
       showRenamingPage(renamedPatch + currentCharacter);
-      break;
-    case DELETE:
-      patches.unshift(patches.pop());
       break;
     case SETTINGS:
       mainSettings.decrement_setting();
@@ -1915,9 +1999,11 @@ void checkEncoder()
       showSettingsPage();
       break;
     case MT_PROFILE_LIST:
+    case DELETE_MT_PROFILE:
       timbreProfiles.unshift(timbreProfiles.pop());
       break;
     case MT_TIMBRE_LIST:
+    case DELETE_MT_TIMBRE:
       timbres.unshift(timbres.pop());
       break;
     case MT_TIMBRE_SETTINGS:

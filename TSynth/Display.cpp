@@ -27,6 +27,9 @@ const char * currentSettingsValue = "";
 uint32_t currentSettingsPart = SETTINGS;
 uint32_t paramType = PARAMETER;
 
+const char * currentMessageLine1 = "";
+const char * currentMessageLine2 = "";
+
 boolean MIDIClkSignal = false;
 uint32_t peakCount = 0;
 uint16_t prevLen = 0;
@@ -227,39 +230,39 @@ FLASHMEM void renderCurrentParameterPage() {
   }
 }
 
-FLASHMEM void renderDeletePatchPage() {
+FLASHMEM void renderSelectPage(String question, String num1, String name1, String num2, String name2) {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSansBold18pt7b);
   tft.setCursor(5, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Delete?");
+  tft.println(question);
   tft.drawFastHLine(10, 60, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 78);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.last().patchNo);
+  tft.println(num1);
   tft.setCursor(35, 78);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.last().patchName);
+  tft.println(name1);
   tft.fillRect(0, 85, tft.width(), 23, ST77XX_DARKRED);
   tft.setCursor(0, 98);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.first().patchNo);
+  tft.println(num2);
   tft.setCursor(35, 98);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.first().patchName);
+  tft.println(name2);
 }
 
-FLASHMEM void renderDeleteMessagePage() {
+FLASHMEM void renderMessagePage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSans12pt7b);
   tft.setCursor(2, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Renumbering");
+  tft.println(currentMessageLine1);
   tft.setCursor(10, 90);
-  tft.println("SD Card");
+  tft.println(currentMessageLine2);
 }
 
 FLASHMEM void renderSavePage() {
@@ -366,7 +369,12 @@ FLASHMEM void renderSettingsPage() {
   if (currentSettingsPart == SETTINGSVALUE) renderUpDown(140, 80, ST7735_WHITE);
 }
 
-FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType) {
+FLASHMEM void showMessage(const char *line1, const char *line2){
+  currentMessageLine1 = line1;
+  currentMessageLine2 = line2;
+}
+
+FLASHMEM void showCurrentParameterPage(const char *param, float val, int pType) {
   currentParameter = param;
   currentValue = String(val);
   currentFloatValue = val;
@@ -472,11 +480,40 @@ void displayThread() {
       case PATCH:
         renderCurrentPatchPage();
         break;
-      case DELETE:
-        renderDeletePatchPage();
+      case MT_TIMBRE_ADD_SELECT:
+        renderSelectPage(
+          "Timbre?",
+          patches.last().patchNo,
+          patches.last().patchName,
+          patches.first().patchNo,
+          patches.first().patchName);
         break;
-      case DELETEMSG:
-        renderDeleteMessagePage();
+      case DELETE:
+        renderSelectPage(
+          "Delete?",
+          patches.last().patchNo,
+          patches.last().patchName,
+          patches.first().patchNo,
+          patches.first().patchName);
+        break;
+      case DELETE_MT_PROFILE:
+        renderSelectPage(
+          "Delete?",
+          timbreProfiles.last().profileNo,
+          timbreProfiles.last().profileName,
+          timbreProfiles.first().profileNo,
+          timbreProfiles.first().profileName);
+        break;
+      case DELETE_MT_TIMBRE:
+        renderSelectPage(
+          "Delete?",
+          timbres.last().timbreVoiceGroupIdx,
+          timbres.last().timbreName,
+          timbres.first().timbreVoiceGroupIdx,
+          timbres.first().timbreName);
+        break;
+      case MESSAGE:
+        renderMessagePage();
         break;
       case MT_TIMBRE_SETTINGS:
       case MT_TIMBRE_SETTINGS_VALUE:
