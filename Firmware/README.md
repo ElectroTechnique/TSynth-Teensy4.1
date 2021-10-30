@@ -1,6 +1,6 @@
 Firmware for TSynth Teensy 4.1
 
-FLASH THE LATEST FIRMWARE ONLY - PREVIOUS FIRMWARES ARE HERE FOR TROUBLESHOOTING
+Download the entire repository, not just the hex file, otherwise it'll probably download as text.
 
 - V2.31 - Fixed crash on unison with monophonic
 - V2.30 - Exponential Glide mode
