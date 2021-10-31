@@ -7,4 +7,5 @@ Global global{VOICEMIXERLEVEL};
 
 //VoiceGroup voices1{global.SharedAudio[0]};
 std::vector<VoiceGroup *> groupvec;
+std::vector<Voice*> voices;
 uint8_t activeGroupIndex = 0;
