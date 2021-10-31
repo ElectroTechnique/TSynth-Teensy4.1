@@ -116,51 +116,6 @@ FLASHMEM void initAudioObjects(std::vector<Voice *> &v, std::vector<VoiceGroup *
 
 }
 
-FLASHMEM void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio) {
-  Serial.printf("Refresh timbres...\n");
-
-  // Clear out groups
-  while (!g.empty()) {
-    VoiceGroup* group = g.back();
-    g.pop_back();
-    delete group;
-  }
-
-  Serial.printf("About to start.\n");
-  auto voiceIndex = 0;
-  if (timbres.size() > 0) {
-    for (int i = 0; i < timbres.size(); i++) {
-      Serial.printf("Adding timbre... %d\n", i);
-      // TODO: Look at the config to decide how many voices to add.
-      //VoiceGroup* group = new VoiceGroup();
-      VoiceGroup *group = new VoiceGroup{audio.SharedAudio[g.size()]};
-      for (uint32_t j = 0; j < (v.size() / timbres.size()); j++) {
-        Serial.printf("Adding voice... %d\n", voiceIndex);
-        group->add(v[voiceIndex++]);
-      }
-      g.push_back(group);
-
-      activeGroupIndex = i;
-      // TODO: Look at patch name in config and lookup number.
-      if (i == 0) {
-        // Bells
-        Serial.println("Recalling 23...");
-        recallPatch(23);
-      }
-      if (i == 1) {
-        // Solid Bass
-        Serial.println("Recalling 19...");
-        recallPatch(19);
-      }
-      if (i == 2) {
-        // Tremelo
-        Serial.println("Recalling 25...");
-        recallPatch(25);
-      }
-    }
-  }
-}
-
 FLASHMEM void setup()
 {
   while(!Serial);
@@ -1291,6 +1246,21 @@ FLASHMEM void myMIDIClock()
   count++;
 }
 
+// This helper allows calling recallPatch from a function without needing
+// to know about the globals.
+FLASHMEM void recallPatchToGroup(VoiceGroup* group, int patchNo) {
+  Serial.printf("recall patch to group... %d\n", patchNo);
+  auto cache = activeGroupIndex;
+  for (uint32_t i = 0; i < groupvec.size(); i++) {
+    if (groupvec[i] == group) {
+      activeGroupIndex = i;
+      recallPatch(patchNo);
+      break;
+    }
+  }
+  activeGroupIndex = cache;
+}
+
 FLASHMEM void recallPatch(int patchNo)
 {
   groupvec[activeGroupIndex]->allNotesOff();
@@ -1551,7 +1521,7 @@ void checkMux()
     {
       Serial.println("loading first patch...");
       #if INIT_TIMBRES
-        refreshTimbres(voices, groupvec, global);
+        refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
         Serial.printf("Groupvec size: %d\n", groupvec.size());
       #else
       //for (auto i = 0; i < groupvec.size(); i++) {

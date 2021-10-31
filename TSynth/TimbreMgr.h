@@ -23,8 +23,6 @@ extern CircularBuffer<TimbreSettings, MAX_NO_TIMBER> timbres;
 
 void loadTimbreProfiles();
 
-
-//std::vector<VoiceGroup *> groupvec;
-//std::vector<Voice*> voices;
-//void refreshTimbres(std::vector<Voice *> &voices, std::vector<VoiceGroup *> &groups);
-//void refreshTimbres(std::vector<Voice *> &voices, std::vector<VoiceGroup *> &groups, global &Global) {
+// TODO: 1 more argument: patch lookup function.
+typedef void (*patchInitCallback)(VoiceGroup *group, int patchNo);
+void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio, patchInitCallback cb);
