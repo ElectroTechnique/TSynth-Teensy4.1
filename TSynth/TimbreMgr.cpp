@@ -19,7 +19,7 @@ void loadTimbreProfiles() {
   timbres.push(TimbreSettings{3, "Bells"});
 }
 
-FLASHMEM void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio, patchLookup lookupCb, patchInitCallback initCb) {
+FLASHMEM void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio, patchInitCallback initCb) {
   // Clear out groups
   while (!g.empty()) {
     VoiceGroup* group = g.back();
@@ -39,14 +39,13 @@ FLASHMEM void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> 
       }
       g.push_back(group);
 
+      // Load timbre using callback.
       Serial.printf("Timbre lookup '%s': ", timbres[i].timbreName.c_str());
-      auto patchNo = lookupCb(timbres[i].timbreName.c_str());
-      if (patchNo >= 0) {
-        Serial.printf("%d\n", patchNo);
-        initCb(group, patchNo);
-      } else {
+      int patchNo = initCb(group, timbres[i].timbreName.c_str());
+      if (patchNo < 0) 
         Serial.printf("not found\n");
-      }
+      else
+        Serial.printf("%d\n", patchNo);
     }
   }
 }

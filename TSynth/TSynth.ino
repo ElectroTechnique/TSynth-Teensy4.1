@@ -121,69 +121,12 @@ FLASHMEM void setup()
   while(!Serial);
 
   // Initialize the voice groups.
-#define INIT_TIMBRES 1
   initAudioObjects(voices, groupvec, global);
-  //refreshTimbres(voices, groupvec, global);
-  //refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio) {
-#if INIT_TIMBRES
-
-#elif INIT_ONE
-  uint8_t total = 0;
-  VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
-  while (total < global.maxVoices())
-  {
-    Voice *v = new Voice(global.Oscillators[total], total);
-    currentGroup->add(v);
-    total++;
-  }
-  groupvec.push_back(currentGroup);
-
-  currentGroup = new VoiceGroup{global.SharedAudio[1]};
-  currentGroup->add(groupvec[0]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  groupvec.push_back(currentGroup);
-
-  currentGroup = new VoiceGroup{global.SharedAudio[2]};
-  currentGroup->add(groupvec[1]->pop());
-  currentGroup->add(groupvec[1]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  currentGroup->add(groupvec[0]->pop());
-  groupvec.push_back(currentGroup);
-#elif INIT_TWO
-  VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[0]};
-  currentGroup->add(new Voice(global.Oscillators[0], 0));
-  currentGroup->add(new Voice(global.Oscillators[1], 1));
-  currentGroup->add(new Voice(global.Oscillators[2], 2));
-  currentGroup->add(new Voice(global.Oscillators[3], 3));
-  currentGroup->add(new Voice(global.Oscillators[4], 4));
-  currentGroup->add(new Voice(global.Oscillators[5], 5));
-
-  groupvec.push_back(currentGroup);
-  currentGroup = new VoiceGroup{global.SharedAudio[1]};
-
-  currentGroup->add(new Voice(global.Oscillators[6], 6));
-  currentGroup->add(new Voice(global.Oscillators[7], 7));
-  currentGroup->add(new Voice(global.Oscillators[8], 8));
-
-  groupvec.push_back(currentGroup);
-  currentGroup = new VoiceGroup{global.SharedAudio[2]};
-
-  currentGroup->add(new Voice(global.Oscillators[9], 9));
-  currentGroup->add(new Voice(global.Oscillators[10], 10));
-  currentGroup->add(new Voice(global.Oscillators[11], 11));
-  groupvec.push_back(currentGroup);
-#endif
-
-  Serial.println("initialized...");
 
   setupDisplay();
   setupHardware();
 
-  AudioMemory(80); // I've maxed it out at 65 with 3 timbres...
+  AudioMemory(100);
   global.sgtl5000_1.enable();
   global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   global.sgtl5000_1.dacVolumeRamp();
@@ -298,6 +241,7 @@ void myNoteOn(byte channel, byte note, byte velocity)
   if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
+  // TODO: Note on channel based on settings.
   bool all = channel > groupvec.size();
   for (unsigned int i = 0; i < groupvec.size(); i++) {
     if (all || channel == i + 1) {
@@ -308,6 +252,7 @@ void myNoteOn(byte channel, byte note, byte velocity)
 
 void myNoteOff(byte channel, byte note, byte velocity)
 {
+  // TODO: Note off channel based on settings.
   bool all = channel > groupvec.size();
   for (unsigned int i = 0; i < groupvec.size(); i++) {
     if (all || channel == i + 1) {
@@ -1246,18 +1191,21 @@ FLASHMEM void myMIDIClock()
   count++;
 }
 
-FLASHMEM int patchNameToPatchNo(const char* name) {
+// Helper to load patch into a specific group by name. This helper allows
+// calling recallPatch from a function without knowing about any globals.
+FLASHMEM int recallPatchToGroup(VoiceGroup* group, const char* name) {
+  int patchNo = -1;
   for(int i = 0; i < patches.size(); i++) {
     if (patches[i].patchName.equals(name)) {
-      return patches[i].patchNo;
+      Serial.printf("%d\n", timbres[i].timbreName.c_str());
+      patchNo = patches[i].patchNo;
+      break;
     }
   }
-  return -1;
-}
+  if (patchNo < 0) {
+    return patchNo;
+  }
 
-// This helper allows calling recallPatch from a function without needing
-// to know about the globals.
-FLASHMEM void recallPatchToGroup(VoiceGroup* group, int patchNo) {
   auto cache = activeGroupIndex;
   for (uint32_t i = 0; i < groupvec.size(); i++) {
     if (groupvec[i] == group) {
@@ -1267,6 +1215,8 @@ FLASHMEM void recallPatchToGroup(VoiceGroup* group, int patchNo) {
     }
   }
   activeGroupIndex = cache;
+
+  return patchNo;
 }
 
 FLASHMEM void recallPatch(int patchNo)
@@ -1528,21 +1478,9 @@ void checkMux()
     if (!firstPatchLoaded)
     {
       Serial.println("loading first patch...");
-      #if INIT_TIMBRES
-        refreshTimbres(voices, groupvec, global, &patchNameToPatchNo, &recallPatchToGroup);
-        Serial.printf("Groupvec size: %d\n", groupvec.size());
-      #else
-      //for (auto i = 0; i < groupvec.size(); i++) {
-        activeGroupIndex = 0;
-        recallPatch(55); //Load first patch after all controls read
+      refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
+      Serial.printf("Timbres loaded: %d\n", groupvec.size());
 
-        activeGroupIndex = 1;
-        recallPatch(57); //Load first patch after all controls read
-
-        activeGroupIndex = 2;
-        recallPatch(36); //Load first patch after all controls read
-      //}
-      #endif
       activeGroupIndex = 0;
       firstPatchLoaded = true;
       global.sgtl5000_1.unmuteHeadphone();
@@ -1671,7 +1609,7 @@ void checkSwitches()
       // TODO: Save profile.
       // TODO: Update settings.
 
-      refreshTimbres(voices, groupvec, global, &patchNameToPatchNo, &recallPatchToGroup);
+      refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
       break;
     }
   }
@@ -1901,7 +1839,7 @@ void checkSwitches()
         // TODO: delete from SD card.
         // TODO: load next timbre
         // TODO: renumber stuff
-        refreshTimbres(voices, groupvec, global, &patchNameToPatchNo, &recallPatchToGroup);
+        refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
         delay(500);
       }
       state = PARAMETER;
