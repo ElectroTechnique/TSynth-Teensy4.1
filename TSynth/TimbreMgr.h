@@ -25,4 +25,6 @@ void loadTimbreProfiles();
 
 // TODO: 1 more argument: patch lookup function.
 typedef void (*patchInitCallback)(VoiceGroup *group, int patchNo);
-void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio, patchInitCallback cb);
+typedef int (*patchLookup)(const char*);
+
+void refreshTimbres(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio, patchLookup lookupCb, patchInitCallback initCb);

@@ -1246,10 +1246,18 @@ FLASHMEM void myMIDIClock()
   count++;
 }
 
+FLASHMEM int patchNameToPatchNo(const char* name) {
+  for(int i = 0; i < patches.size(); i++) {
+    if (patches[i].patchName.equals(name)) {
+      return patches[i].patchNo;
+    }
+  }
+  return -1;
+}
+
 // This helper allows calling recallPatch from a function without needing
 // to know about the globals.
 FLASHMEM void recallPatchToGroup(VoiceGroup* group, int patchNo) {
-  Serial.printf("recall patch to group... %d\n", patchNo);
   auto cache = activeGroupIndex;
   for (uint32_t i = 0; i < groupvec.size(); i++) {
     if (groupvec[i] == group) {
@@ -1521,7 +1529,7 @@ void checkMux()
     {
       Serial.println("loading first patch...");
       #if INIT_TIMBRES
-        refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
+        refreshTimbres(voices, groupvec, global, &patchNameToPatchNo, &recallPatchToGroup);
         Serial.printf("Groupvec size: %d\n", groupvec.size());
       #else
       //for (auto i = 0; i < groupvec.size(); i++) {
@@ -1662,6 +1670,8 @@ void checkSwitches()
       state = MT_TIMBRE_LIST;
       // TODO: Save profile.
       // TODO: Update settings.
+
+      refreshTimbres(voices, groupvec, global, &patchNameToPatchNo, &recallPatchToGroup);
       break;
     }
   }
@@ -1891,6 +1901,7 @@ void checkSwitches()
         // TODO: delete from SD card.
         // TODO: load next timbre
         // TODO: renumber stuff
+        refreshTimbres(voices, groupvec, global, &patchNameToPatchNo, &recallPatchToGroup);
         delay(500);
       }
       state = PARAMETER;
