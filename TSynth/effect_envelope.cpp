@@ -58,7 +58,7 @@ void AudioEffectEnvelopeTS::noteOn(void)
       {
         state=STATE_ATTACK;
         count=attack_count;
-      inc_hires = 0x40000000 / (int32_t)count;
+        inc_hires = 0x40000000 / (int32_t)count;
       }
       break;    
     case STATE_DELAY:

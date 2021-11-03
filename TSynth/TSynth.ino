@@ -51,42 +51,28 @@
 #include <SD.h>
 #include <MIDI.h>
 #include <USBHost_t36.h>
-#include <TeensyThreads.h>
 #include "MidiCC.h"
 #include "SettingsService.h"
 #include "AudioPatching.h"
 #include "Constants.h"
 #include "Parameters.h"
 #include "PatchMgr.h"
+#include "TimbreMgr.h"
 #include "HWControls.h"
 #include "EepromMgr.h"
 #include "Detune.h"
 #include "utils.h"
 #include "Voice.h"
 #include "VoiceGroup.h"
-// This should be included here, but it introduces a circular dependency.
-// #include "ST7735Display.h"
+#include "globals.h"
+#include "Display.h"
+#include "Settings.h"
 
-#define PARAMETER 0     //The main page for displaying the current patch and control (parameter) changes
-#define RECALL 1        //Patches list
-#define SAVE 2          //Save patch page
-#define REINITIALISE 3  // Reinitialise message
-#define PATCH 4         // Show current patch bypassing PARAMETER
-#define PATCHNAMING 5   // Patch naming page
-#define DELETE 6        //Delete patch page
-#define DELETEMSG 7     //Delete patch message page
-#define SETTINGS 8      //Settings page
-#define SETTINGSVALUE 9 //Settings page
-
-uint32_t state = PARAMETER;
-
-// Initialize the audio configuration.
-Global global{VOICEMIXERLEVEL};
-//VoiceGroup voices1{global.SharedAudio[0]};
-std::vector<VoiceGroup *> groupvec;
-uint8_t activeGroupIndex = 0;
-
-#include "ST7735Display.h"
+// Used for entering patch names.
+const static char CHARACTERS[TOTALCHARS] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',' ', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', ' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'};
+int charIndex;
+char currentCharacter;
+String renamedPatch;
 
 //USB HOST MIDI Class Compliant
 USBHost myusb;
@@ -103,8 +89,6 @@ void changeMIDIThruMode()
   MIDI.turnThruOn(MIDIThru);
 }
 
-#include "Settings.h"
-
 boolean cardStatus = false;
 boolean firstPatchLoaded = false;
 
@@ -112,32 +96,37 @@ float previousMillis = millis(); //For MIDI Clk Sync
 
 uint32_t count = 0;           //For MIDI Clk Sync
 uint32_t patchNo = 1;         //Current patch no
+uint32_t timbreProfileNo = 1; //Current timbre profile
+uint32_t timbreIdx = 0;       //Selected timbre / voice group index.
 int voiceToReturn = -1;       //Initialise
 long earliestTime = millis(); //For voice allocation - initialise to now
 
-FLASHMEM void setup()
-{
-  // Initialize the voice groups.
-  uint8_t total = 0;
-  while (total < global.maxVoices())
+FLASHMEM void initAudioObjects(std::vector<Voice *> &v, std::vector<VoiceGroup *> &g, Global &audio) {
+  VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
+
+  // Initialize voices.
+  for (int i = 0; i < global.maxVoices(); i++)
   {
-    VoiceGroup *currentGroup = new VoiceGroup{global.SharedAudio[groupvec.size()]};
-
-    for (uint8_t i = 0; total < global.maxVoices() && i < global.maxVoicesPerGroup(); i++)
-    {
-      Voice *v = new Voice(global.Oscillators[i], i);
-      currentGroup->add(v);
-      total++;
-    }
-
-    groupvec.push_back(currentGroup);
+    Voice *voice = new Voice(global.Oscillators[i], i);
+    v.push_back(voice);
+    currentGroup->add(voice);
   }
 
+  g.push_back(currentGroup);
+
+}
+
+FLASHMEM void setup()
+{
+  while(!Serial);
+
+  // Initialize the voice groups.
+  initAudioObjects(voices, groupvec, global);
+
   setupDisplay();
-  setUpSettings();
   setupHardware();
 
-  AudioMemory(60);
+  AudioMemory(100);
   global.sgtl5000_1.enable();
   global.sgtl5000_1.volume(0.5 * SGTL_MAXVOLUME);
   global.sgtl5000_1.dacVolumeRamp();
@@ -158,6 +147,12 @@ FLASHMEM void setup()
       //save an initialised patch to SD card
       savePatch("1", INITPATCH);
       loadPatches();
+    }
+
+    loadTimbreProfiles();
+    if (timbreProfiles.size() == 0)
+    {
+      // TODO: create default profile
     }
   }
   else
@@ -229,24 +224,41 @@ FLASHMEM void setup()
   enableScope(getScopeEnable());
   //Read VU enable from EEPROM
   vuMeter = getVUEnable();
+
   //Read Filter and Amp Envelope shapes
   reloadFiltEnv();
   reloadAmpEnv();
   reloadGlideShape();
+
+  // Setup settings menu last.
+  setUpSettings();
 }
 
 void myNoteOn(byte channel, byte note, byte velocity)
 {
+  // TODO: Check range in voice, this check is currently wrong with multiple timbres.
   //Check for out of range notes
   if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
-  groupvec[activeGroupIndex]->noteOn(note, velocity);
+  // TODO: Note on channel based on settings.
+  bool all = channel > groupvec.size();
+  for (unsigned int i = 0; i < groupvec.size(); i++) {
+    if (all || channel == i + 1) {
+      groupvec[i]->noteOn(note, velocity);
+    }
+  }
 }
 
 void myNoteOff(byte channel, byte note, byte velocity)
 {
-  groupvec[activeGroupIndex]->noteOff(note);
+  // TODO: Note off channel based on settings.
+  bool all = channel > groupvec.size();
+  for (unsigned int i = 0; i < groupvec.size(); i++) {
+    if (all || channel == i + 1) {
+      groupvec[i]->noteOff(note);
+    }
+  }
 }
 
 int getLFOWaveform(int value)
@@ -1179,6 +1191,34 @@ FLASHMEM void myMIDIClock()
   count++;
 }
 
+// Helper to load patch into a specific group by name. This helper allows
+// calling recallPatch from a function without knowing about any globals.
+FLASHMEM int recallPatchToGroup(VoiceGroup* group, const char* name) {
+  int patchNo = -1;
+  for(int i = 0; i < patches.size(); i++) {
+    if (patches[i].patchName.equals(name)) {
+      Serial.printf("%d\n", timbres[i].timbreName.c_str());
+      patchNo = patches[i].patchNo;
+      break;
+    }
+  }
+  if (patchNo < 0) {
+    return patchNo;
+  }
+
+  auto cache = activeGroupIndex;
+  for (uint32_t i = 0; i < groupvec.size(); i++) {
+    if (groupvec[i] == group) {
+      activeGroupIndex = i;
+      recallPatch(patchNo);
+      break;
+    }
+  }
+  activeGroupIndex = cache;
+
+  return patchNo;
+}
+
 FLASHMEM void recallPatch(int patchNo)
 {
   groupvec[activeGroupIndex]->allNotesOff();
@@ -1261,6 +1301,7 @@ FLASHMEM void setCurrentPatchData(String data[])
 
   Serial.print(F("Set Patch: "));
   Serial.println(data[0]);
+  mainSettings.refresh_current_values();
 }
 
 FLASHMEM String getCurrentPatchData()
@@ -1436,7 +1477,11 @@ void checkMux()
     checkVolumePot(); //Check here
     if (!firstPatchLoaded)
     {
-      recallPatch(patchNo); //Load first patch after all controls read
+      Serial.println("loading first patch...");
+      refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
+      Serial.printf("Timbres loaded: %d\n", groupvec.size());
+
+      activeGroupIndex = 0;
       firstPatchLoaded = true;
       global.sgtl5000_1.unmuteHeadphone();
       global.sgtl5000_1.unmuteLineout();
@@ -1461,7 +1506,12 @@ void checkVolumePot()
 
 void showSettingsPage()
 {
-  showSettingsPage(settings::current_setting(), settings::current_setting_value(), state);
+  showSettingsPage(mainSettings.current_setting(), mainSettings.current_setting_value(), state);
+}
+
+void showTimbreSettingsPage(uint32_t settingOrValue)
+{
+  showSettingsPage(timbreSettings.current_setting(), timbreSettings.current_setting_value(), settingOrValue);
 }
 
 void checkSwitches()
@@ -1499,6 +1549,7 @@ void checkSwitches()
   }
 
   saveButton.update();
+  // Delete
   if (saveButton.held())
   {
     switch (state)
@@ -1507,8 +1558,15 @@ void checkSwitches()
     case PATCH:
       state = DELETE;
       break;
+    case MT_PROFILE_LIST:
+      state = DELETE_MT_PROFILE;
+      break;
+    case MT_TIMBRE_LIST:
+      state = DELETE_MT_TIMBRE;
+      break;
     }
   }
+  // Save
   else if (saveButton.numClicks() == 1)
   {
     switch (state)
@@ -1545,17 +1603,53 @@ void checkSwitches()
       renamedPatch = "";
       state = PARAMETER;
       break;
+    case MT_TIMBRE_ADD_SELECT:
+      timbres.push(TimbreSettings{timbres.size() + 1, patches.first().patchName});
+      state = MT_TIMBRE_LIST;
+      // TODO: Save profile.
+      // TODO: Update settings.
+
+      refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
+      break;
     }
   }
 
   settingsButton.update();
+  // Init
   if (settingsButton.held())
   {
-    //If recall held, set current patch to match current hardware state
-    //Reinitialise all hardware values to force them to be re-read if different
-    state = REINITIALISE;
-    reinitialiseToPanel();
+    switch (state) {
+      case MT_PROFILE_LIST:
+        // new timbre profile
+        Serial.println("profile naming.");
+        state = MT_PROFILE_NAMING;
+        break;
+      case MT_TIMBRE_LIST:
+        // new timbre
+        if (timbres.size() >= MAX_NO_TIMBER) {
+          showMessage("Too many", "Timbres");
+          state = MESSAGE;
+          // TODO: does this mess up audio? Use a timer?
+          delay(750);
+          state = MT_TIMBRE_LIST;
+        } else {
+          Serial.println("add timbre");
+          state = MT_TIMBRE_ADD_SELECT;
+        }
+        break;
+      case MT_PROFILE_NAMING:
+      case MT_TIMBRE_ADD_SELECT:
+        // TODO: Change "held()" so that it is consumed.
+        // Make sure we don't hit the default case for these.
+        break;
+      default:
+        //If recall held, set current patch to match current hardware state
+        //Reinitialise all hardware values to force them to be re-read if different
+        state = REINITIALISE;
+        reinitialiseToPanel();
+    }
   }
+  // Settings
   else if (settingsButton.numClicks() == 1)
   {
     switch (state)
@@ -1567,9 +1661,25 @@ void checkSwitches()
     case SETTINGS:
       showSettingsPage();
     case SETTINGSVALUE:
-      settings::save_current_value();
+      mainSettings.save_current_value();
       state = SETTINGS;
       showSettingsPage();
+      break;
+    // Setting button should go back?
+    case MT_PROFILE_LIST:
+      state = PARAMETER;
+      break;
+    case MT_TIMBRE_LIST:
+      state = PARAMETER;
+      break;
+    case MT_TIMBRE_SETTINGS:
+      state = MT_TIMBRE_LIST;
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.save_current_value();
+      state = MT_TIMBRE_SETTINGS;
+      showTimbreSettingsPage(SETTINGS);
       break;
     }
   }
@@ -1611,12 +1721,29 @@ void checkSwitches()
       state = SETTINGS;
       showSettingsPage();
       break;
+    case MT_PROFILE_LIST:
+      state = PARAMETER;
+      break;
+    case MT_TIMBRE_LIST:
+      state = PARAMETER;
+      break;
+    case MT_TIMBRE_SETTINGS:
+      state = MT_TIMBRE_LIST;
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      state = MT_TIMBRE_SETTINGS;
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_ADD_SELECT:
+      // TODO: Cancel timbre add.
+      state = MT_TIMBRE_LIST;
+      break;
     }
   }
 
   //Encoder switch
-  recallButton.update();
-  if (recallButton.held())
+  encoderButton.update();
+  if (encoderButton.held())
   {
     //If Recall button held, return to current patch setting
     //which clears any changes made
@@ -1626,7 +1753,26 @@ void checkSwitches()
     recallPatch(patchNo);
     state = PARAMETER;
   }
-  else if (recallButton.numClicks() == 1)
+  // Double click settings to configure multi-timbre.
+  else if (settingsButton.numClicks() == 2) {
+    switch (state)
+    {
+    case PARAMETER:
+      state = MT_TIMBRE_LIST;
+      break;
+    }
+  }
+  // Double click encoder to enter the multi-timbre profile config.
+  else if (encoderButton.numClicks() == 2) {
+    // enter multi timbral config
+    switch (state)
+    {
+    case PARAMETER:
+      state = MT_PROFILE_LIST;
+      break;
+    }
+  }
+  else if (encoderButton.numClicks() == 1)
   {
     switch (state)
     {
@@ -1658,7 +1804,8 @@ void checkSwitches()
       //Don't delete final patch
       if (patches.size() > 1)
       {
-        state = DELETEMSG;
+        showMessage("Updating", "SD Card.");
+        state = MESSAGE;
         patchNo = patches.first().patchNo;    //PatchNo to delete from SD card
         patches.shift();                      //Remove patch from circular buffer
         deletePatch(String(patchNo).c_str()); //Delete from SD card
@@ -1668,6 +1815,33 @@ void checkSwitches()
         patchNo = patches.first().patchNo; //Go back to 1
         recallPatch(patchNo);              //Load first patch
       }
+      state = PARAMETER;// Stop showing the message.
+      break;
+    case DELETE_MT_PROFILE:
+      //Don't delete final profile
+      if (timbreProfiles.size() > 1) {
+        showMessage("Updating", "SD Card.");
+        state = MESSAGE;
+        timbreProfiles.shift();
+        // TODO: delete from SD card.
+        // TODO: load next profile
+        // TODO: renumber stuff
+        delay(500);
+      }
+      state = PARAMETER;
+      break;
+    case DELETE_MT_TIMBRE:
+      //Don't delete final timbre
+      if (timbres.size() > 1) {
+        showMessage("Updating", "SD Card.");
+        state = MESSAGE;
+        timbres.shift();
+        // TODO: delete from SD card.
+        // TODO: load next timbre
+        // TODO: renumber stuff
+        refreshTimbres(voices, groupvec, global, &recallPatchToGroup);
+        delay(500);
+      }
       state = PARAMETER;
       break;
     case SETTINGS:
@@ -1675,9 +1849,32 @@ void checkSwitches()
       showSettingsPage();
       break;
     case SETTINGSVALUE:
-      settings::save_current_value();
+      mainSettings.save_current_value();
       state = SETTINGS;
       showSettingsPage();
+      break;
+    case MT_PROFILE_LIST:
+      // Select / load a profile.
+      state = PARAMETER;
+      if (int(timbreProfileNo) != timbreProfiles.first().profileNo) {
+        timbreProfileNo = timbreProfiles.first().profileNo;
+        // TODO: Load the new profile.
+      }
+      break;
+    case MT_TIMBRE_LIST:
+      state = MT_TIMBRE_SETTINGS;
+      timbreIdx = timbres.first().timbreVoiceGroupIdx;
+      // TODO: Load timbre settings for whichever one is selected.
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS:
+      state = MT_TIMBRE_SETTINGS_VALUE;
+      showTimbreSettingsPage(SETTINGSVALUE);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.save_current_value();
+      state = MT_TIMBRE_SETTINGS;
+      showTimbreSettingsPage(SETTINGS);
       break;
     }
   }
@@ -1715,13 +1912,13 @@ void checkEncoder()
       recallPatch(patchNo);
       state = PARAMETER;
       // Make sure the current setting value is refreshed.
-      settings::increment_setting();
-      settings::decrement_setting();
+      mainSettings.increment_setting();
+      mainSettings.decrement_setting();
       break;
     case RECALL:
-      patches.push(patches.shift());
-      break;
     case SAVE:
+    case DELETE:
+    case MT_TIMBRE_ADD_SELECT:
       patches.push(patches.shift());
       break;
     case PATCHNAMING:
@@ -1730,16 +1927,30 @@ void checkEncoder()
       currentCharacter = CHARACTERS[charIndex++];
       showRenamingPage(renamedPatch + currentCharacter);
       break;
-    case DELETE:
-      patches.push(patches.shift());
       break;
     case SETTINGS:
-      settings::increment_setting();
+      mainSettings.increment_setting();
       showSettingsPage();
       break;
     case SETTINGSVALUE:
-      settings::increment_setting_value();
+      mainSettings.increment_setting_value();
       showSettingsPage();
+      break;
+    case MT_PROFILE_LIST:
+    case DELETE_MT_PROFILE:
+      timbreProfiles.push(timbreProfiles.shift());
+      break;
+    case MT_TIMBRE_LIST:
+    case DELETE_MT_TIMBRE:
+      timbres.push(timbres.shift());
+      break;
+    case MT_TIMBRE_SETTINGS:
+      timbreSettings.increment_setting();
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.increment_setting_value();
+      showTimbreSettingsPage(SETTINGSVALUE);
       break;
     }
     encPrevious = encRead;
@@ -1755,13 +1966,13 @@ void checkEncoder()
       recallPatch(patchNo);
       state = PARAMETER;
       // Make sure the current setting value is refreshed.
-      settings::increment_setting();
-      settings::decrement_setting();
+      mainSettings.increment_setting();
+      mainSettings.decrement_setting();
       break;
     case RECALL:
-      patches.unshift(patches.pop());
-      break;
     case SAVE:
+    case DELETE:
+    case MT_TIMBRE_ADD_SELECT:
       patches.unshift(patches.pop());
       break;
     case PATCHNAMING:
@@ -1770,16 +1981,29 @@ void checkEncoder()
       currentCharacter = CHARACTERS[charIndex--];
       showRenamingPage(renamedPatch + currentCharacter);
       break;
-    case DELETE:
-      patches.unshift(patches.pop());
-      break;
     case SETTINGS:
-      settings::decrement_setting();
+      mainSettings.decrement_setting();
       showSettingsPage();
       break;
     case SETTINGSVALUE:
-      settings::decrement_setting_value();
+      mainSettings.decrement_setting_value();
       showSettingsPage();
+      break;
+    case MT_PROFILE_LIST:
+    case DELETE_MT_PROFILE:
+      timbreProfiles.unshift(timbreProfiles.pop());
+      break;
+    case MT_TIMBRE_LIST:
+    case DELETE_MT_TIMBRE:
+      timbres.unshift(timbres.pop());
+      break;
+    case MT_TIMBRE_SETTINGS:
+      timbreSettings.decrement_setting();
+      showTimbreSettingsPage(SETTINGS);
+      break;
+    case MT_TIMBRE_SETTINGS_VALUE:
+      timbreSettings.decrement_setting_value();
+      showTimbreSettingsPage(SETTINGSVALUE);
       break;
     }
     encPrevious = encRead;

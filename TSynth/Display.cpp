@@ -1,5 +1,10 @@
-#ifndef TSYNTH_ST7735_DISPLAY_H
-#define TSYNTH_ST7735_DISPLAY_H
+#include <TeensyThreads.h>
+#include "Display.h"
+#include "globals.h"
+#include "Parameters.h"
+#include "PatchMgr.h"
+#include "TimbreMgr.h"
+#include "Settings.h"
 
 #define sclk 27
 #define mosi 26
@@ -8,22 +13,6 @@
 #define rst 9
 #define DISPLAYTIMEOUT 700
 
-#include <Adafruit_GFX.h>
-#include "ST7735_t3.h" // Local copy from TD1.48 that works for 0.96" IPS 160x80 display
-#include "Voice.h"
-
-#include "Fonts/Org_01.h"
-#include "Yeysk16pt7b.h"
-#include "Fonts/FreeSansBold18pt7b.h"
-#include "Fonts/FreeSans12pt7b.h"
-#include "Fonts/FreeSans9pt7b.h"
-#include "Fonts/FreeSansOblique24pt7b.h"
-#include "Fonts/FreeSansBoldOblique24pt7b.h"
-
-#define PULSE 1
-#define VAR_TRI 2
-#define FILTER_ENV 3
-#define AMP_ENV 4
 
 ST7735_t3 tft = ST7735_t3(cs, dc, mosi, sclk, rst);
 
@@ -38,11 +27,15 @@ const char * currentSettingsValue = "";
 uint32_t currentSettingsPart = SETTINGS;
 uint32_t paramType = PARAMETER;
 
+const char * currentMessageLine1 = "";
+const char * currentMessageLine2 = "";
+
 boolean MIDIClkSignal = false;
 uint32_t peakCount = 0;
 uint16_t prevLen = 0;
 
-uint32_t colourPriority[5] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
+#define NUM_COLORS 5
+uint32_t colourPriority[NUM_COLORS] = {ST7735_BLACK, ST7735_BLUE, ST7735_YELLOW, ST77XX_ORANGE, ST77XX_DARKRED};
 
 unsigned long timer = 0;
 
@@ -125,9 +118,14 @@ FLASHMEM void renderCurrentPatchPage() {
   // Select colours based on voice state.
   uint8_t i = 0;
   for (uint8_t group = 0; group < groupvec.size(); group++) {
-    for (uint8_t voice = 0; voice  < groupvec[group]->size(); voice++) {
+    auto g = groupvec[group];
+    for (uint8_t voice = 0; voice  < g->size(); voice++) {
       borderColour[i] = group + 1;
-      if ((*groupvec[group])[voice]->on()) fillColour[i] = (*groupvec[group])[voice]->noteId() + 1;
+      if ((*g)[voice]->on()) {
+        // Start the fill color on the same color as the group, then
+        // continue on for unison colors.
+        fillColour[i] = (group + (*g)[voice]->noteId() + 1) % NUM_COLORS;
+      }
       else fillColour[i] = 0;
       i++;
     }
@@ -232,39 +230,39 @@ FLASHMEM void renderCurrentParameterPage() {
   }
 }
 
-FLASHMEM void renderDeletePatchPage() {
+FLASHMEM void renderSelectPage(String question, String num1, String name1, String num2, String name2) {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSansBold18pt7b);
   tft.setCursor(5, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Delete?");
+  tft.println(question);
   tft.drawFastHLine(10, 60, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 78);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.last().patchNo);
+  tft.println(num1);
   tft.setCursor(35, 78);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.last().patchName);
+  tft.println(name1);
   tft.fillRect(0, 85, tft.width(), 23, ST77XX_DARKRED);
   tft.setCursor(0, 98);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.first().patchNo);
+  tft.println(num2);
   tft.setCursor(35, 98);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.first().patchName);
+  tft.println(name2);
 }
 
-FLASHMEM void renderDeleteMessagePage() {
+FLASHMEM void renderMessagePage() {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSans12pt7b);
   tft.setCursor(2, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Renumbering");
+  tft.println(currentMessageLine1);
   tft.setCursor(10, 90);
-  tft.println("SD Card");
+  tft.println(currentMessageLine2);
 }
 
 FLASHMEM void renderSavePage() {
@@ -317,31 +315,32 @@ FLASHMEM void renderPatchNamingPage()
   tft.println(newPatchName);
 }
 
-FLASHMEM void renderRecallPage()
+FLASHMEM void renderChooserPage(String id1, String field1, String id2, String field2, String id3, String field3)
 {
   tft.fillScreen(ST7735_BLACK);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 45);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.last().patchNo);
+  tft.println(id1);
   tft.setCursor(35, 45);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.last().patchName);
+  tft.println(field1);
 
   tft.fillRect(0, 56, tft.width(), 23, 0xA000);
   tft.setCursor(0, 72);
   tft.setTextColor(ST7735_YELLOW);
-  tft.println(patches.first().patchNo);
+  tft.println(id2);
   tft.setCursor(35, 72);
   tft.setTextColor(ST7735_WHITE);
-  tft.println(patches.first().patchName);
+  tft.println(field2);
 
   tft.setCursor(0, 98);
   tft.setTextColor(ST7735_YELLOW);
-  patches.size() > 1 ? tft.println(patches[1].patchNo) : tft.println(patches.last().patchNo);
+  tft.println(id3);
   tft.setCursor(35, 98);
   tft.setTextColor(ST7735_WHITE);
-  patches.size() > 1 ? tft.println(patches[1].patchName) : tft.println(patches.last().patchName);
+  //patches.size() > 1 ? tft.println(patches[1].patchName) : tft.println(patches.last().patchName);
+  tft.println(field3);
 }
 
 FLASHMEM void showRenamingPage(String newName) {
@@ -370,7 +369,12 @@ FLASHMEM void renderSettingsPage() {
   if (currentSettingsPart == SETTINGSVALUE) renderUpDown(140, 80, ST7735_WHITE);
 }
 
-FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType) {
+FLASHMEM void showMessage(const char *line1, const char *line2){
+  currentMessageLine1 = line1;
+  currentMessageLine2 = line2;
+}
+
+FLASHMEM void showCurrentParameterPage(const char *param, float val, int pType) {
   currentParameter = param;
   currentValue = String(val);
   currentFloatValue = val;
@@ -396,6 +400,9 @@ FLASHMEM void showPatchPage(String number, String patchName) {
 }
 
 FLASHMEM void showSettingsPage(const char *  option, const char * value, int settingsPart) {
+  Serial.println(option);
+  Serial.println(value);
+  Serial.println(settingsPart);
   currentSettingsOption = option;
   currentSettingsValue = value;
   currentSettingsPart = settingsPart;
@@ -419,7 +426,44 @@ void displayThread() {
         }
         break;
       case RECALL:
-        renderRecallPage();
+        renderChooserPage(
+          patches.last().patchNo,
+          patches.last().patchName,
+          patches.first().patchNo,
+          patches.first().patchName,
+          patches.size() > 1 ? patches[1].patchNo : patches.last().patchNo,
+          patches.size() > 1 ? patches[1].patchName : patches.last().patchName
+        );
+        break;
+      case MT_PROFILE_LIST:
+        renderChooserPage(
+          timbreProfiles.last().profileNo,
+          timbreProfiles.last().profileName,
+          timbreProfiles.first().profileNo,
+          timbreProfiles.first().profileName,
+          timbreProfiles.size() > 1 ? timbreProfiles[1].profileNo : timbreProfiles.last().profileNo,
+          timbreProfiles.size() > 1 ? timbreProfiles[1].profileName : timbreProfiles.last().profileName
+        );
+        break;
+      case MT_TIMBRE_LIST:
+        if (timbres.size() == 1) {
+          renderChooserPage(
+            "",
+            "",
+            timbres.first().timbreVoiceGroupIdx,
+            timbres.first().timbreName,
+            "",
+            ""
+          );
+        }
+        renderChooserPage(
+          timbres.last().timbreVoiceGroupIdx,
+          timbres.last().timbreName,
+          timbres.first().timbreVoiceGroupIdx,
+          timbres.first().timbreName,
+          timbres.size() > 1 ? timbres[1].timbreVoiceGroupIdx : timbres.last().timbreVoiceGroupIdx,
+          timbres.size() > 1 ? timbres[1].timbreName : timbres.last().timbreName
+        );
         break;
       case SAVE:
         renderSavePage();
@@ -436,12 +480,43 @@ void displayThread() {
       case PATCH:
         renderCurrentPatchPage();
         break;
+      case MT_TIMBRE_ADD_SELECT:
+        renderSelectPage(
+          "Timbre?",
+          patches.last().patchNo,
+          patches.last().patchName,
+          patches.first().patchNo,
+          patches.first().patchName);
+        break;
       case DELETE:
-        renderDeletePatchPage();
+        renderSelectPage(
+          "Delete?",
+          patches.last().patchNo,
+          patches.last().patchName,
+          patches.first().patchNo,
+          patches.first().patchName);
         break;
-      case DELETEMSG:
-        renderDeleteMessagePage();
+      case DELETE_MT_PROFILE:
+        renderSelectPage(
+          "Delete?",
+          timbreProfiles.last().profileNo,
+          timbreProfiles.last().profileName,
+          timbreProfiles.first().profileNo,
+          timbreProfiles.first().profileName);
         break;
+      case DELETE_MT_TIMBRE:
+        renderSelectPage(
+          "Delete?",
+          timbres.last().timbreVoiceGroupIdx,
+          timbres.last().timbreName,
+          timbres.first().timbreVoiceGroupIdx,
+          timbres.first().timbreName);
+        break;
+      case MESSAGE:
+        renderMessagePage();
+        break;
+      case MT_TIMBRE_SETTINGS:
+      case MT_TIMBRE_SETTINGS_VALUE:
       case SETTINGS:
       case SETTINGSVALUE:
         renderSettingsPage();
@@ -460,5 +535,3 @@ void setupDisplay() {
   tft.updateScreen();
   threads.addThread(displayThread);
 }
-
-#endif
