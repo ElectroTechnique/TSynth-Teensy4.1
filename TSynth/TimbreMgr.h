@@ -2,8 +2,8 @@
 #include "Constants.h"
 #include <FS.h>
 #include <SD.h>
-#include <Voice.h>
-#include <VoiceGroup.h>
+#include "Voice.h"
+#include "VoiceGroup.h"
 #include <vector>
 
 #define TOTALCHARS 64
