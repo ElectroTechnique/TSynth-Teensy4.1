@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.31
+  ElectroTechnique TSynth - Firmware Rev 2.32
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -67,35 +67,35 @@
 // This should be included here, but it introduces a circular dependency.
 // #include "ST7735Display.h"
 
-#define PARAMETER 0     //The main page for displaying the current patch and control (parameter) changes
-#define RECALL 1        //Patches list
-#define SAVE 2          //Save patch page
+#define PARAMETER 0     // The main page for displaying the current patch and control (parameter) changes
+#define RECALL 1        // Patches list
+#define SAVE 2          // Save patch page
 #define REINITIALISE 3  // Reinitialise message
 #define PATCH 4         // Show current patch bypassing PARAMETER
 #define PATCHNAMING 5   // Patch naming page
-#define DELETE 6        //Delete patch page
-#define DELETEMSG 7     //Delete patch message page
-#define SETTINGS 8      //Settings page
-#define SETTINGSVALUE 9 //Settings page
+#define DELETE 6        // Delete patch page
+#define DELETEMSG 7     // Delete patch message page
+#define SETTINGS 8      // Settings page
+#define SETTINGSVALUE 9 // Settings page
 
 uint32_t state = PARAMETER;
 
 // Initialize the audio configuration.
 Global global{VOICEMIXERLEVEL};
-//VoiceGroup voices1{global.SharedAudio[0]};
+// VoiceGroup voices1{global.SharedAudio[0]};
 std::vector<VoiceGroup *> groupvec;
 uint8_t activeGroupIndex = 0;
 
 #include "ST7735Display.h"
 
-//USB HOST MIDI Class Compliant
+// USB HOST MIDI Class Compliant
 USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
 MIDIDevice midi1(myusb);
-//MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
+// MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
 
-//MIDI 5 Pin DIN
+// MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
 
 void changeMIDIThruMode()
@@ -108,12 +108,12 @@ void changeMIDIThruMode()
 boolean cardStatus = false;
 boolean firstPatchLoaded = false;
 
-float previousMillis = millis(); //For MIDI Clk Sync
+float previousMillis = millis(); // For MIDI Clk Sync
 
-uint32_t count = 0;           //For MIDI Clk Sync
-uint32_t patchNo = 1;         //Current patch no
-int voiceToReturn = -1;       //Initialise
-long earliestTime = millis(); //For voice allocation - initialise to now
+uint32_t count = 0;           // For MIDI Clk Sync
+uint32_t patchNo = 1;         // Current patch no
+int voiceToReturn = -1;       // Initialise
+long earliestTime = millis(); // For voice allocation - initialise to now
 
 FLASHMEM void setup()
 {
@@ -144,18 +144,18 @@ FLASHMEM void setup()
   global.sgtl5000_1.muteHeadphone();
   global.sgtl5000_1.muteLineout();
   global.sgtl5000_1.audioPostProcessorEnable();
-  global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4); //Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
-  global.sgtl5000_1.enhanceBassDisable();          //Turned on from EEPROM
+  global.sgtl5000_1.enhanceBass(0.85, 0.87, 0, 4); // Normal level, bass level, HPF bypass (1 - on), bass cutoff freq
+  global.sgtl5000_1.enhanceBassDisable();          // Turned on from EEPROM
 
   cardStatus = SD.begin(BUILTIN_SDCARD);
   if (cardStatus)
   {
     Serial.println(F("SD card is connected"));
-    //Get patch numbers and names from SD card
+    // Get patch numbers and names from SD card
     loadPatches();
     if (patches.size() == 0)
     {
-      //save an initialised patch to SD card
+      // save an initialised patch to SD card
       savePatch("1", INITPATCH);
       loadPatches();
     }
@@ -167,12 +167,12 @@ FLASHMEM void setup()
     showPatchPage("No SD", "conn'd / usable");
   }
 
-  //Read MIDI Channel from EEPROM
+  // Read MIDI Channel from EEPROM
   midiChannel = getMIDIChannel();
   Serial.println("MIDI In Ch:" + String(midiChannel) + " (0 is Omni On)");
 
-  //USB HOST MIDI Class Compliant
-  delay(200); //Wait to turn on USB Host
+  // USB HOST MIDI Class Compliant
+  delay(200); // Wait to turn on USB Host
   myusb.begin();
   midi1.setHandleControlChange(myControlChange);
   midi1.setHandleNoteOff(myNoteOff);
@@ -184,7 +184,7 @@ FLASHMEM void setup()
   midi1.setHandleStop(myMIDIClockStop);
   Serial.println(F("USB HOST MIDI Class Compliant Listening"));
 
-  //USB Client MIDI
+  // USB Client MIDI
   usbMIDI.setHandleControlChange(myControlChange);
   usbMIDI.setHandleNoteOff(myNoteOff);
   usbMIDI.setHandleNoteOn(myNoteOn);
@@ -195,7 +195,7 @@ FLASHMEM void setup()
   usbMIDI.setHandleStop(myMIDIClockStop);
   Serial.println(F("USB Client MIDI Listening"));
 
-  //MIDI 5 Pin DIN
+  // MIDI 5 Pin DIN
   MIDI.begin();
   MIDI.setHandleNoteOn(myNoteOn);
   MIDI.setHandleNoteOff(myNoteOff);
@@ -207,29 +207,29 @@ FLASHMEM void setup()
   MIDI.setHandleStop(myMIDIClockStop);
   Serial.println(F("MIDI In DIN Listening"));
 
-  volumePrevious = RE_READ; //Force volume control to be read and set to current
+  volumePrevious = RE_READ; // Force volume control to be read and set to current
 
-  //Read Pitch Bend Range from EEPROM
+  // Read Pitch Bend Range from EEPROM
   pitchBendRange = getPitchBendRange();
-  //Read Mod Wheel Depth from EEPROM
+  // Read Mod Wheel Depth from EEPROM
   modWheelDepth = getModWheelDepth();
-  //Read MIDI Out Channel from EEPROM
+  // Read MIDI Out Channel from EEPROM
   midiOutCh = getMIDIOutCh();
-  //Read MIDI Thru mode from EEPROM
+  // Read MIDI Thru mode from EEPROM
   MIDIThru = getMidiThru();
   changeMIDIThruMode();
-  //Read Encoder Direction from EEPROM
+  // Read Encoder Direction from EEPROM
   encCW = getEncoderDir();
-  //Read Pick-up enable from EEPROM - experimental feature
+  // Read Pick-up enable from EEPROM - experimental feature
   pickUp = getPickupEnable();
-  //Read bass enhance enable from EEPROM
+  // Read bass enhance enable from EEPROM
   if (getBassEnhanceEnable())
     global.sgtl5000_1.enhanceBassEnable();
-  //Read oscilloscope enable from EEPROM
+  // Read oscilloscope enable from EEPROM
   enableScope(getScopeEnable());
-  //Read VU enable from EEPROM
+  // Read VU enable from EEPROM
   vuMeter = getVUEnable();
-  //Read Filter and Amp Envelope shapes
+  // Read Filter and Amp Envelope shapes
   reloadFiltEnv();
   reloadAmpEnv();
   reloadGlideShape();
@@ -237,7 +237,7 @@ FLASHMEM void setup()
 
 void myNoteOn(byte channel, byte note, byte velocity)
 {
-  //Check for out of range notes
+  // Check for out of range notes
   if (note + groupvec[activeGroupIndex]->params().oscPitchA < 0 || note + groupvec[activeGroupIndex]->params().oscPitchA > 127 || note + groupvec[activeGroupIndex]->params().oscPitchB < 0 || note + groupvec[activeGroupIndex]->params().oscPitchB > 127)
     return;
 
@@ -314,7 +314,7 @@ FLASHMEM int getWaveformA(int value)
 {
   if (value >= 0 && value < 7)
   {
-    //This will turn the osc off
+    // This will turn the osc off
     return WAVEFORM_SILENT;
   }
   else if (value >= 7 && value < 23)
@@ -351,7 +351,7 @@ FLASHMEM int getWaveformB(int value)
 {
   if (value >= 0 && value < 7)
   {
-    //This will turn the osc off
+    // This will turn the osc off
     return WAVEFORM_SILENT;
   }
   else if (value >= 7 && value < 23)
@@ -403,7 +403,7 @@ FLASHMEM void updateUnison(uint8_t unison)
   else
   {
     showCurrentParameterPage("Chd. Unison", "On");
-    analogWriteFrequency(UNISON_LED, 1); //This is to make the LED flash using PWM rather than some thread
+    analogWriteFrequency(UNISON_LED, 1); // This is to make the LED flash using PWM rather than some thread
     analogWrite(UNISON_LED, 127);
   }
 }
@@ -468,7 +468,7 @@ FLASHMEM void updatePWMSource(uint8_t source)
 
   if (source == PWMSOURCELFO)
   {
-    showCurrentParameterPage("PWM Source", "LFO"); //Only shown when updated via MIDI
+    showCurrentParameterPage("PWM Source", "LFO"); // Only shown when updated via MIDI
   }
   else
   {
@@ -482,23 +482,23 @@ FLASHMEM void updatePWMRate(float value)
 
   if (value == PWMRATE_PW_MODE)
   {
-    //Set to fixed PW mode
+    // Set to fixed PW mode
     showCurrentParameterPage("PW Mode", "On");
   }
   else if (value == PWMRATE_SOURCE_FILTER_ENV)
   {
-    //Set to Filter Env Mod source
+    // Set to Filter Env Mod source
     showCurrentParameterPage("PWM Source", "Filter Env");
   }
   else
   {
-    showCurrentParameterPage("PWM Rate", String(2 * value) + " Hz"); //PWM goes through mid to maximum, sounding effectively twice as fast
+    showCurrentParameterPage("PWM Rate", String(2 * value) + " Hz"); // PWM goes through mid to maximum, sounding effectively twice as fast
   }
 }
 
 FLASHMEM void updatePWMAmount(float value)
 {
-  //MIDI only - sets both osc PWM
+  // MIDI only - sets both osc PWM
   groupvec[activeGroupIndex]->overridePwmAmount(value);
   showCurrentParameterPage("PWM Amt", String(value) + " : " + String(value));
 }
@@ -522,12 +522,12 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
   {
     if (groupvec[activeGroupIndex]->getPwmSource() == PWMSOURCELFO)
     {
-      //PW alters PWM LFO amount for waveform A
+      // PW alters PWM LFO amount for waveform A
       showCurrentParameterPage("1. PWM Amt", "LFO " + String(groupvec[activeGroupIndex]->getPwmAmtA()));
     }
     else
     {
-      //PW alters PWM Filter Env amount for waveform A
+      // PW alters PWM Filter Env amount for waveform A
       showCurrentParameterPage("1. PWM Amt", "F. Env " + String(groupvec[activeGroupIndex]->getPwmAmtA()));
     }
   }
@@ -552,12 +552,12 @@ FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB)
   {
     if (groupvec[activeGroupIndex]->getPwmSource() == PWMSOURCELFO)
     {
-      //PW alters PWM LFO amount for waveform B
+      // PW alters PWM LFO amount for waveform B
       showCurrentParameterPage("2. PWM Amt", "LFO " + String(groupvec[activeGroupIndex]->getPwmAmtB()));
     }
     else
     {
-      //PW alters PWM Filter Env amount for waveform B
+      // PW alters PWM Filter Env amount for waveform B
       showCurrentParameterPage("2. PWM Amt", "F. Env " + String(groupvec[activeGroupIndex]->getPwmAmtB()));
     }
   }
@@ -569,17 +569,17 @@ FLASHMEM void updateOscLevelA(float value)
 
   switch (groupvec[activeGroupIndex]->getOscFX())
   {
-  case 1: //XOR
+  case 1: // XOR
     showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
-  case 2: //XMod
-    //osc A sounds with increasing osc B mod
+  case 2: // XMod
+    // osc A sounds with increasing osc B mod
     if (groupvec[activeGroupIndex]->getOscLevelA() == 1.0f && groupvec[activeGroupIndex]->getOscLevelB() <= 1.0f)
     {
       showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - groupvec[activeGroupIndex]->getOscLevelB()));
     }
     break;
-  case 0: //None
+  case 0: // None
     showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
   }
@@ -591,17 +591,17 @@ FLASHMEM void updateOscLevelB(float value)
 
   switch (groupvec[activeGroupIndex]->getOscFX())
   {
-  case 1: //XOR
+  case 1: // XOR
     showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
-  case 2: //XMod
-    //osc B sounds with increasing osc A mod
+  case 2: // XMod
+    // osc B sounds with increasing osc A mod
     if (groupvec[activeGroupIndex]->getOscLevelB() == 1.0f && groupvec[activeGroupIndex]->getOscLevelA() < 1.0f)
     {
       showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - groupvec[activeGroupIndex]->getOscLevelA()));
     }
     break;
-  case 0: //None
+  case 0: // None
     showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
   }
@@ -660,7 +660,7 @@ FLASHMEM void updateFilterMixer(float value)
   }
   else
   {
-    //LP-HP mix mode - a notch filter
+    // LP-HP mix mode - a notch filter
     if (value == LOWPASS)
     {
       filterStr = "Low Pass";
@@ -720,7 +720,7 @@ FLASHMEM void updatePitchLFOWaveform(uint32_t waveform)
   showCurrentParameterPage("Pitch LFO", getWaveformStr(waveform));
 }
 
-//MIDI CC only
+// MIDI CC only
 FLASHMEM void updatePitchLFOMidiClkSync(bool value)
 {
   groupvec[activeGroupIndex]->setPitchLfoMidiClockSync(value);
@@ -827,7 +827,7 @@ FLASHMEM void updateOscFX(uint8_t value)
   if (value == 2)
   {
     showCurrentParameterPage("Osc FX", "On - X Mod");
-    analogWriteFrequency(OSC_FX_LED, 1); //This is to make the LED flash using PWM rather than some thread
+    analogWriteFrequency(OSC_FX_LED, 1); // This is to make the LED flash using PWM rather than some thread
     analogWrite(OSC_FX_LED, 127);
   }
   else if (value == 1)
@@ -913,13 +913,13 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCpwmRate:
-    //Uses combination of PWMRate, PWa and PWb
+    // Uses combination of PWMRate, PWa and PWb
     updatePWMRate(PWMRATE[value]);
     break;
 
   case CCpwmAmt:
-    //NO FRONT PANEL CONTROL - MIDI CC ONLY
-    //Total PWM amount for both oscillators
+    // NO FRONT PANEL CONTROL - MIDI CC ONLY
+    // Total PWM amount for both oscillators
     updatePWMAmount(LINEAR[value]);
     break;
 
@@ -944,32 +944,32 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfilterfreq:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (filterfreqPrevValue < FILTERFREQS256[(value - TOLERANCE) * 2] || filterfreqPrevValue > FILTERFREQS256[(value - TOLERANCE) * 2]))
-      return; //PICK-UP
+      return; // PICK-UP
 
-    //MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
+    // MIDI is 7 bit, 128 values and needs to choose alternate filterfreqs(8 bit) by multiplying by 2
     updateFilterFreq(FILTERFREQS256[value * 2]);
-    filterfreqPrevValue = FILTERFREQS256[value * 2]; //PICK-UP
+    filterfreqPrevValue = FILTERFREQS256[value * 2]; // PICK-UP
     break;
 
   case CCfilterres:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (resonancePrevValue < ((14.29f * POWER[value - TOLERANCE]) + 0.71f) || resonancePrevValue > ((14.29f * POWER[value + TOLERANCE]) + 0.71f)))
-      return; //PICK-UP
+      return; // PICK-UP
 
-    //If <1.1 there is noise at high cutoff freq
+    // If <1.1 there is noise at high cutoff freq
     updateFilterRes((14.29f * POWER[value]) + 0.71f);
-    resonancePrevValue = (14.29f * POWER[value]) + 0.71f; //PICK-UP
+    resonancePrevValue = (14.29f * POWER[value]) + 0.71f; // PICK-UP
     break;
 
   case CCfiltermixer:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (filterMixPrevValue < LINEAR_FILTERMIXER[value - TOLERANCE] || filterMixPrevValue > LINEAR_FILTERMIXER[value + TOLERANCE]))
-      return; //PICK-UP
+      return; // PICK-UP
 
     updateFilterMixer(LINEAR_FILTERMIXER[value]);
-    filterMixPrevValue = LINEAR_FILTERMIXER[value]; //PICK-UP
+    filterMixPrevValue = LINEAR_FILTERMIXER[value]; // PICK-UP
     break;
 
   case CCfilterenv:
@@ -981,24 +981,24 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCmodwheel:
-    //Variable LFO amount from mod wheel - Settings Option
+    // Variable LFO amount from mod wheel - Settings Option
     updateModWheel(POWER[value] * modWheelDepth);
     break;
 
   case CCosclfoamt:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (oscLfoAmtPrevValue < POWER[value - TOLERANCE] || oscLfoAmtPrevValue > POWER[value + TOLERANCE]))
-      return; //PICK-UP
+      return; // PICK-UP
 
     updatePitchLFOAmt(POWER[value]);
-    oscLfoAmtPrevValue = POWER[value]; //PICK-UP
+    oscLfoAmtPrevValue = POWER[value]; // PICK-UP
     break;
 
   case CCoscLfoRate:
   {
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (oscLfoRatePrevValue < LFOMAXRATE * POWER[value - TOLERANCE] || oscLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE]))
-      return; //PICK-UP
+      return; // PICK-UP
 
     float rate = 0.0;
     if (groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())
@@ -1013,7 +1013,7 @@ void myControlChange(byte channel, byte control, byte value)
       rate = LFOMAXRATE * POWER[value];
     }
     updatePitchLFORate(rate);
-    oscLfoRatePrevValue = rate; //PICK-UP
+    oscLfoRatePrevValue = rate; // PICK-UP
     break;
   }
 
@@ -1031,9 +1031,9 @@ void myControlChange(byte channel, byte control, byte value)
 
   case CCfilterlforate:
   {
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (filterLfoRatePrevValue < LFOMAXRATE * POWER[value - TOLERANCE] || filterLfoRatePrevValue > LFOMAXRATE * POWER[value + TOLERANCE]))
-      return; //PICK-UP
+      return; // PICK-UP
 
     float rate;
     String timeDivStr = "";
@@ -1049,17 +1049,17 @@ void myControlChange(byte channel, byte control, byte value)
     }
 
     updateFilterLfoRate(rate, timeDivStr);
-    filterLfoRatePrevValue = rate; //PICK-UP
+    filterLfoRatePrevValue = rate; // PICK-UP
     break;
   }
 
   case CCfilterlfoamt:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (filterLfoAmtPrevValue < LINEAR[value - TOLERANCE] * FILTERMODMIXERMAX || filterLfoAmtPrevValue > LINEAR[value + TOLERANCE] * FILTERMODMIXERMAX))
-      return; //PICK-UP
+      return; // PICK-UP
 
     updateFilterLfoAmt(LINEAR[value] * FILTERMODMIXERMAX);
-    filterLfoAmtPrevValue = LINEAR[value] * FILTERMODMIXERMAX; //PICK-UP
+    filterLfoAmtPrevValue = LINEAR[value] * FILTERMODMIXERMAX; // PICK-UP
     break;
 
   case CCfilterlfowaveform:
@@ -1070,7 +1070,7 @@ void myControlChange(byte channel, byte control, byte value)
     updateFilterLFORetrig(value > 0);
     break;
 
-  //MIDI Only
+  // MIDI Only
   case CCoscLFOMidiClkSync:
     updatePitchLFOMidiClkSync(value > 0);
     break;
@@ -1112,19 +1112,19 @@ void myControlChange(byte channel, byte control, byte value)
     break;
 
   case CCfxamt:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (fxAmtPrevValue < ENSEMBLE_LFO[value - TOLERANCE] || fxAmtPrevValue > ENSEMBLE_LFO[value + TOLERANCE]))
-      return; //PICK-UP
+      return; // PICK-UP
     updateEffectAmt(ENSEMBLE_LFO[value]);
-    fxAmtPrevValue = ENSEMBLE_LFO[value]; //PICK-UP
+    fxAmtPrevValue = ENSEMBLE_LFO[value]; // PICK-UP
     break;
 
   case CCfxmix:
-    //Pick up
+    // Pick up
     if (!pickUpActive && pickUp && (fxMixPrevValue < LINEAR[value - TOLERANCE] || fxMixPrevValue > LINEAR[value + TOLERANCE]))
-      return; //PICK-UP
+      return; // PICK-UP
     updateEffectMix(LINEAR[value]);
-    fxMixPrevValue = LINEAR[value]; //PICK-UP
+    fxMixPrevValue = LINEAR[value]; // PICK-UP
     break;
 
   case CCallnotesoff:
@@ -1146,10 +1146,10 @@ FLASHMEM void myProgramChange(byte channel, byte program)
 FLASHMEM void myMIDIClockStart()
 {
   setMIDIClkSignal(true);
-  //Resync LFOs when MIDI Clock starts.
-  //When there's a jump to a different
-  //part of a track, such as in a DAW, the DAW must have same
-  //rhythmic quantisation as Tempo Div.
+  // Resync LFOs when MIDI Clock starts.
+  // When there's a jump to a different
+  // part of a track, such as in a DAW, the DAW must have same
+  // rhythmic quantisation as Tempo Div.
 
   // TODO: Apply to all groupvec[activeGroupIndex]-> Maybe check channel?
   groupvec[activeGroupIndex]->midiClockStart();
@@ -1162,7 +1162,7 @@ FLASHMEM void myMIDIClockStop()
 
 FLASHMEM void myMIDIClock()
 {
-  //This recalculates the LFO frequencies if the tempo changes (MIDI cLock is 24ppq)
+  // This recalculates the LFO frequencies if the tempo changes (MIDI cLock is 24ppq)
   if (count > 23)
   {
     // TODO: Most of this needs to move into the VoiceGroup
@@ -1190,7 +1190,7 @@ FLASHMEM void recallPatch(int patchNo)
   }
   else
   {
-    String data[NO_OF_PARAMS]; //Array of data read in
+    String data[NO_OF_PARAMS]; // Array of data read in
     recallPatchData(patchFile, data);
     setCurrentPatchData(data);
     patchFile.close();
@@ -1218,28 +1218,28 @@ FLASHMEM void setCurrentPatchData(String data[])
   updateWaveformB(data[15].toInt());
   updatePWMSource(data[16].toInt());
   updatePWA(data[20].toFloat(), data[17].toFloat());
-  updatePWA(data[21].toFloat(), data[18].toFloat());
+  updatePWB(data[21].toFloat(), data[18].toFloat());
   updatePWMRate(data[19].toFloat());
   updateFilterRes(data[22].toFloat());
-  resonancePrevValue = data[22].toFloat(); //Pick-up
+  resonancePrevValue = data[22].toFloat(); // Pick-up
   updateFilterFreq(data[23].toFloat());
-  filterfreqPrevValue = data[23].toInt(); //Pick-up
+  filterfreqPrevValue = data[23].toInt(); // Pick-up
   updateFilterMixer(data[24].toFloat());
-  filterMixPrevValue = data[24].toFloat(); //Pick-up
+  filterMixPrevValue = data[24].toFloat(); // Pick-up
   updateFilterEnv(data[25].toFloat());
   updatePitchLFOAmt(data[26].toFloat());
-  oscLfoAmtPrevValue = data[26].toFloat(); //PICK-UP
+  oscLfoAmtPrevValue = data[26].toFloat(); // PICK-UP
   updatePitchLFORate(data[27].toFloat());
-  oscLfoRatePrevValue = data[27].toFloat(); //PICK-UP
+  oscLfoRatePrevValue = data[27].toFloat(); // PICK-UP
   updatePitchLFOWaveform(data[28].toInt());
   updatePitchLFORetrig(data[29].toInt() > 0);
   updatePitchLFOMidiClkSync(data[30].toInt() > 0); // MIDI CC Only
   updateFilterLfoRate(data[31].toFloat(), "");
-  filterLfoRatePrevValue = data[31].toFloat(); //PICK-UP
+  filterLfoRatePrevValue = data[31].toFloat(); // PICK-UP
   updateFilterLFORetrig(data[32].toInt() > 0);
   updateFilterLFOMidiClkSync(data[33].toInt() > 0);
   updateFilterLfoAmt(data[34].toFloat());
-  filterLfoAmtPrevValue = data[34].toFloat(); //PICK-UP
+  filterLfoAmtPrevValue = data[34].toFloat(); // PICK-UP
   updateFilterLFOWaveform(data[35].toFloat());
   updateFilterAttack(data[36].toFloat());
   updateFilterDecay(data[37].toFloat());
@@ -1250,9 +1250,9 @@ FLASHMEM void setCurrentPatchData(String data[])
   updateSustain(data[42].toFloat());
   updateRelease(data[43].toFloat());
   updateEffectAmt(data[44].toFloat());
-  fxAmtPrevValue = data[44].toFloat(); //PICK-UP
+  fxAmtPrevValue = data[44].toFloat(); // PICK-UP
   updateEffectMix(data[45].toFloat());
-  fxMixPrevValue = data[45].toFloat(); //PICK-UP
+  fxMixPrevValue = data[45].toFloat(); // PICK-UP
   updatePitchEnv(data[46].toFloat());
   velocitySens = data[47].toFloat();
   groupvec[activeGroupIndex]->setMonophonic(data[49].toInt());
@@ -1278,7 +1278,7 @@ void checkMux()
   if (mux1Read > (mux1ValuesPrev[muxInput] + QUANTISE_FACTOR) || mux1Read < (mux1ValuesPrev[muxInput] - QUANTISE_FACTOR))
   {
     mux1ValuesPrev[muxInput] = mux1Read;
-    mux1Read = (mux1Read >> 5); //Change range to 0-127
+    mux1Read = (mux1Read >> 5); // Change range to 0-127
     switch (muxInput)
     {
     case MUX1_noiseLevel:
@@ -1354,7 +1354,7 @@ void checkMux()
   {
     mux2ValuesPrev[muxInput] = mux2Read;
     if (muxInput != MUX2_cutoff)
-      mux2Read = (mux2Read >> 5); //Change range to 0-127
+      mux2Read = (mux2Read >> 5); // Change range to 0-127
     switch (muxInput)
     {
     case MUX2_attack:
@@ -1410,13 +1410,13 @@ void checkMux()
       myControlChange(midiChannel, CCfilterres, mux2Read);
       break;
     case MUX2_cutoff:
-      //Special case - Filter Cutoff is 8 bit, 256 values for smoother changes
+      // Special case - Filter Cutoff is 8 bit, 256 values for smoother changes
       mux2Read = (mux2Read >> 4);
       if (!pickUpActive && pickUp && (filterfreqPrevValue < FILTERFREQS256[mux2Read - TOLERANCE] || filterfreqPrevValue > FILTERFREQS256[mux2Read + TOLERANCE]))
-        return; //PICK-UP
+        return; // PICK-UP
 
       updateFilterFreq(FILTERFREQS256[mux2Read]);
-      filterfreqPrevValue = FILTERFREQS256[mux2Read]; //PICK-UP
+      filterfreqPrevValue = FILTERFREQS256[mux2Read]; // PICK-UP
       midiCCOut(CCfilterfreq, mux2Read >> 1);
       break;
     case MUX2_filterLFORate:
@@ -1433,10 +1433,10 @@ void checkMux()
   if (muxInput >= MUXCHANNELS)
   {
     muxInput = 0;
-    checkVolumePot(); //Check here
+    checkVolumePot(); // Check here
     if (!firstPatchLoaded)
     {
-      recallPatch(patchNo); //Load first patch after all controls read
+      recallPatch(patchNo); // Load first patch after all controls read
       firstPatchLoaded = true;
       global.sgtl5000_1.unmuteHeadphone();
       global.sgtl5000_1.unmuteLineout();
@@ -1454,7 +1454,7 @@ void checkVolumePot()
   if (volumeRead > (volumePrevious + QUANTISE_FACTOR) || volumeRead < (volumePrevious - QUANTISE_FACTOR))
   {
     volumePrevious = volumeRead;
-    volumeRead = (volumeRead >> 5); //Change range to 0-127
+    volumeRead = (volumeRead >> 5); // Change range to 0-127
     myControlChange(midiChannel, CCvolume, volumeRead);
   }
 }
@@ -1469,7 +1469,7 @@ void checkSwitches()
   unisonSwitch.update();
   if (unisonSwitch.numClicks() == 1)
   {
-    //Cycle through each option
+    // Cycle through each option
     midiCCOut(CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode + 1);
     myControlChange(midiChannel, CCunison, groupvec[activeGroupIndex]->params().unisonMode == 2 ? 0 : groupvec[activeGroupIndex]->params().unisonMode + 1);
   }
@@ -1477,7 +1477,7 @@ void checkSwitches()
   oscFXSwitch.update();
   if (oscFXSwitch.numClicks() == 1)
   {
-    //Cycle through each option
+    // Cycle through each option
     midiCCOut(CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX() + 1);
     myControlChange(midiChannel, CCoscfx, groupvec[activeGroupIndex]->getOscFX() == 2 ? 0 : groupvec[activeGroupIndex]->getOscFX() + 1);
   }
@@ -1516,31 +1516,31 @@ void checkSwitches()
     case PARAMETER:
       if (patches.size() < PATCHES_LIMIT)
       {
-        resetPatchesOrdering(); //Reset order of patches from first patch
+        resetPatchesOrdering(); // Reset order of patches from first patch
         patches.push({patches.size() + 1, INITPATCHNAME});
         state = SAVE;
       }
       break;
     case SAVE:
-      //Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
+      // Save as new patch with INITIALPATCH name or overwrite existing keeping name - bypassing patch renaming
       patchName = patches.last().patchName;
       state = PATCH;
       savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
       showPatchPage(patches.last().patchNo, patches.last().patchName);
       patchNo = patches.last().patchNo;
-      loadPatches(); //Get rid of pushed patch if it wasn't saved
+      loadPatches(); // Get rid of pushed patch if it wasn't saved
       setPatchesOrdering(patchNo);
       renamedPatch = "";
       state = PARAMETER;
       break;
     case PATCHNAMING:
       if (renamedPatch.length() > 0)
-        patchName = renamedPatch; //Prevent empty strings
+        patchName = renamedPatch; // Prevent empty strings
       state = PATCH;
       savePatch(String(patches.last().patchNo).c_str(), getCurrentPatchData());
       showPatchPage(patches.last().patchNo, patchName);
       patchNo = patches.last().patchNo;
-      loadPatches(); //Get rid of pushed patch if it wasn't saved
+      loadPatches(); // Get rid of pushed patch if it wasn't saved
       setPatchesOrdering(patchNo);
       renamedPatch = "";
       state = PARAMETER;
@@ -1551,8 +1551,8 @@ void checkSwitches()
   settingsButton.update();
   if (settingsButton.held())
   {
-    //If recall held, set current patch to match current hardware state
-    //Reinitialise all hardware values to force them to be re-read if different
+    // If recall held, set current patch to match current hardware state
+    // Reinitialise all hardware values to force them to be re-read if different
     state = REINITIALISE;
     reinitialiseToPanel();
   }
@@ -1577,7 +1577,7 @@ void checkSwitches()
   backButton.update();
   if (backButton.held())
   {
-    //If Back button held, Panic - all notes off
+    // If Back button held, Panic - all notes off
     groupvec[activeGroupIndex]->allNotesOff();
     groupvec[activeGroupIndex]->closeEnvelopes();
   }
@@ -1592,7 +1592,7 @@ void checkSwitches()
     case SAVE:
       renamedPatch = "";
       state = PARAMETER;
-      loadPatches(); //Remove patch that was to be saved
+      loadPatches(); // Remove patch that was to be saved
       setPatchesOrdering(patchNo);
       break;
     case PATCHNAMING:
@@ -1614,14 +1614,14 @@ void checkSwitches()
     }
   }
 
-  //Encoder switch
+  // Encoder switch
   recallButton.update();
   if (recallButton.held())
   {
-    //If Recall button held, return to current patch setting
-    //which clears any changes made
+    // If Recall button held, return to current patch setting
+    // which clears any changes made
     state = PATCH;
-    //Recall the current patch
+    // Recall the current patch
     patchNo = patches.first().patchNo;
     recallPatch(patchNo);
     state = PARAMETER;
@@ -1631,11 +1631,11 @@ void checkSwitches()
     switch (state)
     {
     case PARAMETER:
-      state = RECALL; //show patch list
+      state = RECALL; // show patch list
       break;
     case RECALL:
       state = PATCH;
-      //Recall the current patch
+      // Recall the current patch
       patchNo = patches.first().patchNo;
       recallPatch(patchNo);
       state = PARAMETER;
@@ -1646,7 +1646,7 @@ void checkSwitches()
       state = PATCHNAMING;
       break;
     case PATCHNAMING:
-      if (renamedPatch.length() < 12) //actually 12 chars
+      if (renamedPatch.length() < 12) // actually 12 chars
       {
         renamedPatch.concat(String(currentCharacter));
         charIndex = 0;
@@ -1655,18 +1655,18 @@ void checkSwitches()
       }
       break;
     case DELETE:
-      //Don't delete final patch
+      // Don't delete final patch
       if (patches.size() > 1)
       {
         state = DELETEMSG;
-        patchNo = patches.first().patchNo;    //PatchNo to delete from SD card
-        patches.shift();                      //Remove patch from circular buffer
-        deletePatch(String(patchNo).c_str()); //Delete from SD card
-        loadPatches();                        //Repopulate circular buffer to start from lowest Patch No
+        patchNo = patches.first().patchNo;    // PatchNo to delete from SD card
+        patches.shift();                      // Remove patch from circular buffer
+        deletePatch(String(patchNo).c_str()); // Delete from SD card
+        loadPatches();                        // Repopulate circular buffer to start from lowest Patch No
         renumberPatchesOnSD();
-        loadPatches();                     //Repopulate circular buffer again after delete
-        patchNo = patches.first().patchNo; //Go back to 1
-        recallPatch(patchNo);              //Load first patch
+        loadPatches();                     // Repopulate circular buffer again after delete
+        patchNo = patches.first().patchNo; // Go back to 1
+        recallPatch(patchNo);              // Load first patch
       }
       state = PARAMETER;
       break;
@@ -1685,9 +1685,9 @@ void checkSwitches()
 
 FLASHMEM void reinitialiseToPanel()
 {
-  //This sets the current patch to be the same as the current hardware panel state - all the pots
-  //The four button controls stay the same state
-  //This reinialises the previous hardware values to force a re-read
+  // This sets the current patch to be the same as the current hardware panel state - all the pots
+  // The four button controls stay the same state
+  // This reinialises the previous hardware values to force a re-read
   muxInput = 0;
   for (int i = 0; i < MUXCHANNELS; i++)
   {
@@ -1701,8 +1701,8 @@ FLASHMEM void reinitialiseToPanel()
 
 void checkEncoder()
 {
-  //Encoder works with relative inc and dec values
-  //Detent encoder goes up in 4 steps, hence +/-3
+  // Encoder works with relative inc and dec values
+  // Detent encoder goes up in 4 steps, hence +/-3
   long encRead = encoder.read();
   if ((encCW && encRead > encPrevious + 3) || (!encCW && encRead < encPrevious - 3))
   {
@@ -1726,7 +1726,7 @@ void checkEncoder()
       break;
     case PATCHNAMING:
       if (charIndex == TOTALCHARS)
-        charIndex = 0; //Wrap around
+        charIndex = 0; // Wrap around
       currentCharacter = CHARACTERS[charIndex++];
       showRenamingPage(renamedPatch + currentCharacter);
       break;
@@ -1793,7 +1793,7 @@ void midiCCOut(byte cc, byte value)
     usbMIDI.sendControlChange(cc, value, midiOutCh);
     midi1.sendControlChange(cc, value, midiOutCh);
     if (MIDIThru == midi::Thru::Off)
-      MIDI.sendControlChange(cc, value, midiOutCh); //MIDI DIN is set to Out
+      MIDI.sendControlChange(cc, value, midiOutCh); // MIDI DIN is set to Out
   }
 }
 
@@ -1811,15 +1811,15 @@ void CPUMonitor()
 
 void loop()
 {
-  //USB HOST MIDI Class Compliant
+  // USB HOST MIDI Class Compliant
   myusb.Task();
   midi1.read(midiChannel);
-  //USB Client MIDI
+  // USB Client MIDI
   usbMIDI.read(midiChannel);
-  //MIDI 5 Pin DIN
+  // MIDI 5 Pin DIN
   MIDI.read(midiChannel);
   checkMux();
   checkSwitches();
   checkEncoder();
-  //CPUMonitor();
+  // CPUMonitor();
 }
