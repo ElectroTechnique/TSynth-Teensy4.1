@@ -70,15 +70,15 @@ FLASHMEM void renderBootUpPage()
   tft.setFont(&Org_01);
   tft.setTextSize(1);
   tft.setTextColor(ST7735_WHITE);
-  tft.println("ELECTRO");
+  tft.println(F("ELECTRO"));
   tft.setTextColor(ST7735_BLACK);
   tft.setCursor(91, 37);
-  tft.println("TECHNIQUE");
+  tft.println(F("TECHNIQUE"));
   tft.setTextColor(ST7735_YELLOW);
   tft.setFont(&Yeysk16pt7b);
   tft.setCursor(5, 70);
   tft.setTextSize(1);
-  tft.println("TSynth");
+  tft.println(F("TSynth"));
   tft.setTextColor(ST7735_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(110, 95);
@@ -115,7 +115,7 @@ FLASHMEM void renderCurrentPatchPage() {
   if (MIDIClkSignal) {
     tft.fillRect(100, 27, 14, 7, ST77XX_ORANGE);
     tft.setCursor(101, 32);
-    tft.println("CK");
+    tft.println(F("CK"));
   }
   renderPeak();
 
@@ -238,7 +238,7 @@ FLASHMEM void renderDeletePatchPage() {
   tft.setCursor(5, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Delete?");
+  tft.println(F("Delete?"));
   tft.drawFastHLine(10, 60, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 78);
@@ -262,7 +262,7 @@ FLASHMEM void renderDeleteMessagePage() {
   tft.setCursor(2, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Renumbering");
+  tft.println(F("Renumbering"));
   tft.setCursor(10, 90);
   tft.println("SD Card");
 }
@@ -273,7 +273,7 @@ FLASHMEM void renderSavePage() {
   tft.setCursor(5, 53);
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
-  tft.println("Save?");
+  tft.println(F("Save?"));
   tft.drawFastHLine(10, 60, tft.width() - 20, ST7735_RED);
   tft.setFont(&FreeSans9pt7b);
   tft.setCursor(0, 78);
@@ -298,7 +298,7 @@ FLASHMEM void renderReinitialisePage()
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
   tft.setCursor(5, 53);
-  tft.println("Initialise to");
+  tft.println(F("Initialise to"));
   tft.setCursor(5, 90);
   tft.println("panel setting");
 }
@@ -310,7 +310,7 @@ FLASHMEM void renderPatchNamingPage()
   tft.setTextColor(ST7735_YELLOW);
   tft.setTextSize(1);
   tft.setCursor(0, 53);
-  tft.println("Rename Patch");
+  tft.println(F("Rename Patch"));
   tft.drawFastHLine(10, 63, tft.width() - 20, ST7735_RED);
   tft.setTextColor(ST7735_WHITE);
   tft.setCursor(5, 90);
@@ -378,7 +378,7 @@ FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType)
   startTimer();
 }
 
-FLASHMEM void showCurrentParameterPage(const char *param, String val, int pType) {
+FLASHMEM void showCurrentParameterPage(String param, String val, int pType) {
   if (state == SETTINGS || state == SETTINGSVALUE)state = PARAMETER;//Exit settings page if showing
   currentParameter = param;
   currentValue = val;
@@ -386,7 +386,7 @@ FLASHMEM void showCurrentParameterPage(const char *param, String val, int pType)
   startTimer();
 }
 
-FLASHMEM void showCurrentParameterPage(const char *param, String val) {
+FLASHMEM void showCurrentParameterPage(String param, String val) {
   showCurrentParameterPage(param, val, PARAMETER);
 }
 

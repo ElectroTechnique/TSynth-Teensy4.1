@@ -7,4 +7,4 @@
 
 extern const float DETUNE[4][24];
 extern const char* CDT_STR[128];
-extern const uint32_t CHORD_DETUNE[12][128];
+extern const uint8_t CHORD_DETUNE[12][128];

@@ -147,7 +147,7 @@ FLASHMEM void savePatch(const char *patchNo, String patchData[]){
   String dataString = patchData[0];
   for (uint32_t i = 1; i < NO_OF_PARAMS; i++)
   {
-    dataString = dataString + "," + patchData[i];
+    dataString = dataString + F(",") + patchData[i];
   }
   savePatch(patchNo, dataString);
 }

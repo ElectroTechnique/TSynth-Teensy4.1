@@ -21,7 +21,7 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
 
-  ElectroTechnique TSynth - Firmware Rev 2.32
+  ElectroTechnique TSynth - Firmware Rev 2.33
   TEENSY 4.1 - 12 VOICES
 
   Arduino IDE Tools Settings:
@@ -92,8 +92,8 @@ uint8_t activeGroupIndex = 0;
 USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
-MIDIDevice midi1(myusb);
-// MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
+//MIDIDevice midi1(myusb);
+MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
 
 // MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
@@ -110,9 +110,8 @@ boolean firstPatchLoaded = false;
 
 float previousMillis = millis(); // For MIDI Clk Sync
 
-uint32_t count = 0;           // For MIDI Clk Sync
-uint32_t patchNo = 1;         // Current patch no
-int voiceToReturn = -1;       // Initialise
+uint8_t count = 0;           // For MIDI Clk Sync
+uint16_t patchNo = 1;         // Current patch no
 long earliestTime = millis(); // For voice allocation - initialise to now
 
 FLASHMEM void setup()
@@ -164,12 +163,12 @@ FLASHMEM void setup()
   {
     Serial.println(F("SD card is not connected or unusable"));
     reinitialiseToPanel();
-    showPatchPage("No SD", "conn'd / usable");
+    showPatchPage(F("No SD"), F("conn'd / usable"));
   }
 
   // Read MIDI Channel from EEPROM
   midiChannel = getMIDIChannel();
-  Serial.println("MIDI In Ch:" + String(midiChannel) + " (0 is Omni On)");
+  Serial.println(F("MIDI In Ch:") + String(midiChannel) + F(" (0 is Omni On)"));
 
   // USB HOST MIDI Class Compliant
   delay(200); // Wait to turn on USB Host
@@ -390,19 +389,19 @@ FLASHMEM void updateUnison(uint8_t unison)
 
   if (unison == 0)
   {
-    showCurrentParameterPage("Unison", "Off");
+    showCurrentParameterPage(F("Unison"), F("Off"));
     pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, LOW); // LED off
   }
   else if (unison == 1)
   {
-    showCurrentParameterPage("Dyn. Unison", "On");
+    showCurrentParameterPage(F("Dyn. Unison"), F("On"));
     pinMode(UNISON_LED, OUTPUT);
     digitalWriteFast(UNISON_LED, HIGH); // LED on
   }
   else
   {
-    showCurrentParameterPage("Chd. Unison", "On");
+    showCurrentParameterPage(F("Chd. Unison"), F("On"));
     analogWriteFrequency(UNISON_LED, 1); // This is to make the LED flash using PWM rather than some thread
     analogWrite(UNISON_LED, 127);
   }
@@ -411,25 +410,25 @@ FLASHMEM void updateUnison(uint8_t unison)
 FLASHMEM void updateVolume(float vol)
 {
   global.sgtl5000_1.volume(vol * SGTL_MAXVOLUME);
-  showCurrentParameterPage("Volume", vol);
+  showCurrentParameterPage(F("Volume"), vol);
 }
 
 FLASHMEM void updateGlide(float glideSpeed)
 {
   groupvec[activeGroupIndex]->params().glideSpeed = glideSpeed;
-  showCurrentParameterPage("Glide", milliToString(glideSpeed * GLIDEFACTOR));
+  showCurrentParameterPage(F("Glide"), milliToString(glideSpeed * GLIDEFACTOR));
 }
 
 FLASHMEM void updateWaveformA(uint32_t waveform)
 {
   groupvec[activeGroupIndex]->setWaveformA(waveform);
-  showCurrentParameterPage("1. Waveform", getWaveformStr(waveform));
+  showCurrentParameterPage(F("1. Waveform"), getWaveformStr(waveform));
 }
 
 FLASHMEM void updateWaveformB(uint32_t waveform)
 {
   groupvec[activeGroupIndex]->setWaveformB(waveform);
-  showCurrentParameterPage("2. Waveform", getWaveformStr(waveform));
+  showCurrentParameterPage(F("2. Waveform"), getWaveformStr(waveform));
 }
 
 FLASHMEM void updatePitchA(int pitch)
@@ -443,7 +442,7 @@ FLASHMEM void updatePitchB(int pitch)
 {
   groupvec[activeGroupIndex]->params().oscPitchB = pitch;
   groupvec[activeGroupIndex]->updateVoices();
-  showCurrentParameterPage("2. Semitones", (pitch > 0 ? "+" : "") + String(pitch));
+  showCurrentParameterPage(F("2. Semitones"), (pitch > 0 ? "+" : "") + String(pitch));
 }
 
 FLASHMEM void updateDetune(float detune, uint32_t chordDetune)
@@ -454,11 +453,11 @@ FLASHMEM void updateDetune(float detune, uint32_t chordDetune)
 
   if (groupvec[activeGroupIndex]->params().unisonMode == 2)
   {
-    showCurrentParameterPage("Chord", CDT_STR[chordDetune]);
+    showCurrentParameterPage(F("Chord"), CDT_STR[chordDetune]);
   }
   else
   {
-    showCurrentParameterPage("Detune", String((1 - detune) * 100) + " %");
+    showCurrentParameterPage(F("Detune"), String((1 - detune) * 100) + F(" %"));
   }
 }
 
@@ -468,11 +467,11 @@ FLASHMEM void updatePWMSource(uint8_t source)
 
   if (source == PWMSOURCELFO)
   {
-    showCurrentParameterPage("PWM Source", "LFO"); // Only shown when updated via MIDI
+    showCurrentParameterPage(F("PWM Source"), F("LFO")); // Only shown when updated via MIDI
   }
   else
   {
-    showCurrentParameterPage("PWM Source", "Filter Env");
+    showCurrentParameterPage(F("PWM Source"), F("Filter Env"));
   }
 }
 
@@ -483,16 +482,16 @@ FLASHMEM void updatePWMRate(float value)
   if (value == PWMRATE_PW_MODE)
   {
     // Set to fixed PW mode
-    showCurrentParameterPage("PW Mode", "On");
+    showCurrentParameterPage(F("PW Mode"), F("On"));
   }
   else if (value == PWMRATE_SOURCE_FILTER_ENV)
   {
     // Set to Filter Env Mod source
-    showCurrentParameterPage("PWM Source", "Filter Env");
+    showCurrentParameterPage(F("PWM Source"), F("Filter Env"));
   }
   else
   {
-    showCurrentParameterPage("PWM Rate", String(2 * value) + " Hz"); // PWM goes through mid to maximum, sounding effectively twice as fast
+    showCurrentParameterPage(F("PWM Rate"), String(2 * value) + F(" Hz")); // PWM goes through mid to maximum, sounding effectively twice as fast
   }
 }
 
@@ -500,7 +499,7 @@ FLASHMEM void updatePWMAmount(float value)
 {
   // MIDI only - sets both osc PWM
   groupvec[activeGroupIndex]->overridePwmAmount(value);
-  showCurrentParameterPage("PWM Amt", String(value) + " : " + String(value));
+  showCurrentParameterPage(F("PWM Amt"), String(value) + F(" : ") + String(value));
 }
 
 FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
@@ -511,11 +510,11 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
   {
     if (groupvec[activeGroupIndex]->getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE)
     {
-      showCurrentParameterPage("1. PW Amt", groupvec[activeGroupIndex]->getPwA(), VAR_TRI);
+      showCurrentParameterPage(F("1. PW Amt"), groupvec[activeGroupIndex]->getPwA(), VAR_TRI);
     }
     else
     {
-      showCurrentParameterPage("1. PW Amt", groupvec[activeGroupIndex]->getPwA(), PULSE);
+      showCurrentParameterPage(F("1. PW Amt"), groupvec[activeGroupIndex]->getPwA(), PULSE);
     }
   }
   else
@@ -523,12 +522,12 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
     if (groupvec[activeGroupIndex]->getPwmSource() == PWMSOURCELFO)
     {
       // PW alters PWM LFO amount for waveform A
-      showCurrentParameterPage("1. PWM Amt", "LFO " + String(groupvec[activeGroupIndex]->getPwmAmtA()));
+      showCurrentParameterPage(F("1. PWM Amt"), F("LFO ") + String(groupvec[activeGroupIndex]->getPwmAmtA()));
     }
     else
     {
       // PW alters PWM Filter Env amount for waveform A
-      showCurrentParameterPage("1. PWM Amt", "F. Env " + String(groupvec[activeGroupIndex]->getPwmAmtA()));
+      showCurrentParameterPage(F("1. PWM Amt"), F("F. Env ") + String(groupvec[activeGroupIndex]->getPwmAmtA()));
     }
   }
 }
@@ -541,11 +540,11 @@ FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB)
   {
     if (groupvec[activeGroupIndex]->getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE)
     {
-      showCurrentParameterPage("2. PW Amt", groupvec[activeGroupIndex]->getPwB(), VAR_TRI);
+      showCurrentParameterPage(F("2. PW Amt"), groupvec[activeGroupIndex]->getPwB(), VAR_TRI);
     }
     else
     {
-      showCurrentParameterPage("2. PW Amt", groupvec[activeGroupIndex]->getPwB(), PULSE);
+      showCurrentParameterPage(F("2. PW Amt"), groupvec[activeGroupIndex]->getPwB(), PULSE);
     }
   }
   else
@@ -553,12 +552,12 @@ FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB)
     if (groupvec[activeGroupIndex]->getPwmSource() == PWMSOURCELFO)
     {
       // PW alters PWM LFO amount for waveform B
-      showCurrentParameterPage("2. PWM Amt", "LFO " + String(groupvec[activeGroupIndex]->getPwmAmtB()));
+      showCurrentParameterPage(F("2. PWM Amt"), F("LFO ") + String(groupvec[activeGroupIndex]->getPwmAmtB()));
     }
     else
     {
       // PW alters PWM Filter Env amount for waveform B
-      showCurrentParameterPage("2. PWM Amt", "F. Env " + String(groupvec[activeGroupIndex]->getPwmAmtB()));
+      showCurrentParameterPage(F("2. PWM Amt"), F("F. Env ") + String(groupvec[activeGroupIndex]->getPwmAmtB()));
     }
   }
 }
@@ -570,17 +569,17 @@ FLASHMEM void updateOscLevelA(float value)
   switch (groupvec[activeGroupIndex]->getOscFX())
   {
   case 1: // XOR
-    showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
+    showCurrentParameterPage(F("Osc Mix 1:2"), F("   ") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(" : ") + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
   case 2: // XMod
     // osc A sounds with increasing osc B mod
     if (groupvec[activeGroupIndex]->getOscLevelA() == 1.0f && groupvec[activeGroupIndex]->getOscLevelB() <= 1.0f)
     {
-      showCurrentParameterPage("XMod Osc 1", "Osc 2: " + String(1 - groupvec[activeGroupIndex]->getOscLevelB()));
+      showCurrentParameterPage(F("XMod Osc 1"), F("Osc 2: ") + String(1 - groupvec[activeGroupIndex]->getOscLevelB()));
     }
     break;
   case 0: // None
-    showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
+    showCurrentParameterPage(F("Osc Mix 1:2"), F("   ") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(" : ") + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
   }
 }
@@ -592,17 +591,17 @@ FLASHMEM void updateOscLevelB(float value)
   switch (groupvec[activeGroupIndex]->getOscFX())
   {
   case 1: // XOR
-    showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
+    showCurrentParameterPage(F("Osc Mix 1:2"), F("   ") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(" : ") + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
   case 2: // XMod
     // osc B sounds with increasing osc A mod
     if (groupvec[activeGroupIndex]->getOscLevelB() == 1.0f && groupvec[activeGroupIndex]->getOscLevelA() < 1.0f)
     {
-      showCurrentParameterPage("XMod Osc 2", "Osc 1: " + String(1 - groupvec[activeGroupIndex]->getOscLevelA()));
+      showCurrentParameterPage(F("XMod Osc 2"), F("Osc 1: ") + String(1 - groupvec[activeGroupIndex]->getOscLevelA()));
     }
     break;
   case 0: // None
-    showCurrentParameterPage("Osc Mix 1:2", "   " + String(groupvec[activeGroupIndex]->getOscLevelA()) + " : " + String(groupvec[activeGroupIndex]->getOscLevelB()));
+    showCurrentParameterPage(F("Osc Mix 1:2"), F("   ") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(" : ") + String(groupvec[activeGroupIndex]->getOscLevelB()));
     break;
   }
 }
@@ -625,28 +624,28 @@ FLASHMEM void updateNoiseLevel(float value)
 
   if (value > 0)
   {
-    showCurrentParameterPage("Noise Level", "Pink " + String(value));
+    showCurrentParameterPage(F("Noise Level"), F("Pink ") + String(value));
   }
   else if (value < 0)
   {
-    showCurrentParameterPage("Noise Level", "White " + String(abs(value)));
+    showCurrentParameterPage(F("Noise Level"), F("White ") + String(abs(value)));
   }
   else
   {
-    showCurrentParameterPage("Noise Level", "Off");
+    showCurrentParameterPage(F("Noise Level"), F("Off"));
   }
 }
 
 FLASHMEM void updateFilterFreq(float value)
 {
   groupvec[activeGroupIndex]->setCutoff(value);
-  showCurrentParameterPage("Cutoff", String(int(value)) + " Hz");
+  showCurrentParameterPage(F("Cutoff"), String(int(value)) + F(" Hz"));
 }
 
 FLASHMEM void updateFilterRes(float value)
 {
   groupvec[activeGroupIndex]->setResonance(value);
-  showCurrentParameterPage("Resonance", value);
+  showCurrentParameterPage(F("Resonance"), value);
 }
 
 FLASHMEM void updateFilterMixer(float value)
@@ -656,51 +655,51 @@ FLASHMEM void updateFilterMixer(float value)
   String filterStr;
   if (value == BANDPASS)
   {
-    filterStr = "Band Pass";
+    filterStr = F("Band Pass");
   }
   else
   {
     // LP-HP mix mode - a notch filter
     if (value == LOWPASS)
     {
-      filterStr = "Low Pass";
+      filterStr = F("Low Pass");
     }
     else if (value == HIGHPASS)
     {
-      filterStr = "High Pass";
+      filterStr = F("High Pass");
     }
     else
     {
-      filterStr = "LP " + String(100 - int(100 * value)) + " - " + String(int(100 * value)) + " HP";
+      filterStr = F("LP ") + String(100 - int(100 * value)) + F(" - ") + String(int(100 * value)) + F(" HP");
     }
   }
 
-  showCurrentParameterPage("Filter Type", filterStr);
+  showCurrentParameterPage(F("Filter Type"), filterStr);
 }
 
 FLASHMEM void updateFilterEnv(float value)
 {
   groupvec[activeGroupIndex]->setFilterEnvelope(value);
-  showCurrentParameterPage("Filter Env.", String(value));
+  showCurrentParameterPage(F("Filter Env."), String(value));
 }
 
 FLASHMEM void updatePitchEnv(float value)
 {
   groupvec[activeGroupIndex]->setPitchEnvelope(value);
-  showCurrentParameterPage("Pitch Env Amt", String(value));
+  showCurrentParameterPage(F("Pitch Env Amt"), String(value));
 }
 
 FLASHMEM void updateKeyTracking(float value)
 {
   groupvec[activeGroupIndex]->setKeytracking(value);
-  showCurrentParameterPage("Key Tracking", String(value));
+  showCurrentParameterPage(F("Key Tracking"), String(value));
 }
 
 FLASHMEM void updatePitchLFOAmt(float value)
 {
   groupvec[activeGroupIndex]->setPitchLfoAmount(value);
   char buf[10];
-  showCurrentParameterPage("LFO Amount", dtostrf(value, 4, 3, buf));
+  showCurrentParameterPage(F("LFO Amount"), dtostrf(value, 4, 3, buf));
 }
 
 FLASHMEM void updateModWheel(float value)
@@ -711,20 +710,20 @@ FLASHMEM void updateModWheel(float value)
 FLASHMEM void updatePitchLFORate(float value)
 {
   groupvec[activeGroupIndex]->setPitchLfoRate(value);
-  showCurrentParameterPage("LFO Rate", String(value) + " Hz");
+  showCurrentParameterPage(F("LFO Rate"), String(value) + F(" Hz"));
 }
 
 FLASHMEM void updatePitchLFOWaveform(uint32_t waveform)
 {
   groupvec[activeGroupIndex]->setPitchLfoWaveform(waveform);
-  showCurrentParameterPage("Pitch LFO", getWaveformStr(waveform));
+  showCurrentParameterPage(F("Pitch LFO"), getWaveformStr(waveform));
 }
 
 // MIDI CC only
 FLASHMEM void updatePitchLFOMidiClkSync(bool value)
 {
   groupvec[activeGroupIndex]->setPitchLfoMidiClockSync(value);
-  showCurrentParameterPage("P. LFO Sync", value ? "On" : "Off");
+  showCurrentParameterPage(F("P. LFO Sync"), value ? F("On") : F("Off"));
 }
 
 FLASHMEM void updateFilterLfoRate(float value, String timeDivStr)
@@ -733,50 +732,50 @@ FLASHMEM void updateFilterLfoRate(float value, String timeDivStr)
 
   if (timeDivStr.length() > 0)
   {
-    showCurrentParameterPage("LFO Time Div", timeDivStr);
+    showCurrentParameterPage(F("LFO Time Div"), timeDivStr);
   }
   else
   {
-    showCurrentParameterPage("F. LFO Rate", String(value) + " Hz");
+    showCurrentParameterPage(F("F. LFO Rate"), String(value) + F(" Hz"));
   }
 }
 
 FLASHMEM void updateFilterLfoAmt(float value)
 {
   groupvec[activeGroupIndex]->setFilterLfoAmt(value);
-  showCurrentParameterPage("F. LFO Amt", String(value));
+  showCurrentParameterPage(F("F. LFO Amt"), String(value));
 }
 
 FLASHMEM void updateFilterLFOWaveform(uint32_t waveform)
 {
   groupvec[activeGroupIndex]->setFilterLfoWaveform(waveform);
-  showCurrentParameterPage("Filter LFO", getWaveformStr(waveform));
+  showCurrentParameterPage(F("Filter LFO"), getWaveformStr(waveform));
 }
 
 FLASHMEM void updatePitchLFORetrig(bool value)
 {
   groupvec[activeGroupIndex]->setPitchLfoRetrig(value);
-  showCurrentParameterPage("P. LFO Retrig", value ? "On" : "Off");
+  showCurrentParameterPage(F("P. LFO Retrig"), value ? F("On") : F("Off"));
 }
 
 FLASHMEM void updateFilterLFORetrig(bool value)
 {
   groupvec[activeGroupIndex]->setFilterLfoRetrig(value);
-  showCurrentParameterPage("F. LFO Retrig", groupvec[activeGroupIndex]->getFilterLfoRetrig() ? "On" : "Off");
+  showCurrentParameterPage(F("F. LFO Retrig"), groupvec[activeGroupIndex]->getFilterLfoRetrig() ? F("On") : F("Off"));
   digitalWriteFast(RETRIG_LED, groupvec[activeGroupIndex]->getFilterLfoRetrig() ? HIGH : LOW); // LED
 }
 
 FLASHMEM void updateFilterLFOMidiClkSync(bool value)
 {
   groupvec[activeGroupIndex]->setFilterLfoMidiClockSync(value);
-  showCurrentParameterPage("Tempo Sync", value ? "On" : "Off");
+  showCurrentParameterPage(F("Tempo Sync"), value ? F("On") : F("Off"));
   digitalWriteFast(TEMPO_LED, value ? HIGH : LOW); // LED
 }
 
 FLASHMEM void updateFilterAttack(float value)
 {
   groupvec[activeGroupIndex]->setFilterAttack(value);
-  showCurrentParameterPage("Filter Attack", milliToString(value), FILTER_ENV);
+  showCurrentParameterPage(F("Filter Attack"), milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterDecay(float value)
@@ -788,37 +787,37 @@ FLASHMEM void updateFilterDecay(float value)
 FLASHMEM void updateFilterSustain(float value)
 {
   groupvec[activeGroupIndex]->setFilterSustain(value);
-  showCurrentParameterPage("Filter Sustain", String(value), FILTER_ENV);
+  showCurrentParameterPage(F("Filter Sustain"), String(value), FILTER_ENV);
 }
 
 FLASHMEM void updateFilterRelease(float value)
 {
   groupvec[activeGroupIndex]->setFilterRelease(value);
-  showCurrentParameterPage("Filter Release", milliToString(value), FILTER_ENV);
+  showCurrentParameterPage(F("Filter Release"), milliToString(value), FILTER_ENV);
 }
 
 FLASHMEM void updateAttack(float value)
 {
   groupvec[activeGroupIndex]->setAmpAttack(value);
-  showCurrentParameterPage("Attack", milliToString(value), AMP_ENV);
+  showCurrentParameterPage(F("Attack"), milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateDecay(float value)
 {
   groupvec[activeGroupIndex]->setAmpDecay(value);
-  showCurrentParameterPage("Decay", milliToString(value), AMP_ENV);
+  showCurrentParameterPage(F("Decay"), milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateSustain(float value)
 {
   groupvec[activeGroupIndex]->setAmpSustain(value);
-  showCurrentParameterPage("Sustain", String(value), AMP_ENV);
+  showCurrentParameterPage(F("Sustain"), String(value), AMP_ENV);
 }
 
 FLASHMEM void updateRelease(float value)
 {
   groupvec[activeGroupIndex]->setAmpRelease(value);
-  showCurrentParameterPage("Release", milliToString(value), AMP_ENV);
+  showCurrentParameterPage(F("Release"), milliToString(value), AMP_ENV);
 }
 
 FLASHMEM void updateOscFX(uint8_t value)
@@ -826,19 +825,19 @@ FLASHMEM void updateOscFX(uint8_t value)
   groupvec[activeGroupIndex]->setOscFX(value);
   if (value == 2)
   {
-    showCurrentParameterPage("Osc FX", "On - X Mod");
+    showCurrentParameterPage(F("Osc FX"), F("On - X Mod"));
     analogWriteFrequency(OSC_FX_LED, 1); // This is to make the LED flash using PWM rather than some thread
     analogWrite(OSC_FX_LED, 127);
   }
   else if (value == 1)
   {
-    showCurrentParameterPage("Osc FX", "On - XOR");
+    showCurrentParameterPage(F("Osc FX"), F("On - XOR"));
     pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, HIGH); // LED on
   }
   else
   {
-    showCurrentParameterPage("Osc FX", "Off");
+    showCurrentParameterPage(F("Osc FX"), F("Off"));
     pinMode(OSC_FX_LED, OUTPUT);
     digitalWriteFast(OSC_FX_LED, LOW); // LED off
   }
@@ -847,13 +846,13 @@ FLASHMEM void updateOscFX(uint8_t value)
 FLASHMEM void updateEffectAmt(float value)
 {
   groupvec[activeGroupIndex]->setEffectAmount(value);
-  showCurrentParameterPage("Effect Amt", String(value) + " Hz");
+  showCurrentParameterPage(F("Effect Amt"), String(value) + F(" Hz"));
 }
 
 FLASHMEM void updateEffectMix(float value)
 {
   groupvec[activeGroupIndex]->setEffectMix(value);
-  showCurrentParameterPage("Effect Mix", String(value));
+  showCurrentParameterPage(F("Effect Mix"), String(value));
 }
 
 FLASHMEM void updatePatch(String name, uint32_t index)
@@ -1266,10 +1265,10 @@ FLASHMEM void setCurrentPatchData(String data[])
 FLASHMEM String getCurrentPatchData()
 {
   auto p = groupvec[activeGroupIndex]->params();
-  return patchName + "," + String(groupvec[activeGroupIndex]->getOscLevelA()) + "," + String(groupvec[activeGroupIndex]->getOscLevelB()) + "," + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + "," + String(p.unisonMode) + "," + String(groupvec[activeGroupIndex]->getOscFX()) + "," + String(p.detune, 5) + "," + String(lfoSyncFreq) + "," + String(midiClkTimeInterval) + "," + String(lfoTempoValue) + "," + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + "," + String(p.glideSpeed, 5) + "," + String(p.oscPitchA) + "," + String(p.oscPitchB) + "," + String(groupvec[activeGroupIndex]->getWaveformA()) + "," + String(groupvec[activeGroupIndex]->getWaveformB()) + "," +
-         String(groupvec[activeGroupIndex]->getPwmSource()) + "," + String(groupvec[activeGroupIndex]->getPwmAmtA()) + "," + String(groupvec[activeGroupIndex]->getPwmAmtB()) + "," + String(groupvec[activeGroupIndex]->getPwmRate()) + "," + String(groupvec[activeGroupIndex]->getPwA()) + "," + String(groupvec[activeGroupIndex]->getPwB()) + "," + String(groupvec[activeGroupIndex]->getResonance()) + "," + String(groupvec[activeGroupIndex]->getCutoff()) + "," + String(groupvec[activeGroupIndex]->getFilterMixer()) + "," + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + "," + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + "," + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + "," + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + "," + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + "," + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + "," + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + "," +
-         groupvec[activeGroupIndex]->getFilterLfoRetrig() + "," + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + "," + groupvec[activeGroupIndex]->getFilterLfoAmt() + "," + groupvec[activeGroupIndex]->getFilterLfoWaveform() + "," + groupvec[activeGroupIndex]->getFilterAttack() + "," + groupvec[activeGroupIndex]->getFilterDecay() + "," + groupvec[activeGroupIndex]->getFilterSustain() + "," + groupvec[activeGroupIndex]->getFilterRelease() + "," + groupvec[activeGroupIndex]->getAmpAttack() + "," + groupvec[activeGroupIndex]->getAmpDecay() + "," + groupvec[activeGroupIndex]->getAmpSustain() + "," + groupvec[activeGroupIndex]->getAmpRelease() + "," +
-         String(groupvec[activeGroupIndex]->getEffectAmount()) + "," + String(groupvec[activeGroupIndex]->getEffectMix()) + "," + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + "," + String(velocitySens) + "," + String(p.chordDetune) + "," + String(groupvec[activeGroupIndex]->getMonophonicMode()) + "," + String(0.0f) + "," + String(0.0f);
+  return patchName + F(",") + String(groupvec[activeGroupIndex]->getOscLevelA()) + F(",") + String(groupvec[activeGroupIndex]->getOscLevelB()) + F(",") + String(groupvec[activeGroupIndex]->getPinkNoiseLevel() - groupvec[activeGroupIndex]->getWhiteNoiseLevel()) + F(",") + String(p.unisonMode) + F(",") + String(groupvec[activeGroupIndex]->getOscFX()) + F(",") + String(p.detune, 5) + F(",") + String(lfoSyncFreq) + F(",") + String(midiClkTimeInterval) + F(",") + String(lfoTempoValue) + F(",") + String(groupvec[activeGroupIndex]->getKeytrackingAmount()) + F(",") + String(p.glideSpeed, 5) + F(",") + String(p.oscPitchA) + F(",") + String(p.oscPitchB) + F(",") + String(groupvec[activeGroupIndex]->getWaveformA()) + F(",") + String(groupvec[activeGroupIndex]->getWaveformB()) + F(",") +
+         String(groupvec[activeGroupIndex]->getPwmSource()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtA()) + F(",") + String(groupvec[activeGroupIndex]->getPwmAmtB()) + F(",") + String(groupvec[activeGroupIndex]->getPwmRate()) + F(",") + String(groupvec[activeGroupIndex]->getPwA()) + F(",") + String(groupvec[activeGroupIndex]->getPwB()) + F(",") + String(groupvec[activeGroupIndex]->getResonance()) + F(",") + String(groupvec[activeGroupIndex]->getCutoff()) + F(",") + String(groupvec[activeGroupIndex]->getFilterMixer()) + F(",") + String(groupvec[activeGroupIndex]->getFilterEnvelope()) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoAmount(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoRate(), 5) + F(",") + String(groupvec[activeGroupIndex]->getPitchLfoWaveform()) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoRetrig())) + F(",") + String(int(groupvec[activeGroupIndex]->getPitchLfoMidiClockSync())) + F(",") + String(groupvec[activeGroupIndex]->getFilterLfoRate(), 5) + F(",") +
+         groupvec[activeGroupIndex]->getFilterLfoRetrig() + F(",") + groupvec[activeGroupIndex]->getFilterLfoMidiClockSync() + F(",") + groupvec[activeGroupIndex]->getFilterLfoAmt() + F(",") + groupvec[activeGroupIndex]->getFilterLfoWaveform() + F(",") + groupvec[activeGroupIndex]->getFilterAttack() + F(",") + groupvec[activeGroupIndex]->getFilterDecay() + F(",") + groupvec[activeGroupIndex]->getFilterSustain() + F(",") + groupvec[activeGroupIndex]->getFilterRelease() + F(",") + groupvec[activeGroupIndex]->getAmpAttack() + F(",") + groupvec[activeGroupIndex]->getAmpDecay() + F(",") + groupvec[activeGroupIndex]->getAmpSustain() + F(",") + groupvec[activeGroupIndex]->getAmpRelease() + F(",") +
+         String(groupvec[activeGroupIndex]->getEffectAmount()) + F(",") + String(groupvec[activeGroupIndex]->getEffectMix()) + F(",") + String(groupvec[activeGroupIndex]->getPitchEnvelope()) + F(",") + String(velocitySens) + F(",") + String(p.chordDetune) + F(",") + String(groupvec[activeGroupIndex]->getMonophonicMode()) + F(",") + String(0.0f) + F(",") + String(0.0f);
 }
 
 void checkMux()
@@ -1696,7 +1695,7 @@ FLASHMEM void reinitialiseToPanel()
   }
   volumePrevious = RE_READ;
   patchName = INITPATCHNAME;
-  showPatchPage("Initial", "Panel Settings");
+  showPatchPage(F("Initial"), F("Panel Settings"));
 }
 
 void checkEncoder()
@@ -1821,5 +1820,5 @@ void loop()
   checkMux();
   checkSwitches();
   checkEncoder();
-  // CPUMonitor();
+  //CPUMonitor();
 }
