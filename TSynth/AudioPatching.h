@@ -222,11 +222,11 @@ struct Global {
     std::vector<AudioConnection*> connections;
 
     Global(float mixerLevel) {
-        for (int i = 0; i < MAX_NO_VOICE; i++) {
+        for (uint8_t i = 0; i < MAX_NO_VOICE; i++) {
             connections.push_back(new AudioConnection{constant1Dc, Oscillators[i].filterEnvelope_});
         }
 
-        for (int i = 0; i < MAX_NO_TIMBER; i++) {
+        for (uint8_t i = 0; i < MAX_NO_TIMBER; i++) {
             SharedAudio[i].connectNoise(pink, white);
 
             uint8_t mixerIdx = 0;
@@ -263,12 +263,12 @@ struct Global {
         white.amplitude(1.0);
     }
 
-    inline int maxVoices() { return MAX_NO_VOICE; }
-    inline int maxTimbre() { return MAX_NO_TIMBER; }
+    inline uint8_t maxVoices() { return MAX_NO_VOICE; }
+    inline uint8_t maxTimbre() { return MAX_NO_TIMBER; }
 
     // Limited to 12 because we have 3 mixers funnelling into 1 mixer.
-    inline int maxVoicesPerGroup() { return 12; }
-    inline int maxTimbres() { return 12; }
+    inline uint8_t maxVoicesPerGroup() { return 12; }
+    inline uint8_t maxTimbres() { return 12; }
 };
 
 #endif

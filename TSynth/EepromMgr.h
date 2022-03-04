@@ -44,7 +44,7 @@ FLASHMEM int8_t getFiltEnv() {
   return fe;
 }
 
-FLASHMEM int getMIDIChannel() {
+FLASHMEM uint8_t getMIDIChannel() {
   byte midiChannel = EEPROM.read(EEPROM_MIDI_CH);
   if (midiChannel < 0 || midiChannel > 16) midiChannel = MIDI_CHANNEL_OMNI;//If EEPROM has no MIDI channel stored
   return midiChannel;
@@ -54,7 +54,7 @@ FLASHMEM void storeMidiChannel(byte channel){
   EEPROM.update(EEPROM_MIDI_CH, channel);
 }
 
-FLASHMEM int getPitchBendRange() {
+FLASHMEM uint8_t getPitchBendRange() {
   byte pitchbend = EEPROM.read(EEPROM_PITCHBEND);
   if (pitchbend < 1 || pitchbend > 12) return pitchBendRange; //If EEPROM has no pitchbend stored
   return pitchbend;
@@ -75,7 +75,7 @@ FLASHMEM void storeModWheelDepth(float mwDepth){
   EEPROM.update(EEPROM_MODWHEEL_DEPTH, mw);
 }
 
-FLASHMEM int getMIDIOutCh() {
+FLASHMEM uint8_t getMIDIOutCh() {
   byte mc = EEPROM.read(EEPROM_MIDI_OUT_CH);
   if (mc < 0 || midiOutCh > 16) mc = 0;//If EEPROM has no MIDI channel stored
   return mc;

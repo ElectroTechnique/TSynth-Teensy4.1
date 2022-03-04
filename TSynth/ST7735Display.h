@@ -370,7 +370,7 @@ FLASHMEM void renderSettingsPage() {
   if (currentSettingsPart == SETTINGSVALUE) renderUpDown(140, 80, ST7735_WHITE);
 }
 
-FLASHMEM void showCurrentParameterPage( const char *param, float val, int pType) {
+FLASHMEM void showCurrentParameterPage(String param, int pType, float val) {
   currentParameter = param;
   currentValue = String(val);
   currentFloatValue = val;

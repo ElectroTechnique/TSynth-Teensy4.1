@@ -510,11 +510,11 @@ FLASHMEM void updatePWA(float valuePwA, float valuePwmAmtA)
   {
     if (groupvec[activeGroupIndex]->getWaveformA() == WAVEFORM_TRIANGLE_VARIABLE)
     {
-      showCurrentParameterPage(F("1. PW Amt"), groupvec[activeGroupIndex]->getPwA(), VAR_TRI);
+      showCurrentParameterPage(F("1. PW Amt"), VAR_TRI, groupvec[activeGroupIndex]->getPwA());
     }
     else
     {
-      showCurrentParameterPage(F("1. PW Amt"), groupvec[activeGroupIndex]->getPwA(), PULSE);
+      showCurrentParameterPage(F("1. PW Amt"), PULSE, groupvec[activeGroupIndex]->getPwA());
     }
   }
   else
@@ -540,11 +540,11 @@ FLASHMEM void updatePWB(float valuePwB, float valuePwmAmtB)
   {
     if (groupvec[activeGroupIndex]->getWaveformB() == WAVEFORM_TRIANGLE_VARIABLE)
     {
-      showCurrentParameterPage(F("2. PW Amt"), groupvec[activeGroupIndex]->getPwB(), VAR_TRI);
+      showCurrentParameterPage(F("2. PW Amt"), VAR_TRI, groupvec[activeGroupIndex]->getPwB());
     }
     else
     {
-      showCurrentParameterPage(F("2. PW Amt"), groupvec[activeGroupIndex]->getPwB(), PULSE);
+      showCurrentParameterPage(F("2. PW Amt"), PULSE, groupvec[activeGroupIndex]->getPwB());
     }
   }
   else
