@@ -13,7 +13,7 @@ boolean vuMeter = false;
 
 // Global patch modifiers
 float lfoSyncFreq = 1.0f;
-float midiClkTimeInterval = 0.0f;
+long midiClkTimeInterval = 0;
 float lfoTempoValue = 1.0f;
 int pitchBendRange = 12;
 float modWheelDepth = 0.2f;

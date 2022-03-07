@@ -12,7 +12,7 @@ extern boolean vuMeter;
 
 // Global patch modifiers
 extern float lfoSyncFreq;
-extern float midiClkTimeInterval;
+extern long midiClkTimeInterval;
 extern float lfoTempoValue;
 extern int pitchBendRange;
 extern float modWheelDepth;

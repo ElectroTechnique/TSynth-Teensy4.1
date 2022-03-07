@@ -64,8 +64,6 @@
 #include "utils.h"
 #include "Voice.h"
 #include "VoiceGroup.h"
-// This should be included here, but it introduces a circular dependency.
-// #include "ST7735Display.h"
 
 #define PARAMETER 0     // The main page for displaying the current patch and control (parameter) changes
 #define RECALL 1        // Patches list
@@ -1167,7 +1165,7 @@ FLASHMEM void myMIDIClock()
     // TODO: Most of this needs to move into the VoiceGroup
 
     setMIDIClkSignal(!getMIDIClkSignal());
-    float timeNow = millis();
+    long timeNow = millis();
     midiClkTimeInterval = (timeNow - previousMillis);
     lfoSyncFreq = 1000.0f / midiClkTimeInterval;
     previousMillis = timeNow;
