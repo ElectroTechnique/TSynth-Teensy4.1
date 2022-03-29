@@ -90,8 +90,8 @@ uint8_t activeGroupIndex = 0;
 USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
-//MIDIDevice midi1(myusb);
-MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
+MIDIDevice midi1(myusb);
+//MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
 
 // MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);

@@ -51,12 +51,12 @@ FLASHMEM void settingsGlideShape(int index, const char * value) {
 
 FLASHMEM int currentIndexAmpEnv() {
   if((envTypeAmp>=-8) && (envTypeAmp<=8))return envTypeAmp+9;
-  else return 0;
+  else return 8;
 }
 
 FLASHMEM int currentIndexFiltEnv() {
   if((envTypeFilt>=-8) && (envTypeFilt<=8))return envTypeFilt+9;
-  else return 0;
+  else return 8;
 }
 
 FLASHMEM void settingsAmpEnv(int index, const char * value) {
