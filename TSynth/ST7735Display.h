@@ -7,8 +7,6 @@
 #define dc 3
 #define rst 9
 #define DISPLAYTIMEOUT 700
-#define SPI_SPEED 60000000
-#define SPICLOCK_READ 40000000
 
 #include <Adafruit_GFX.h>
 #include "ST7735_t3.h" // Local copy from TD1.48 that works for 0.96" IPS 160x80 display
@@ -455,6 +453,7 @@ void displayThread() {
 
 void setupDisplay() {
   tft.initR(INITR_GREENTAB);
+  
   tft.useFrameBuffer(true);
   tft.setRotation(3);
   tft.invertDisplay(true);
