@@ -115,7 +115,7 @@ public:
     __enable_irq();
   }
   // slowly transition to the new DC level
-  FLASHMEM void amplitude(float n, float milliseconds) {
+   void amplitude(float n, float milliseconds) {
     if (milliseconds <= 0.0f) {
       amplitude(n);
       return;

@@ -83,6 +83,10 @@ Global global{VOICEMIXERLEVEL};
 // VoiceGroup voices1{global.SharedAudio[0]};
 std::vector<VoiceGroup *> groupvec;
 uint8_t activeGroupIndex = 0;
+uint8_t loopCount = 0;
+
+boolean usbHostPluggedIn = false;
+elapsedMillis usb_host_wait_timer;
 
 #include "ST7735Display.h"
 
@@ -91,7 +95,7 @@ USBHost myusb;
 USBHub hub1(myusb);
 USBHub hub2(myusb);
 MIDIDevice midi1(myusb);
-//MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
+// MIDIDevice_BigBuffer midi1(myusb); // Try this if your MIDI Compliant controller has problems
 
 // MIDI 5 Pin DIN
 MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
@@ -108,7 +112,7 @@ boolean firstPatchLoaded = false;
 
 float previousMillis = millis(); // For MIDI Clk Sync
 
-uint8_t count = 0;           // For MIDI Clk Sync
+uint8_t count = 0;            // For MIDI Clk Sync
 uint16_t patchNo = 1;         // Current patch no
 long earliestTime = millis(); // For voice allocation - initialise to now
 
@@ -171,7 +175,7 @@ FLASHMEM void setup()
   // USB HOST MIDI Class Compliant
   delay(200); // Wait to turn on USB Host
   myusb.begin();
-  midi1.setHandleControlChange(myControlChange);
+  midi1.setHandleControlChange(usbHostControlChange);
   midi1.setHandleNoteOff(myNoteOff);
   midi1.setHandleNoteOn(myNoteOn);
   midi1.setHandlePitchChange(myPitchBend);
@@ -1794,6 +1798,30 @@ void midiCCOut(byte cc, byte value)
   }
 }
 
+// Ignores CC messages for four seconds after USB Host is plugged in
+// Some MIDI controllers send data when connected that changes synth settings
+FLASHMEM void usbHostControlChange(byte channel, byte control, byte value)
+{
+  if (usbHostPluggedIn && usb_host_wait_timer > 4000) // wait 4s
+  {
+    // When waiting time has expired, all CC messages go through to the normal handler
+    myControlChange(channel, control, value);
+  }
+}
+
+FLASHMEM void checkUSBHostStatus()
+{
+  if (midi1 && !usbHostPluggedIn)
+  {
+    usb_host_wait_timer = 0;
+    usbHostPluggedIn = true;
+  }
+  else if (!midi1 && usbHostPluggedIn)
+  {
+    usbHostPluggedIn = false;
+  }
+}
+
 void CPUMonitor()
 {
   Serial.print(F(" CPU:"));
@@ -1809,14 +1837,19 @@ void CPUMonitor()
 void loop()
 {
   // USB HOST MIDI Class Compliant
-  myusb.Task();
+   myusb.Task();
   midi1.read(midiChannel);
   // USB Client MIDI
   usbMIDI.read(midiChannel);
   // MIDI 5 Pin DIN
   MIDI.read(midiChannel);
-  checkMux();
-  checkSwitches();
-  checkEncoder();
-  //CPUMonitor();
+  if (loopCount++ > 9)
+  {
+    checkUSBHostStatus();
+    checkMux();
+    checkSwitches();
+    checkEncoder();
+    // CPUMonitor();
+    loopCount = 0;
+  }
 }
