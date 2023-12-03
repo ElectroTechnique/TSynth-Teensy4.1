@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name Front_Panel-rescue)(type Legacy)(uri ${KIPRJMOD}/Front_Panel-rescue.lib)(options "")(descr ""))
+)
