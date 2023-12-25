@@ -1061,6 +1061,16 @@ private:
     {
         Voice *result = nullptr;
 
+        // Find free voice
+        for (uint8_t i = 0; i < voices.size(); i++)
+        {
+            if (!voices[i]->on())
+            {
+                result = voices[i];
+                break;
+            }
+        }
+
         for (uint8_t i = 0; i < voices.size(); i++)
         {
             if (result == nullptr || !voices[i]->on() || result->on())
