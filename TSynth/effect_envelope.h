@@ -53,8 +53,8 @@
 // This allows different eponential curvatures (positive and negative) with the endpoints constrained
 // to start at 0 and end at 1 (normalized) in the specified time interval.
 // and ynew = k1*yold+k2 (normalized).
-// The funtion for the k2 term is a continous funtion of curveFactor through zero, but it is an indeterminate form at zero that
-// This causes problems with finite precision math when approaching zero from either side (like the sinc funtion sin(x)/x but worse).
+// The function for the k2 term is a continuous function of curveFactor through zero, but it is an indeterminate form at zero that
+// causes problems with finite precision math when approaching zero from either side (like the sinc function sin(x)/x but worse).
 // It can be expressed as a continous function using a ratio of power series but it is simpler to restrict the values to integers
 // between -8 and 8 treating zero as a special case (linear ramp).
 //

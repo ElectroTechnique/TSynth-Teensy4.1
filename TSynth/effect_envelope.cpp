@@ -48,6 +48,14 @@ void AudioEffectEnvelopeTS::noteOn(void)
 
     case STATE_IDLE:
     case STATE_IDLE_NEXT:
+      // In a corner case, where the state becomes STATE_IDLE EXACTLY at the end of an update(),
+	  // AND noteOn() is called before the next update() occurs, AND delay_count is non-zero, 
+	  // AND the exponential envelope shape is in use, exp_count will have a stale value 
+	  // of 2^32-1 and the delay becomes about 9 days. So duplicate some code here - it
+	  // might be possible to move it instead
+      exp_count=((uint32_t)(delay_count))*8;
+      ysum=0;
+	  
       count=delay_count;
       if(count>0)
       {
